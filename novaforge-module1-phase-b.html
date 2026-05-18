@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase B — AI Operations Analysis Lab | NovaForge Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --purple:#7B2FBE; --purple-light:#9B59D9; --purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8; --purple-dark:#4A1880; --purple-deep:#2D0F52;
+  --white:#FFFFFF; --off:#FAFAF8; --off2:#F4F1F8;
+  --border:rgba(123,47,190,0.13); --border-s:rgba(123,47,190,0.28);
+  --txt:#1A1020; --muted:#6B5C7A; --light:#A090B0;
+  --green:#1A6645; --green-bg:#EAF7F0; --green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00; --amber-bg:#FDF5E6; --amber-border:rgba(122,79,0,.22);
+  --red:#8A2020; --red-bg:#FDF0EF; --red-border:rgba(138,32,32,.22);
+  --blue:#0F4F8A; --blue-bg:#EBF4FD; --blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+
+/* ── SHELL ── */
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 48px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-left .sep{color:var(--purple-mid);}
+.tb-left .cur{color:var(--purple);}
+.tb-right{display:flex;align-items:center;gap:14px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-s);padding:5px 14px;border-radius:20px;}
+.screen-counter{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{background:var(--off2);border-bottom:1px solid var(--border);padding:0 48px;height:6px;}
+.progress-track{height:100%;background:var(--border);position:relative;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple-light));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* ── STEP DOTS ── */
+.step-dots{padding:14px 48px 0;display:flex;align-items:center;gap:6px;max-width:860px;margin:0 auto;width:100%;}
+.dot{width:28px;height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s,width .25s;}
+.dot.active{background:var(--purple);width:36px;}
+.dot.done{background:var(--purple-mid);}
+
+/* ── MAIN ── */
+.main{flex:1;max-width:860px;margin:0 auto;width:100%;padding:0 48px 80px;}
+
+/* ── SCREEN ── */
+.screen{display:none;padding-top:40px;animation:fadeUp .4s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SCREEN HEADER ── */
+.screen-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.screen-eyebrow::before{content:'';width:20px;height:2px;background:var(--purple);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.screen .lead{font-size:16px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:32px;}
+.screen-rule{height:1px;background:var(--border);margin-bottom:32px;}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:16px;}
+.card.accent{border-left:4px solid var(--purple);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.blue{border-left:4px solid #378ADD;background:var(--blue-bg);}
+.card h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:8px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card ul{padding-left:18px;margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+
+/* ── LABEL ── */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px;display:block;}
+
+/* ── GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.checklist li{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--off);border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--txt);cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk-box{background:var(--green);border-color:var(--green);color:white;}
+.chk-box{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent;transition:all .2s;margin-top:1px;}
+.chk-text strong{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-text span{font-size:13px;color:var(--muted);}
+
+/* ── PROMPT BOX ── */
+.prompt-box{background:var(--off);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.prompt-header{background:var(--purple-pale);padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.prompt-header .ph-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.copy-btn{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);background:var(--white);border:1px solid var(--border-s);padding:4px 12px;border-radius:3px;cursor:pointer;transition:background .15s;}
+.copy-btn:hover{background:var(--purple-pale);}
+.copy-btn.copied{color:var(--green);border-color:var(--green-border);}
+.prompt-text{padding:16px 20px;font-family:'Space Mono',monospace;font-size:12px;color:var(--txt);line-height:1.7;white-space:pre-wrap;}
+
+/* ── STEP INSTRUCTIONS ── */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.steps-list li{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6;}
+.steps-list li:last-child{border-bottom:none;}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--purple);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* ── TEXTAREA ── */
+textarea.field{width:100%;min-height:80px;border:1px dashed var(--border-s);border-radius:6px;background:var(--off);padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--purple-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:120px;}
+
+/* ── RADIO CHOICE ── */
+.choices{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.choice{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--off);border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--txt);cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.choice:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.choice.selected.correct{background:var(--green-bg);border-color:var(--green-border);}
+.choice.selected.wrong{background:var(--red-bg);border-color:var(--red-border);}
+.choice-dot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-s);flex-shrink:0;transition:all .2s;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.choice.selected.correct .choice-dot{background:var(--green);border-color:var(--green);color:white;}
+.choice.selected.wrong .choice-dot{background:#D94040;border-color:#D94040;color:white;}
+
+/* ── COMPARE TABLE ── */
+.compare-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.compare-table thead tr{background:var(--purple-pale);}
+.compare-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);padding:12px 16px;text-align:left;border-bottom:1px solid var(--border-s);font-weight:700;}
+.compare-table td{padding:13px 16px;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;align-items:center;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.ai{background:var(--purple-pale);color:var(--purple-dark);}
+.tag.human{background:var(--green-bg);color:var(--green);}
+.tag.both{background:var(--amber-bg);color:var(--amber);}
+
+/* ── REPORT SECTION ── */
+.report-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.report-section-header{background:var(--purple-pale);padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.report-section-header .rs-icon{font-size:16px;}
+.report-section-header .rs-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.report-section-body{padding:16px 20px;background:var(--white);}
+
+/* ── SCENARIO BOX ── */
+.scenario-box{background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;padding:28px;margin-bottom:24px;}
+.scenario-box .sc-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.scenario-box .sc-tag::before{content:'⚠';font-size:14px;}
+.scenario-box h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--txt);margin-bottom:10px;}
+.scenario-box p{font-size:15px;color:var(--muted);line-height:1.7;}
+
+/* ── AI BUBBLE ── */
+.ai-bubble{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:22px 24px;margin-bottom:20px;position:relative;}
+.ai-bubble::before{content:'🤖 AI Response';font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700;display:block;margin-bottom:10px;}
+.ai-bubble p{font-size:14px;color:var(--txt);line-height:1.7;}
+.ai-bubble .ai-warning{margin-top:12px;padding:10px 14px;background:rgba(122,79,0,.08);border:1px solid var(--amber-border);border-radius:5px;font-size:12px;color:var(--amber);font-style:italic;}
+
+/* ── NAV BUTTONS ── */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:40px;border-top:1px solid var(--border);margin-top:40px;}
+.btn-back{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:11px 22px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s,color .15s;}
+.btn-back:hover{background:var(--off);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:16px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;}
+
+/* ── SUCCESS ── */
+.success-box{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:18px 24px;margin-bottom:20px;display:none;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.success-box strong{font-weight:600;}
+
+/* ── DOWNLOAD BTN ── */
+.btn-download{display:inline-flex;align-items:center;gap:10px;background:var(--white);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:2px solid var(--purple);cursor:pointer;letter-spacing:.02em;transition:background .2s;margin-left:12px;}
+.btn-download:hover{background:var(--purple-pale);}
+
+/* ── COMPLETION ── */
+.completion-hero{text-align:center;padding:48px 0 32px;}
+.completion-hero .c-icon{font-size:64px;margin-bottom:20px;display:block;}
+.completion-hero h1{font-family:'Fraunces',serif;font-size:36px;font-weight:500;color:var(--txt);margin-bottom:12px;}
+.completion-hero p{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 32px;line-height:1.7;}
+.portfolio-badge{display:inline-flex;align-items:center;gap:12px;background:var(--purple-pale);border:1px solid var(--border-s);border-radius:6px;padding:16px 24px;margin-bottom:32px;}
+.portfolio-badge .pb-icon{font-size:28px;}
+.portfolio-badge .pb-text .pb-title{font-weight:600;font-size:15px;color:var(--txt);}
+.portfolio-badge .pb-text .pb-sub{font-size:12px;color:var(--muted);}
+
+/* ── PHASE TRANSITION ── */
+.transition-box{background:var(--off);border:1px solid var(--border);border-radius:10px;padding:36px;text-align:center;margin-top:16px;}
+.transition-box .t-eyebrow{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;}
+.transition-box h2{font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--txt);margin-bottom:12px;letter-spacing:-.01em;}
+.transition-box h2 em{font-style:italic;color:var(--purple);}
+.transition-box p{font-size:14px;color:var(--muted);max-width:480px;margin:0 auto;line-height:1.7;}
+.phase-c-list{list-style:none;display:flex;flex-direction:column;gap:8px;max-width:340px;margin:20px auto 0;text-align:left;}
+.phase-c-list li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);}
+.phase-c-list li::before{content:'›';color:var(--purple);font-weight:700;font-size:16px;}
+
+/* ── INPUT field ── */
+input.field{width:100%;padding:10px 14px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.field:focus{border-color:var(--purple-light);background:var(--white);}
+input.field::placeholder{color:var(--light);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 1</span><span class="sep">›</span>
+    <span class="cur">Phase B</span>
+  </div>
+  <div class="tb-right">
+    <span class="screen-counter" id="screenCounter">Screen 1 of 10</span>
+    <div class="phase-pill">Phase B of 3</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+</div>
+
+<!-- STEP DOTS -->
+<div class="step-dots" id="stepDots"></div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══════════════════════════════════════
+     SCREEN 1 — ENTER THE LAB
+═══════════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="screen-eyebrow">Phase B · Screen 1 of 10</div>
+  <h1>Welcome to the<br><em>AI Operations Lab</em></h1>
+  <div class="screen-rule"></div>
+  <div class="card accent">
+    <h3>🏭 You're entering the NovaForge AI Operations Analysis Lab</h3>
+    <p>In Phase A, you investigated the factory floor. You mapped how AI is used, identified safety risks, and tracked where humans are still in charge.</p>
+    <p style="margin-top:10px;">Now it's time to go deeper. Real operations teams don't just observe — they <strong>analyze</strong>. They use AI tools to organize findings, spot patterns, and build recommendations for leadership.</p>
+    <p style="margin-top:10px;">That's exactly what you'll do in Phase B.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">What You Just Finished</span>
+      <p>✅ Phase A Shop Floor Investigation<br>You mapped AI systems, safety risks, and human vs. AI responsibilities across five factory zones.</p>
+    </div>
+    <div class="card">
+      <span class="label">What Happens in Phase B</span>
+      <p>🔍 AI Operations Analysis<br>You will use AI tools to analyze your findings, evaluate risks, and build a professional operations report.</p>
+    </div>
+  </div>
+
+  <div class="card green">
+    <h3>Your goal in Phase B</h3>
+    <ul>
+      <li>Use AI tools to analyze manufacturing workflows</li>
+      <li>Evaluate safety risks with AI support</li>
+      <li>Identify where AI falls short — and why</li>
+      <li>Build a report that shows responsible AI thinking</li>
+    </ul>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read the briefing, then continue</span>
+    <button class="btn-next" onclick="goTo(2)">Enter the Lab</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 2 — REVIEW YOUR OBSERVATIONS
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="screen-eyebrow">Phase B · Screen 2 of 10</div>
+  <h1>Review Your<br><em>Phase A Findings</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Before you use any AI tools, gather your notes from Phase A. Good analysis starts with good input. Check off each item as you find it.</p>
+
+  <ul class="checklist" id="cl2">
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>AI Observation Log</strong>
+        <span>Your three completed observation entries from the factory zones</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>AI vs. Human Responsibility Map</strong>
+        <span>Which tasks belong to AI, which to humans, and which are shared</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Safety Risk Notes</strong>
+        <span>At least two safety concerns you identified on the shop floor</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Decision Scenario Responses</strong>
+        <span>Your answers to the three operational judgment scenarios</span>
+      </div>
+    </li>
+  </ul>
+
+  <div class="card amber">
+    <p><strong>Pro tip:</strong> Open your Phase A PDF report in a separate tab or window so you can reference it while working through Phase B. You'll be pulling your observations directly into AI tools.</p>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">I Have My Notes</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 3 — USING AI AS A TOOL
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="screen-eyebrow">Phase B · Screen 3 of 10</div>
+  <h1>Using AI as an<br><em>Operations Tool</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Manufacturing professionals use AI tools every day to organize information and support decisions. Let's look at how that works before you try it yourself.</p>
+
+  <div class="card accent">
+    <h3>Which AI tools will you use?</h3>
+    <p>You can use any of these — they all work for this task:</p>
+    <div class="grid-2" style="margin-top:14px;">
+      <div style="padding:14px;background:var(--off);border:1px solid var(--border);border-radius:7px;">
+        <strong style="font-size:14px;">ChatGPT</strong><br>
+        <span style="font-size:13px;color:var(--muted);">chatgpt.com — free to use</span>
+      </div>
+      <div style="padding:14px;background:var(--off);border:1px solid var(--border);border-radius:7px;">
+        <strong style="font-size:14px;">Microsoft Copilot</strong><br>
+        <span style="font-size:13px;color:var(--muted);">copilot.microsoft.com — free to use</span>
+      </div>
+    </div>
+  </div>
+
+  <span class="label">What AI tools can do for operations teams</span>
+  <ul class="checklist" style="pointer-events:none;">
+    <li class="checked"><div class="chk-box" style="background:var(--green);border-color:var(--green);color:white;">✓</div><div class="chk-text"><strong>Organize and summarize findings</strong><span>Turn messy notes into clear, structured information</span></div></li>
+    <li class="checked"><div class="chk-box" style="background:var(--green);border-color:var(--green);color:white;">✓</div><div class="chk-text"><strong>Identify patterns in workflows</strong><span>Spot trends and connections across multiple data points</span></div></li>
+    <li class="checked"><div class="chk-box" style="background:var(--green);border-color:var(--green);color:white;">✓</div><div class="chk-text"><strong>Generate questions and recommendations</strong><span>Surface issues and suggest next steps for the team to evaluate</span></div></li>
+  </ul>
+
+  <div class="card red">
+    <h3>⚠ Critical Rule</h3>
+    <p>AI tools support decisions — they <strong>do not make final decisions</strong>. In manufacturing, a wrong recommendation from an AI can cause safety problems, production shutdowns, or equipment failure. Always review AI output with your own judgment.</p>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Understood — Let's Start</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 4 — AI WORKFLOW ANALYSIS TASK
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="screen-eyebrow">Phase B · Screen 4 of 10</div>
+  <h1>Task 1 —<br><em>Workflow Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Pick one workflow observation from your Phase A log. You'll paste it into an AI tool and use a prompt to analyze it. Follow each step below.</p>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Open your Phase A report and choose <strong>one workflow observation</strong> — something you wrote in your Observation Log.</div></li>
+    <li><div class="step-n">2</div><div>Open your AI tool (ChatGPT or Copilot) in a new tab.</div></li>
+    <li><div class="step-n">3</div><div>Copy one of the example prompts below, paste it into the AI tool, then <strong>add your observation at the end.</strong></div></li>
+    <li><div class="step-n">4</div><div>Read the AI's response carefully. Then come back here and answer the reflection questions.</div></li>
+  </ol>
+
+  <span class="label">Example Prompts — Copy and Use One</span>
+
+  <div class="prompt-box">
+    <div class="prompt-header">
+      <span class="ph-label">Prompt Option A</span>
+      <button class="copy-btn" onclick="copyPrompt(this,'Analyze this manufacturing workflow and explain where AI improves efficiency. Also identify where human oversight is still necessary:\n\n[Paste your observation here]')">Copy</button>
+    </div>
+    <div class="prompt-text">Analyze this manufacturing workflow and explain where AI improves efficiency. Also identify where human oversight is still necessary:
+
+[Paste your observation here]</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-header">
+      <span class="ph-label">Prompt Option B</span>
+      <button class="copy-btn" onclick="copyPrompt(this,'I work in manufacturing operations. Review this workflow observation and tell me: (1) how AI is being used, (2) what risks exist if AI fails, and (3) what a human worker should monitor:\n\n[Paste your observation here]')">Copy</button>
+    </div>
+    <div class="prompt-text">I work in manufacturing operations. Review this workflow observation and tell me: (1) how AI is being used, (2) what risks exist if AI fails, and (3) what a human worker should monitor:
+
+[Paste your observation here]</div>
+  </div>
+
+  <span class="label" style="margin-top:24px;">After the AI responds — answer these questions</span>
+
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">💬</span><span class="rs-title">Reflection: Workflow Analysis</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:14px;">
+      <div><span class="label">What workflow did you analyze?</span><textarea id="r4_workflow" class="field" placeholder="Briefly describe the workflow or system you chose from Phase A…"></textarea></div>
+      <div><span class="label">What insights did the AI provide?</span><textarea id="r4_insights" class="field tall" placeholder="Summarize the most useful things the AI told you about this workflow…"></textarea></div>
+      <div><span class="label">Did the AI miss anything important?</span><textarea id="r4_missed" class="field" placeholder="What did the AI overlook that you know from your real observation?…"></textarea></div>
+      <div><span class="label">Would you trust this recommendation completely? Why or why not?</span><textarea id="r4_trust" class="field" placeholder="Explain your reasoning…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Next Task</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 5 — AI SAFETY ANALYSIS TASK
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="screen-eyebrow">Phase B · Screen 5 of 10</div>
+  <h1>Task 2 —<br><em>Safety Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now use AI to analyze one of the safety concerns you identified in Phase A. Safety is where human oversight matters most.</p>
+
+  <div class="card amber">
+    <h3>Before you start — remember this</h3>
+    <p>AI does not know your factory floor. It has never seen the equipment, the workers, or the conditions. It can help you <em>think</em> about risks — but it cannot replace a real safety inspection or human judgment.</p>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Find a <strong>safety concern</strong> you noted in your Phase A Observation Log.</div></li>
+    <li><div class="step-n">2</div><div>Go to your AI tool and use one of the prompts below with your safety concern added at the end.</div></li>
+    <li><div class="step-n">3</div><div>Read the response. Then return here and complete the reflection below.</div></li>
+  </ol>
+
+  <span class="label">Safety-Focused Prompts — Copy and Use One</span>
+
+  <div class="prompt-box">
+    <div class="prompt-header">
+      <span class="ph-label">Prompt Option A</span>
+      <button class="copy-btn" onclick="copyPrompt(this,'I work in a robotics manufacturing facility. What workplace safety risks could occur if this AI system fails or gives a wrong alert? What should human workers do in response?\n\n[Describe your safety concern here]')">Copy</button>
+    </div>
+    <div class="prompt-text">I work in a robotics manufacturing facility. What workplace safety risks could occur if this AI system fails or gives a wrong alert? What should human workers do in response?
+
+[Describe your safety concern here]</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-header">
+      <span class="ph-label">Prompt Option B</span>
+      <button class="copy-btn" onclick="copyPrompt(this,'How could workers reduce risks in this manufacturing environment? Identify at least three practical steps and explain whether AI or humans should be responsible for each:\n\n[Describe your safety concern here]')">Copy</button>
+    </div>
+    <div class="prompt-text">How could workers reduce risks in this manufacturing environment? Identify at least three practical steps and explain whether AI or humans should be responsible for each:
+
+[Describe your safety concern here]</div>
+  </div>
+
+  <div class="card red" style="margin-top:20px;">
+    <h3>Important Reminders</h3>
+    <ul>
+      <li>AI may overlook real-world conditions it cannot see or measure</li>
+      <li>Physical environment, worker fatigue, and equipment age are often missed</li>
+      <li>Human workers on the floor must always verify safety conditions personally</li>
+      <li>Never rely on AI alone for safety-critical decisions</li>
+    </ul>
+  </div>
+
+  <span class="label" style="margin-top:24px;">After the AI responds — answer these questions</span>
+
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">🦺</span><span class="rs-title">Reflection: Safety Analysis</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:14px;">
+      <div><span class="label">What safety concern did you analyze?</span><textarea id="r5_concern" class="field" placeholder="Describe the safety concern from your Phase A log…"></textarea></div>
+      <div><span class="label">What risks did the AI identify?</span><textarea id="r5_risks" class="field tall" placeholder="List the main risks the AI flagged and its recommended responses…"></textarea></div>
+      <div><span class="label">What did the AI not account for?</span><textarea id="r5_gaps" class="field" placeholder="What real-world factors did the AI seem to miss?…"></textarea></div>
+      <div><span class="label">What should human workers do that AI cannot?</span><textarea id="r5_human" class="field" placeholder="Describe specific human actions required in this safety situation…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Next: AI Was Wrong</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 6 — AI WAS WRONG
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="screen-eyebrow">Phase B · Screen 6 of 10 — Critical Thinking</div>
+  <h1>When AI Gets<br><em>It Wrong</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">AI tools can be confidently wrong. This is one of the most important things for operations professionals to understand. Read the scenario below carefully.</p>
+
+  <div class="scenario-box">
+    <div class="sc-tag">AI Recommendation Alert</div>
+    <h3>Scenario: The Overnight Staffing Cut</h3>
+    <p>The NovaForge operations AI analyzed production data for the past 90 days. It found that overnight shifts (10pm–6am) produce 18% fewer units than day shifts. The AI's recommendation:</p>
+    <p style="margin-top:14px;padding:14px 18px;background:rgba(255,255,255,0.6);border-radius:6px;font-style:italic;font-size:15px;">"Reduce overnight staffing by 40% to improve cost efficiency. Data shows overnight production is consistently lower and can be maintained with fewer workers."</p>
+  </div>
+
+  <div class="ai-bubble">
+    <p>This recommendation looks logical at first. The data is real — overnight production is lower. A 40% staffing cut would save money. The AI is confident in this analysis.</p>
+    <div class="ai-warning">But is this actually a good recommendation? What is the AI missing?</div>
+  </div>
+
+  <span class="label">Identify what the AI missed — select all that apply</span>
+
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Overnight shifts require minimum safety staffing</strong>
+        <span>Regulations often require a minimum number of workers during any shift for safety compliance</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Lower production doesn't mean less work</strong>
+        <span>Maintenance, equipment resets, and cleaning happen overnight — fewer units built doesn't mean fewer tasks</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Equipment emergencies are harder to handle with fewer workers</strong>
+        <span>If a machine breaks down overnight with a skeleton crew, response time increases and risk multiplies</span>
+      </div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text">
+        <strong>Worker fatigue risk increases with fewer staff</strong>
+        <span>Remaining workers would have to cover more ground, increasing injury and error risk</span>
+      </div>
+    </li>
+  </ul>
+
+  <span class="label">Now write your own response</span>
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">🧠</span><span class="rs-title">Your Critical Thinking Response</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:14px;">
+      <div><span class="label">Why is the AI recommendation risky or incomplete?</span><textarea id="r6_why" class="field tall" placeholder="Explain in your own words what the AI got wrong and why this recommendation could be dangerous…"></textarea></div>
+      <div><span class="label">What would you recommend to leadership instead?</span><textarea id="r6_recommend" class="field tall" placeholder="What should happen? What data or human factors should leadership consider before making any staffing change?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:8px;">
+    <h3>Key Takeaway</h3>
+    <p>AI analyzes patterns in data — but it does not understand context, human safety, regulations, or the real conditions on the shop floor. <strong>That's why human oversight is non-negotiable in manufacturing.</strong></p>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Continue</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 7 — HUMAN VS AI DECISION REVIEW
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="screen-eyebrow">Phase B · Screen 7 of 10</div>
+  <h1>Human vs. AI<br><em>Decision Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Not every task is the same. Some things AI handles well. Others require a human. And some require both working together. Review the table below — then complete the activity.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Best Handled By</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Scanning 500 units per hour for surface defects</td>
+        <td><span class="tag ai">AI</span></td>
+        <td>Speed and consistency — humans tire and miss things at this scale</td>
+      </tr>
+      <tr>
+        <td>Deciding whether to shut down a machine mid-shift</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Requires judgment about risk, cost, and real conditions AI cannot see</td>
+      </tr>
+      <tr>
+        <td>Predicting when a machine will need maintenance</td>
+        <td><span class="tag both">Both</span></td>
+        <td>AI identifies patterns; humans decide timing and priority of repairs</td>
+      </tr>
+      <tr>
+        <td>Responding to a workplace injury</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Physical response, judgment, and care — AI cannot intervene in person</td>
+      </tr>
+      <tr>
+        <td>Generating production schedule options</td>
+        <td><span class="tag both">Both</span></td>
+        <td>AI optimizes for data; humans factor in worker needs and context</td>
+      </tr>
+      <tr>
+        <td>Approving a final product shipment</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Accountability and legal responsibility rest with people, not systems</td>
+      </tr>
+      <tr>
+        <td>Monitoring equipment sensor data 24/7</td>
+        <td><span class="tag ai">AI</span></td>
+        <td>Continuous monitoring at scale is beyond human capacity</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <span class="label" style="margin-top:24px;">Now add two of your own examples from Phase A</span>
+
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">🗂️</span><span class="rs-title">Your Human vs. AI Examples</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <span class="label">Example 1 — From your Phase A observation</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+          <div><span class="label" style="font-size:8px;">Task or Situation</span><textarea id="r7_task1" class="field" style="min-height:56px;" placeholder="Describe the task…"></textarea></div>
+          <div><span class="label" style="font-size:8px;">Best Handled By (AI / Human / Both) — and Why</span><textarea id="r7_who1" class="field" style="min-height:56px;" placeholder="Who handles it and why?…"></textarea></div>
+        </div>
+      </div>
+      <div>
+        <span class="label">Example 2 — From your Phase A observation</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+          <div><span class="label" style="font-size:8px;">Task or Situation</span><textarea id="r7_task2" class="field" style="min-height:56px;" placeholder="Describe the task…"></textarea></div>
+          <div><span class="label" style="font-size:8px;">Best Handled By (AI / Human / Both) — and Why</span><textarea id="r7_who2" class="field" style="min-height:56px;" placeholder="Who handles it and why?…"></textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Build Your Report</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 8 — BUILD YOUR FINAL REPORT
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="screen-eyebrow">Phase B · Screen 8 of 10</div>
+  <h1>Build Your<br><em>Operations Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">You've done the analysis. Now compile your findings into a professional operations report. Fill in each section below — these will be pulled directly into your downloadable PDF.</p>
+
+  <div class="card accent" style="margin-bottom:24px;">
+    <h3>📄 NovaForge AI Operations Analysis Report</h3>
+    <p>This report will show leadership your ability to analyze manufacturing operations using both AI tools and human operational judgment. Think of it as a real workplace deliverable.</p>
+  </div>
+
+  <!-- Learner Info -->
+  <div class="report-section" style="margin-bottom:16px;">
+    <div class="report-section-header"><span class="rs-icon">👤</span><span class="rs-title">Learner Information</span></div>
+    <div class="report-section-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="field-group"><span class="label">Full Name</span><input type="text" id="r_name" class="field" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Date</span><input type="date" id="r_date" class="field"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">🔄</span><span class="rs-title">Part 1 — Workflow Analysis Findings</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div><span class="label">Workflow analyzed</span><textarea id="r8_wf" class="field" placeholder="Which workflow did you analyze with AI? Briefly describe it…"></textarea></div>
+      <div><span class="label">Key AI-generated insights</span><textarea id="r8_insights" class="field tall" placeholder="What did the AI tell you about this workflow? Summarize the most valuable findings…"></textarea></div>
+      <div><span class="label">What the AI missed or got wrong</span><textarea id="r8_missed" class="field" placeholder="What important details or context did the AI overlook?…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">🦺</span><span class="rs-title">Part 2 — Safety Analysis</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div><span class="label">Safety concern analyzed</span><textarea id="r8_sc" class="field" placeholder="Which safety concern from Phase A did you analyze?…"></textarea></div>
+      <div><span class="label">AI-identified risks and recommendations</span><textarea id="r8_airec" class="field tall" placeholder="What risks and actions did the AI identify?…"></textarea></div>
+      <div><span class="label">Human oversight still required</span><textarea id="r8_human" class="field" placeholder="What must humans do that AI cannot handle in this safety situation?…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">⚠️</span><span class="rs-title">Part 3 — AI Limitations Observed</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div><span class="label">Describe a situation where AI gave incomplete or risky advice</span><textarea id="r8_limits" class="field tall" placeholder="Use the staffing scenario or another example from your analysis…"></textarea></div>
+      <div><span class="label">What human factors did AI fail to consider?</span><textarea id="r8_factors" class="field" placeholder="Safety regulations, worker conditions, equipment context, operational history…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="report-section">
+    <div class="report-section-header"><span class="rs-icon">💡</span><span class="rs-title">Part 4 — Operational Recommendations</span></div>
+    <div class="report-section-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div><span class="label">Recommendation 1 — How NovaForge should use AI responsibly</span><textarea id="r8_rec1" class="field" placeholder="Your first recommendation for the operations leadership team…"></textarea></div>
+      <div><span class="label">Recommendation 2 — Where human oversight should be strengthened</span><textarea id="r8_rec2" class="field" placeholder="Your second recommendation…"></textarea></div>
+      <div><span class="label">Overall conclusion</span><textarea id="r8_conclusion" class="field tall" placeholder="Summarize your overall finding: How should NovaForge balance AI tools with human judgment to run a safe and efficient factory?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <button class="btn-next" onclick="goTo(9)">Review &amp; Download</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 9 — DOWNLOAD YOUR REPORT
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="screen-eyebrow">Phase B · Screen 9 of 10</div>
+  <h1>Your Report is<br><em>Ready to Download</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="completion-hero">
+    <span class="c-icon">📋</span>
+    <h1>Phase B Analysis Complete</h1>
+    <p>You've used AI tools to analyze manufacturing workflows, evaluate safety risks, and identify AI limitations. Your report is ready.</p>
+  </div>
+
+  <div class="portfolio-badge" style="display:flex;margin:0 auto 32px;width:fit-content;">
+    <div class="pb-icon">🏭</div>
+    <div class="pb-text">
+      <div class="pb-title">NovaForge AI Operations Analysis Report</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 1 · Phase B</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:24px;">
+    <h3>What this report demonstrates</h3>
+    <ul>
+      <li>Your ability to use AI tools in a manufacturing context</li>
+      <li>Critical thinking about AI limitations and responsible use</li>
+      <li>Understanding of human vs. AI responsibilities on the shop floor</li>
+      <li>Professional-level operational analysis and recommendations</li>
+    </ul>
+    <p style="margin-top:12px;font-size:13px;"><strong>Add this to your professional portfolio.</strong> This report is evidence of AI literacy in a manufacturing operations context — exactly what employers look for.</p>
+  </div>
+
+  <div style="background:var(--off);border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;">
+    <p style="font-size:15px;color:var(--muted);margin-bottom:20px;">Click below to generate and download your completed Phase B report as a PDF.</p>
+    <button class="btn-next" style="font-size:15px;padding:14px 36px;" onclick="downloadPDF()">⬇ Download PDF Report</button>
+    <div class="success-box" id="dl_success" style="margin-top:20px;text-align:left;">
+      <p><strong>Report downloaded.</strong> Your Phase B PDF has been saved. Keep it with your Phase A report — you will reference both in Phase C.</p>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(8)">← Edit Report</button>
+    <button class="btn-next" onclick="goTo(10)">Continue to Phase C Transition</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 10 — PHASE C TRANSITION
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-10">
+  <div class="screen-eyebrow">Phase B · Screen 10 of 10</div>
+  <h1>Analysis Complete —<br><em>Decisions Ahead</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card accent" style="margin-bottom:24px;">
+    <h3>What you've accomplished in Phase B</h3>
+    <div class="grid-2" style="margin-top:12px;">
+      <div style="padding:12px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--muted);">✅ Used real AI tools for manufacturing analysis</div>
+      <div style="padding:12px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--muted);">✅ Evaluated AI-generated safety recommendations</div>
+      <div style="padding:12px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--muted);">✅ Identified a flawed AI recommendation</div>
+      <div style="padding:12px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--muted);">✅ Built a professional operations report</div>
+    </div>
+  </div>
+
+  <div class="transition-box">
+    <div class="t-eyebrow">Coming Up · Phase C</div>
+    <h2>AI has helped analyze<br>the situation.<br><em>Now the decisions must be made.</em></h2>
+    <p>You have the data. You've reviewed the AI's findings. You've identified its limitations. In Phase C, you will do what AI cannot — make the final calls.</p>
+    <ul class="phase-c-list">
+      <li>Evaluate operational recommendations from Phase B</li>
+      <li>Make final safety and production decisions</li>
+      <li>Prioritize worker safety over efficiency when they conflict</li>
+      <li>Justify your reasoning using your analysis</li>
+      <li>Complete your Module 1 mission as an operations leader</li>
+    </ul>
+  </div>
+
+  <div class="card blue" style="margin-top:24px;">
+    <h3>Remember the NovaForge principle</h3>
+    <p><strong>AI supports operations. Humans lead operations.</strong> In Phase C, you step into the leadership role — using everything you've learned to make responsible decisions for the factory and the people inside it.</p>
+  </div>
+
+  <div style="text-align:center;padding:32px 0 0;">
+    <p style="font-size:15px;color:var(--muted);margin-bottom:6px;">Phase B is complete. Your report has been saved.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:11px;color:var(--light);letter-spacing:.1em;text-transform:uppercase;">Module 1 · Phase C will begin when your instructor opens it.</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 10;
+
+function buildDots() {
+  const wrap = document.getElementById('stepDots');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('screenCounter').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+
+function copyPrompt(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+
+  const PW = 215.9, PH = 279.4;
+  const ML = 18, MR = 18, CW = PW - ML - MR;
+  const PURPLE = [123,47,190], PD = [74,24,128], PP = [243,237,251];
+  const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+  const BORDER = [220,210,230], OFF = [250,250,248];
+  const GREEN = [26,102,69], GREEN_BG = [234,247,240];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
+    doc.line(ML, 11, PW-MR, 11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 1 · Phase B', ML, 9);
+    const p = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.text('Page ' + p, PW-MR, 9, {align:'right'});
+  }
+
+  function checkY(need) { if (y + need > PH - 20) newPage(); }
+
+  function sectionHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...PP);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    doc.setTextColor(...PD);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8);
+    y += 13;
+  }
+
+  function fieldLabel(txt) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+
+  function responseBox(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6);
+    y += bh + 5;
+  }
+
+  // COVER
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 0, PW, 68, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+  doc.setTextColor(196,158,232);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 1', ML, 20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(255,255,255);
+  doc.text('Phase B Operations Analysis Report', ML, 36);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(196,158,232);
+  doc.text('AI Operations Analysis Lab  ·  Module 1 Phase B', ML, 48);
+
+  // Learner card
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(ML, 58, CW, 28, 2, 2, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+  doc.text('LEARNER', ML+6, 67);
+  doc.text('DATE', ML+100, 67);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(g('r_name') || 'Not provided', ML+6, 77);
+  doc.text(g('r_date') || '—', ML+100, 77);
+
+  y = 100;
+
+  // PART 1 — Workflow
+  sectionHead('🔄', 'Part 1 — Workflow Analysis Findings');
+  responseBox('Workflow Analyzed', g('r8_wf') || g('r4_workflow'));
+  responseBox('Key AI-Generated Insights', g('r8_insights') || g('r4_insights'));
+  responseBox('What the AI Missed', g('r8_missed') || g('r4_missed'));
+  responseBox('Trust Assessment', g('r4_trust'));
+  y += 4;
+
+  // PART 2 — Safety
+  sectionHead('🦺', 'Part 2 — Safety Analysis');
+  responseBox('Safety Concern Analyzed', g('r8_sc') || g('r5_concern'));
+  responseBox('AI-Identified Risks', g('r8_airec') || g('r5_risks'));
+  responseBox('Gaps in AI Safety Analysis', g('r5_gaps'));
+  responseBox('Human Oversight Required', g('r8_human') || g('r5_human'));
+  y += 4;
+
+  // PART 3 — AI Limitations
+  sectionHead('⚠️', 'Part 3 — AI Limitations Observed');
+  responseBox('Flawed or Incomplete AI Recommendation', g('r8_limits') || g('r6_why'));
+  responseBox('Human Factors AI Failed to Consider', g('r8_factors') || g('r6_recommend'));
+
+  // Scenario response
+  checkY(8);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Overnight Staffing Scenario — Critical Analysis', ML, y); y += 5;
+  responseBox('Why the AI Recommendation Was Risky', g('r6_why'));
+  responseBox('Alternative Recommendation for Leadership', g('r6_recommend'));
+  y += 4;
+
+  // PART 4 — Recommendations
+  sectionHead('💡', 'Part 4 — Operational Recommendations');
+  responseBox('Recommendation 1 — Responsible AI Use', g('r8_rec1'));
+  responseBox('Recommendation 2 — Human Oversight Improvements', g('r8_rec2'));
+  responseBox('Human vs. AI — Example 1', g('r7_task1') + (g('r7_who1') ? '\n→ ' + g('r7_who1') : ''));
+  responseBox('Human vs. AI — Example 2', g('r7_task2') + (g('r7_who2') ? '\n→ ' + g('r7_who2') : ''));
+  responseBox('Overall Conclusion', g('r8_conclusion'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 1 Phase B  ·  AI Operations Analysis Report', ML, PH-8);
+      doc.text('Page ' + i + ' of ' + total, PW/2, PH-8, {align:'center'});
+      doc.text(g('r_name') || '', PW-MR, PH-8, {align:'right'});
+    }
+  }
+
+  const safe = (g('r_name') || 'learner').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  doc.save('novaforge_phase_b_' + safe + '.pdf');
+
+  document.getElementById('dl_success').style.display = 'block';
+}
+
+// Init
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+</script>
+</body>
+</html>

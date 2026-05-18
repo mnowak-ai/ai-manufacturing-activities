@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase A — Shop Floor Investigation | NovaForge Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --purple:#7B2FBE; --purple-light:#9B59D9; --purple-pale:#F3EDFB; --purple-mid:#C49EE8; --purple-dark:#4A1880;
+    --white:#FFFFFF; --off-white:#FAFAF8;
+    --border:rgba(123,47,190,0.13); --border-strong:rgba(123,47,190,0.28);
+    --text-main:#1A1020; --text-muted:#6B5C7A; --text-light:#A090B0;
+    --green-soft:#EAF7F0; --green-text:#1A6645; --amber-soft:#FDF5E6; --amber-text:#7A4F00;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--text-main);font-size:16px;line-height:1.75;}
+
+  .top-bar{background:var(--white);border-bottom:1px solid var(--border);padding:12px 48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .breadcrumb{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-light);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+  .breadcrumb .sep{color:var(--purple-mid);}
+  .breadcrumb .current{color:var(--purple);}
+  .phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-strong);padding:5px 14px;border-radius:20px;}
+
+  .hero{padding:52px 48px 44px;border-bottom:1px solid var(--border);max-width:860px;margin:0 auto;}
+  .hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+  .hero-eyebrow::before{content:'';width:24px;height:2px;background:var(--purple);border-radius:2px;}
+  .hero h1{font-family:'Fraunces',serif;font-size:40px;font-weight:500;color:var(--text-main);line-height:1.15;letter-spacing:-.02em;margin-bottom:14px;}
+  .hero h1 em{font-style:italic;color:var(--purple);}
+  .hero .hero-sub{font-size:17px;color:var(--text-muted);font-weight:300;max-width:600px;line-height:1.7;margin-bottom:28px;}
+  .hero-meta{display:flex;gap:24px;flex-wrap:wrap;}
+  .meta-item{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-light);}
+  .meta-dot{width:6px;height:6px;border-radius:50%;background:var(--purple-mid);}
+
+  .alert-banner{max-width:860px;margin:32px auto 0;padding:0 48px;}
+  .alert-inner{background:var(--purple-pale);border:1px solid var(--border-strong);border-left:4px solid var(--purple);border-radius:0 6px 6px 0;padding:18px 24px;display:flex;gap:16px;align-items:flex-start;}
+  .alert-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+  .alert-inner p{font-size:14px;color:var(--purple-dark);line-height:1.6;}
+  .alert-inner p strong{font-weight:600;}
+
+  .content{max-width:860px;margin:0 auto;padding:0 48px 80px;}
+
+  .section{padding-top:56px;opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease;}
+  .section.visible{opacity:1;transform:translateY(0);}
+  .section-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .section-num{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--white);background:var(--purple);padding:5px 11px;border-radius:3px;flex-shrink:0;}
+  .section h2{font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--text-main);line-height:1.2;letter-spacing:-.01em;}
+  .section-rule{height:1px;background:var(--border);margin-bottom:28px;}
+  .section p{font-size:15px;color:var(--text-muted);line-height:1.75;margin-bottom:16px;}
+  .section p:last-child{margin-bottom:0;}
+
+  .role-chips{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;}
+  .chip{display:flex;align-items:center;gap:8px;padding:9px 18px;border:1px solid var(--border-strong);border-radius:4px;font-size:13px;font-weight:500;color:var(--purple-dark);background:var(--purple-pale);}
+
+  .factory-table,.spot-table{width:100%;border-collapse:collapse;margin-top:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .factory-table thead tr,.spot-table thead tr{background:var(--purple-pale);}
+  .factory-table th,.spot-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);padding:12px 18px;text-align:left;border-bottom:1px solid var(--border-strong);font-weight:700;}
+  .factory-table td,.spot-table td{padding:16px 18px;font-size:14px;color:var(--text-muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6;}
+  .factory-table tr:last-child td,.spot-table tr:last-child td{border-bottom:none;}
+  .factory-table tr:hover td,.spot-table tr:hover td{background:var(--off-white);}
+  .area-name{font-weight:600;color:var(--text-main);font-size:14px;white-space:nowrap;}
+  .ai-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:3px;margin-top:6px;}
+  .ai-tag.yes{background:var(--green-soft);color:var(--green-text);}
+  .ai-tag.partial{background:var(--amber-soft);color:var(--amber-text);}
+  .system-name{font-weight:600;color:var(--text-main);font-size:14px;}
+  .resp-tag{display:inline-flex;align-items:center;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;}
+  .resp-tag.ai{background:var(--purple-pale);color:var(--purple-dark);}
+  .resp-tag.human{background:var(--green-soft);color:var(--green-text);}
+  .resp-tag.both{background:var(--amber-soft);color:var(--amber-text);}
+  .risk-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+  .risk-dot.low{background:#4CAF7D;} .risk-dot.med{background:#E8A020;} .risk-dot.high{background:#D94040;}
+
+  .log-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+  .log-header{background:var(--purple-pale);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-strong);}
+  .log-header-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+  .log-header-sub{font-size:12px;color:var(--text-light);}
+  .log-row{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+  .log-row:last-child{border-bottom:none;}
+  .log-cell{padding:16px 24px;border-right:1px solid var(--border);}
+  .log-cell:last-child{border-right:none;}
+  .log-cell.full-width{grid-column:1/-1;border-right:none;}
+  .log-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:6px;}
+  .log-field{width:100%;min-height:52px;border:1px dashed var(--border-strong);border-radius:4px;background:var(--off-white);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.5;}
+  .log-field:focus{border-color:var(--purple-light);background:white;color:var(--text-main);}
+  .log-field::placeholder{color:var(--text-light);font-style:italic;font-size:13px;}
+  .log-entry-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--white);background:var(--purple);padding:2px 8px;border-radius:2px;margin-right:8px;}
+
+  .prompts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;}
+  .prompt-card{border:1px solid var(--border);border-radius:8px;padding:20px 22px;background:var(--white);transition:border-color .2s,background .2s;}
+  .prompt-card:hover{border-color:var(--purple-light);background:var(--purple-pale);}
+  .prompt-q-num{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:10px;}
+  .prompt-card>.pq{font-size:14px;font-weight:500;color:var(--text-main);line-height:1.55;margin:0 0 8px;}
+  .prompt-hint{font-size:12px;color:var(--text-light);font-style:italic;line-height:1.5;margin:0 0 12px;}
+  .prompt-field{width:100%;min-height:60px;border:1px dashed var(--border-strong);border-radius:4px;background:var(--off-white);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.5;}
+  .prompt-field:focus{border-color:var(--purple-light);background:white;color:var(--text-main);}
+  .prompt-field::placeholder{color:var(--text-light);font-style:italic;font-size:12px;}
+
+  .scenario-cards{display:flex;flex-direction:column;gap:16px;margin-top:8px;}
+  .scenario-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .scenario-top{padding:20px 24px;border-bottom:1px solid var(--border);}
+  .scenario-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .scenario-label .s-num{background:var(--purple);color:white;padding:2px 8px;border-radius:2px;}
+  .situation{font-size:15px;font-weight:500;color:var(--text-main);line-height:1.6;margin:0;}
+  .scenario-bottom{padding:16px 24px;background:var(--off-white);display:flex;flex-direction:column;gap:10px;}
+  .scenario-prompt{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);font-weight:700;}
+  .scenario-field{width:100%;min-height:70px;border:1px dashed var(--border-strong);border-radius:4px;background:white;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-muted);resize:vertical;outline:none;transition:border-color .2s;line-height:1.5;}
+  .scenario-field:focus{border-color:var(--purple-light);color:var(--text-main);}
+  .scenario-field::placeholder{color:var(--text-light);font-style:italic;font-size:13px;}
+
+  .deliverable-box{background:var(--off-white);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;}
+  .deliverable-header{background:var(--purple);padding:18px 28px;display:flex;align-items:center;gap:14px;}
+  .deliverable-header .d-icon{font-size:22px;}
+  .deliverable-header h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:white;letter-spacing:-.01em;}
+  .deliverable-body{padding:24px 28px;}
+  .deliverable-body>p{font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.65;}
+  .deliverable-checklist{list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .deliverable-checklist li{display:flex;align-items:flex-start;gap:12px;padding:13px 18px;background:white;border:1px solid var(--border);border-radius:6px;}
+  .d-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:var(--purple);}
+  .d-check-label strong{display:block;font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:2px;}
+  .d-check-label span{font-size:13px;color:var(--text-muted);}
+
+  /* SUBMIT ZONE */
+  .submit-zone{margin-top:48px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .submit-zone-header{background:var(--purple-pale);padding:20px 28px;border-bottom:1px solid var(--border);}
+  .submit-zone-header h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--text-main);margin-bottom:6px;}
+  .submit-zone-header p{font-size:14px;color:var(--text-muted);margin:0;}
+  .submit-zone-body{padding:24px 28px;background:white;}
+  .learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+  .field-group{display:flex;flex-direction:column;gap:6px;}
+  .field-group label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+  .field-group input{width:100%;padding:10px 14px;border:1px solid var(--border-strong);border-radius:4px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);background:var(--off-white);outline:none;transition:border-color .2s,background .2s;}
+  .field-group input:focus{border-color:var(--purple-light);background:white;}
+  .field-group input::placeholder{color:var(--text-light);}
+  .submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .btn-submit{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+  .btn-submit:hover{background:var(--purple-light);transform:translateY(-1px);}
+  .btn-download{display:none;align-items:center;gap:8px;background:var(--white);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:13px 28px;border-radius:4px;border:2px solid var(--purple);cursor:pointer;letter-spacing:.02em;transition:background .2s;}
+  .btn-download:hover{background:var(--purple-pale);}
+  .submit-note{font-size:13px;color:var(--text-light);font-style:italic;}
+  .success-banner{display:none;margin-top:20px;padding:16px 20px;background:var(--green-soft);border:1px solid rgba(26,102,69,.25);border-left:4px solid var(--green-text);border-radius:0 6px 6px 0;}
+  .success-banner p{font-size:14px;color:var(--green-text);margin:0;line-height:1.6;}
+  .success-banner strong{font-weight:600;}
+  .error-msg{display:none;margin-top:14px;padding:12px 18px;background:#FDF0EF;border:1px solid rgba(138,32,32,.2);border-left:4px solid #D94040;border-radius:0 6px 6px 0;font-size:13px;color:#8A2020;}
+
+  .phase-transition{margin-top:56px;padding:40px 48px;border-top:1px solid var(--border);display:flex;align-items:center;gap:32px;background:var(--off-white);margin-left:-48px;margin-right:-48px;}
+  .transition-icon{width:56px;height:56px;border-radius:50%;background:var(--purple-pale);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .transition-text .t-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--purple);margin-bottom:8px;}
+  .transition-text h3{font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:var(--text-main);margin-bottom:8px;letter-spacing:-.01em;}
+  .transition-text p{font-size:14px;color:var(--text-muted);line-height:1.65;margin:0;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="breadcrumb">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 1</span><span class="sep">›</span>
+    <span class="current">Phase A</span>
+  </div>
+  <div class="phase-pill">Phase A of 3</div>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">Shop Floor Investigation</div>
+  <h1>AI Awareness &amp;<br><em>Workflow Mapping</em></h1>
+  <p class="hero-sub">You are entering the NovaForge smart factory for the first time. Your job is to investigate how AI is being used, where humans stay in charge, and what safety risks exist on the floor.</p>
+  <div class="hero-meta">
+    <div class="meta-item"><div class="meta-dot"></div>Operations Team · New Staff</div>
+    <div class="meta-item"><div class="meta-dot"></div>Module 1 · Mission Assignment</div>
+    <div class="meta-item"><div class="meta-dot"></div>Phase A · Investigation</div>
+  </div>
+</div>
+
+<div class="alert-banner">
+  <div class="alert-inner">
+    <div class="alert-icon">📋</div>
+    <p><strong>Your assignment packet is below.</strong> Work through each section in order. Fill in the observation log, thinking prompts, and scenario fields as you go. When you're done, submit your answers at the bottom — then download your completed report as a PDF.</p>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- S1 -->
+<div class="section" id="s1">
+  <div class="section-header"><div class="section-num">Section 01</div><h2>Your Assignment</h2></div>
+  <div class="section-rule"></div>
+  <p>Welcome to your first operational shift at NovaForge Robotics. Before you can take on responsibilities here, leadership needs you to complete a full shop floor investigation.</p>
+  <p>You are not just touring the factory. You are actively mapping how work gets done — where AI plays a role, where humans are still responsible, and where both work together.</p>
+  <div class="role-chips">
+    <div class="chip"><span>📊</span> Operations Analyst</div>
+    <div class="chip"><span>👁️</span> Shop Floor Observer</div>
+    <div class="chip"><span>🗺️</span> Workflow Investigator</div>
+  </div>
+  <p>Move through all five factory zones, observe how AI systems operate, and identify where human judgment is still essential.</p>
+</div>
+
+<!-- S2 -->
+<div class="section" id="s2">
+  <div class="section-header"><div class="section-num">Section 02</div><h2>NovaForge Smart Factory Snapshot</h2></div>
+  <div class="section-rule"></div>
+  <p>Here is a quick overview of the five zones you will investigate. Read each one carefully before starting your observation log.</p>
+  <table class="factory-table">
+    <thead><tr><th>Zone</th><th>What Happens Here</th><th>AI Involvement</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span style="font-size:18px;margin-right:8px">🦾</span><span class="area-name">Robotics Assembly Line</span></td>
+        <td>NovaBot warehouse robots are built piece by piece. Machines move fast and small errors can cause major delays or safety issues.</td>
+        <td>AI monitors production speed and flags issues before they become breakdowns. Humans supervise all line activity and respond to alerts.<br><span class="ai-tag yes">AI Active</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:18px;margin-right:8px">🔬</span><span class="area-name">Quality Control Lab</span></td>
+        <td>Every finished NovaBot passes through here. Inspectors check for defects, alignment problems, and performance issues before shipping.</td>
+        <td>AI cameras scan units for defects invisible to the naked eye. A human technician reviews every AI flag and makes the final pass/fail call.<br><span class="ai-tag yes">AI Active</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:18px;margin-right:8px">🔧</span><span class="area-name">Maintenance Department</span></td>
+        <td>The maintenance crew keeps all machines running at full capacity. Downtime here costs thousands of dollars per hour.</td>
+        <td>Predictive maintenance AI analyzes sensor data and alerts the team days before a machine is likely to fail.<br><span class="ai-tag yes">AI Active</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:18px;margin-right:8px">📦</span><span class="area-name">Warehouse &amp; Shipping Zone</span></td>
+        <td>Completed units are logged, staged, and prepared for outbound shipping. Speed and accuracy both matter here.</td>
+        <td>Automated systems track all units in real time. Coordinators manage exceptions and anything the system can't handle automatically.<br><span class="ai-tag partial">AI + Human</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:18px;margin-right:8px">🖥️</span><span class="area-name">Operations Command Center</span></td>
+        <td>Leadership monitors the entire factory in real time with dashboards showing production rates, equipment status, and staffing.</td>
+        <td>AI aggregates data from all zones and generates recommendations. All major decisions are made by human leadership.<br><span class="ai-tag yes">AI Active</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- S3 -->
+<div class="section" id="s3">
+  <div class="section-header"><div class="section-num">Section 03</div><h2>Main Task — AI Spotting Workflow</h2></div>
+  <div class="section-rule"></div>
+  <p>Review the five key systems running inside NovaForge. Use this as your reference map for the rest of Phase A.</p>
+  <table class="spot-table">
+    <thead><tr><th>System</th><th>Responsibility</th><th>What AI Does</th><th>What Humans Do</th><th>Risk</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="system-name">Production Monitoring</span><br><span style="font-size:12px;color:var(--text-light)">Command Center</span></td>
+        <td><span class="resp-tag both">Both</span></td>
+        <td>Tracks output, flags slowdowns, predicts bottlenecks</td>
+        <td>Interprets alerts and adjusts staffing</td>
+        <td><span class="risk-dot med"></span>Medium</td>
+      </tr>
+      <tr>
+        <td><span class="system-name">Robotic Assembly Tools</span><br><span style="font-size:12px;color:var(--text-light)">Assembly Line</span></td>
+        <td><span class="resp-tag both">Both</span></td>
+        <td>Executes build steps, monitors arm movement</td>
+        <td>Oversee operations, stop the line if needed</td>
+        <td><span class="risk-dot high"></span>High</td>
+      </tr>
+      <tr>
+        <td><span class="system-name">AI Inspection System</span><br><span style="font-size:12px;color:var(--text-light)">QC Lab</span></td>
+        <td><span class="resp-tag both">Both</span></td>
+        <td>Scans units with cameras, flags defects</td>
+        <td>Review flags, approve or reject units</td>
+        <td><span class="risk-dot med"></span>Medium</td>
+      </tr>
+      <tr>
+        <td><span class="system-name">Scheduling System</span><br><span style="font-size:12px;color:var(--text-light)">Command Center</span></td>
+        <td><span class="resp-tag ai">AI Recommends</span></td>
+        <td>Generates optimized shift schedules</td>
+        <td>Approve or modify based on context</td>
+        <td><span class="risk-dot low"></span>Low</td>
+      </tr>
+      <tr>
+        <td><span class="system-name">Safety Monitoring</span><br><span style="font-size:12px;color:var(--text-light)">All Zones</span></td>
+        <td><span class="resp-tag human">Human Decides</span></td>
+        <td>Detects hazards and flags anomalies</td>
+        <td>Respond to every alert — AI cannot act alone</td>
+        <td><span class="risk-dot high"></span>High</td>
+      </tr>
+      <tr>
+        <td><span class="system-name">Predictive Maintenance</span><br><span style="font-size:12px;color:var(--text-light)">Maintenance Dept.</span></td>
+        <td><span class="resp-tag both">Both</span></td>
+        <td>Analyzes sensor data, predicts failures</td>
+        <td>Prioritize repairs, decide when to go offline</td>
+        <td><span class="risk-dot med"></span>Medium</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- S4: OBSERVATION LOG -->
+<div class="section" id="s4">
+  <div class="section-header"><div class="section-num">Section 04</div><h2>AI Observation Log</h2></div>
+  <div class="section-rule"></div>
+  <p>Complete one entry for each system or workflow you investigate. You need at least three entries to complete Phase A. Type directly into the fields.</p>
+
+  <div class="log-card">
+    <div class="log-header">
+      <div class="log-header-title"><span class="log-entry-num">01</span> Observation Entry</div>
+      <div class="log-header-sub">Complete all five fields</div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">System or Workflow Observed</div><textarea id="l1s" class="log-field" placeholder="e.g. AI-powered quality inspection in the QC Lab…"></textarea></div>
+      <div class="log-cell"><div class="log-label">What Is the AI Doing?</div><textarea id="l1a" class="log-field" placeholder="Describe what the AI system is doing…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">What Are Humans Doing?</div><textarea id="l1h" class="log-field" placeholder="Describe the role humans play alongside the AI…"></textarea></div>
+      <div class="log-cell"><div class="log-label">Why Are Both Needed?</div><textarea id="l1b" class="log-field" placeholder="Explain why neither AI nor humans can do this alone…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell full-width"><div class="log-label">Safety Concerns</div><textarea id="l1sf" class="log-field" style="min-height:44px" placeholder="Note any safety risks you observe or can predict…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="log-card">
+    <div class="log-header">
+      <div class="log-header-title"><span class="log-entry-num">02</span> Observation Entry</div>
+      <div class="log-header-sub">Complete all five fields</div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">System or Workflow Observed</div><textarea id="l2s" class="log-field" placeholder="e.g. Predictive maintenance in the Maintenance Dept…"></textarea></div>
+      <div class="log-cell"><div class="log-label">What Is the AI Doing?</div><textarea id="l2a" class="log-field" placeholder="Describe what the AI system is doing…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">What Are Humans Doing?</div><textarea id="l2h" class="log-field" placeholder="Describe the role humans play alongside the AI…"></textarea></div>
+      <div class="log-cell"><div class="log-label">Why Are Both Needed?</div><textarea id="l2b" class="log-field" placeholder="Explain why neither AI nor humans can do this alone…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell full-width"><div class="log-label">Safety Concerns</div><textarea id="l2sf" class="log-field" style="min-height:44px" placeholder="Note any safety risks you observe or can predict…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="log-card">
+    <div class="log-header">
+      <div class="log-header-title"><span class="log-entry-num">03</span> Observation Entry</div>
+      <div class="log-header-sub">Complete all five fields</div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">System or Workflow Observed</div><textarea id="l3s" class="log-field" placeholder="e.g. Production monitoring in the Command Center…"></textarea></div>
+      <div class="log-cell"><div class="log-label">What Is the AI Doing?</div><textarea id="l3a" class="log-field" placeholder="Describe what the AI system is doing…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell"><div class="log-label">What Are Humans Doing?</div><textarea id="l3h" class="log-field" placeholder="Describe the role humans play alongside the AI…"></textarea></div>
+      <div class="log-cell"><div class="log-label">Why Are Both Needed?</div><textarea id="l3b" class="log-field" placeholder="Explain why neither AI nor humans can do this alone…"></textarea></div>
+    </div>
+    <div class="log-row">
+      <div class="log-cell full-width"><div class="log-label">Safety Concerns</div><textarea id="l3sf" class="log-field" style="min-height:44px" placeholder="Note any safety risks you observe or can predict…"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- S5: PROMPTS -->
+<div class="section" id="s5">
+  <div class="section-header"><div class="section-num">Section 05</div><h2>Real-World Thinking Prompts</h2></div>
+  <div class="section-rule"></div>
+  <p>Think through these questions and type your responses. There are no right or wrong answers — this sharpens your operational judgment.</p>
+  <div class="prompts-grid">
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 01</div>
+      <p class="pq">Where does AI help workers the most inside the NovaForge factory?</p>
+      <div class="prompt-hint">Think about speed, accuracy, and tasks that are hard for humans to do consistently.</div>
+      <textarea id="p1" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 02</div>
+      <p class="pq">Where should AI not be trusted to make decisions on its own?</p>
+      <div class="prompt-hint">Think about situations involving safety, ethics, or unpredictable circumstances.</div>
+      <textarea id="p2" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 03</div>
+      <p class="pq">What could happen if an operations worker ignores an AI safety warning?</p>
+      <div class="prompt-hint">Consider both immediate risks and longer-term consequences for the factory.</div>
+      <textarea id="p3" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 04</div>
+      <p class="pq">How does working alongside AI change what a factory worker needs to know?</p>
+      <div class="prompt-hint">Think about skills, attention, and the judgment that becomes more important.</div>
+      <textarea id="p4" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 05</div>
+      <p class="pq">Can an AI system ever be wrong? What should a worker do if something doesn't look right?</p>
+      <div class="prompt-hint">Think about trust, verification, and when to escalate to a supervisor.</div>
+      <textarea id="p5" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-q-num">Prompt 06</div>
+      <p class="pq">Which factory zone carries the highest risk if AI and humans aren't communicating well?</p>
+      <div class="prompt-hint">Use what you know about each zone from Section 02 to support your thinking.</div>
+      <textarea id="p6" class="prompt-field" placeholder="Type your response here…"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- S6: SCENARIOS -->
+<div class="section" id="s6">
+  <div class="section-header"><div class="section-num">Section 06</div><h2>Mini Challenge — Decision Scenarios</h2></div>
+  <div class="section-rule"></div>
+  <p>Read each scenario and write what you would do and why. Be specific — write as if you are actually on the floor.</p>
+  <div class="scenario-cards">
+    <div class="scenario-card">
+      <div class="scenario-top">
+        <div class="scenario-label"><span class="s-num">Scenario A</span> Robotics Assembly Line</div>
+        <p class="situation">The AI monitoring system flags Robotic Arm #4 as operating outside safe parameters and recommends shutting it down immediately. The lead technician watches it for 30 seconds and says it looks fine. He wants to keep the line running to hit today's production target.</p>
+      </div>
+      <div class="scenario-bottom">
+        <div class="scenario-prompt">What would you do, and why?</div>
+        <textarea id="sc_a" class="scenario-field" placeholder="Who do you side with — the AI or the technician? What steps would you take?"></textarea>
+      </div>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-top">
+        <div class="scenario-label"><span class="s-num">Scenario B</span> Production Scheduling</div>
+        <p class="situation">The scheduling AI recommends increasing line speed by 20% to meet a new client order deadline. The operations supervisor notices this would require staff to work faster than safety guidelines allow. The AI did not account for this — it only optimized for output.</p>
+      </div>
+      <div class="scenario-bottom">
+        <div class="scenario-prompt">What would you do, and why?</div>
+        <textarea id="sc_b" class="scenario-field" placeholder="Do you follow the AI's recommendation? How do you balance the deadline with worker safety?"></textarea>
+      </div>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-top">
+        <div class="scenario-label"><span class="s-num">Scenario C</span> Quality Control Lab</div>
+        <p class="situation">The AI inspection system passes a batch of 50 NovaBot units — no defects flagged. A QC technician doing a manual spot-check finds a wiring issue in one unit the AI missed. She's not sure if it's a one-time problem or if the whole batch is affected.</p>
+      </div>
+      <div class="scenario-bottom">
+        <div class="scenario-prompt">What would you do, and why?</div>
+        <textarea id="sc_c" class="scenario-field" placeholder="Do you hold the batch? Re-inspect all units? How do you handle the fact that AI missed this?"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S7: DELIVERABLE + SUBMIT -->
+<div class="section" id="s7">
+  <div class="section-header"><div class="section-num">Section 07</div><h2>Phase A Deliverable</h2></div>
+  <div class="section-rule"></div>
+  <p>Your submitted answers will compile into a complete Phase A Investigation Report. Make sure all sections above are filled in before you submit.</p>
+
+  <div class="deliverable-box">
+    <div class="deliverable-header">
+      <div class="d-icon">📄</div>
+      <h3>NovaForge AI Shop Floor Investigation Report</h3>
+    </div>
+    <div class="deliverable-body">
+      <p>Your report includes all four required components drawn directly from your responses above.</p>
+      <ul class="deliverable-checklist">
+        <li><div class="d-check">✓</div><div class="d-check-label"><strong>AI vs. Human Responsibility Map</strong><span>Your observation log entries from Section 04</span></div></li>
+        <li><div class="d-check">✓</div><div class="d-check-label"><strong>Safety Risk Notes</strong><span>Safety concerns noted in your log entries</span></div></li>
+        <li><div class="d-check">✓</div><div class="d-check-label"><strong>Workflow Observations</strong><span>Your thinking prompt responses from Section 05</span></div></li>
+        <li><div class="d-check">✓</div><div class="d-check-label"><strong>Initial Recommendations</strong><span>Your decision scenario responses from Section 06</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="submit-zone">
+    <div class="submit-zone-header">
+      <h3>Submit &amp; Download Your Report</h3>
+      <p>Enter your name and today's date, then click Submit. Your PDF download will be ready immediately after.</p>
+    </div>
+    <div class="submit-zone-body">
+      <div class="learner-fields">
+        <div class="field-group">
+          <label for="learner_name">Your Full Name</label>
+          <input type="text" id="learner_name" placeholder="e.g. Jordan Martinez">
+        </div>
+        <div class="field-group">
+          <label for="learner_date">Completion Date</label>
+          <input type="date" id="learner_date">
+        </div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-submit" id="btn_submit" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-download" id="btn_download" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="submit-note" id="submit_note">All typed answers will be included in your PDF.</span>
+      </div>
+      <div class="error-msg" id="error_msg">Please enter your name before submitting.</div>
+      <div class="success-banner" id="success_banner">
+        <p><strong>Report submitted successfully.</strong> Your Phase A investigation is complete. Click "Download PDF Report" to save your completed report. Keep it for your records — you will reference it in Phase B.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSITION -->
+<div class="phase-transition">
+  <div class="transition-icon">🔍</div>
+  <div class="transition-text">
+    <div class="t-label">Coming Up · Phase B</div>
+    <h3>Deeper Operational Analysis</h3>
+    <p>You have mapped the factory floor and documented how AI is being used across NovaForge's operations. Next, you will use AI tools to analyze your findings and uncover deeper operational insights — identifying patterns, gaps, and priority areas for the team to address.</p>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+  // Scroll animations
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.section').forEach(s => obs.observe(s));
+
+  // Default date
+  document.getElementById('learner_date').valueAsDate = new Date();
+
+  function g(id) { return (document.getElementById(id)||{}).value || ''; }
+
+  function handleSubmit() {
+    const name = g('learner_name').trim();
+    if (!name) {
+      document.getElementById('error_msg').style.display = 'block';
+      document.getElementById('learner_name').focus();
+      return;
+    }
+    document.getElementById('error_msg').style.display = 'none';
+    document.getElementById('success_banner').style.display = 'block';
+    document.getElementById('btn_download').style.display = 'inline-flex';
+    const btn = document.getElementById('btn_submit');
+    btn.textContent = '✓ Submitted';
+    btn.style.background = '#1A6645';
+    btn.style.cursor = 'default';
+    btn.onclick = null;
+    document.getElementById('submit_note').style.display = 'none';
+    document.getElementById('success_banner').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function wrapText(doc, text, x, y, maxW, lineH) {
+    const lines = doc.splitTextToSize(text || '(No response provided)', maxW);
+    doc.text(lines, x, y);
+    return y + lines.length * lineH;
+  }
+
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+
+    const PW = 215.9, PH = 279.4;
+    const ML = 18, MR = 18, CW = PW - ML - MR;
+    const PURPLE = [123,47,190], PURPLE_DARK = [74,24,128], PURPLE_PALE = [243,237,251];
+    const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+    const BORDER = [220,210,230], GREEN = [26,102,69], GREEN_BG = [234,247,240];
+    const OFF = [250,250,248];
+    let y = 0, page = 1;
+
+    function newPage() {
+      doc.addPage(); page++; y = 22;
+      doc.setDrawColor(...BORDER); doc.setLineWidth(0.4);
+      doc.line(ML, 12, PW-MR, 12);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+      doc.text('NovaForge Robotics  ·  Module 1 Phase A', ML, 9);
+      doc.text(`Page ${page}`, PW-MR, 9, {align:'right'});
+    }
+
+    function checkY(need) { if (y + need > PH - 18) newPage(); }
+
+    function sectionTitle(txt) {
+      checkY(16);
+      doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...PURPLE);
+      doc.text(txt, ML, y); y += 3;
+      doc.setDrawColor(...PURPLE); doc.setLineWidth(0.5);
+      doc.line(ML, y, ML+CW, y); y += 6;
+    }
+
+    function fieldLabel(txt) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+      doc.text(txt.toUpperCase(), ML+3, y); y += 4;
+    }
+
+    function responseBox(lbl, val) {
+      const v = val && val.trim() ? val : '(No response provided)';
+      const lines = doc.splitTextToSize(v, CW-8);
+      const bh = lines.length * 4.5 + 8;
+      checkY(bh + 12);
+      fieldLabel(lbl);
+      doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
+      doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+      doc.text(lines, ML+4, y+5.5);
+      y += bh + 5;
+    }
+
+    // ── COVER PAGE ──
+    doc.setFillColor(...PURPLE);
+    doc.rect(0, 0, PW, 65, 'F');
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.setTextColor(196,158,232);
+    doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 1', ML, 22);
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(255,255,255);
+    doc.text('Phase A Investigation Report', ML, 38);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(13); doc.setTextColor(196,158,232);
+    doc.text('AI Awareness & Workflow Mapping', ML, 50);
+
+    // learner info panel
+    doc.setFillColor(255,255,255);
+    doc.roundedRect(ML, 62, CW, 26, 2, 2, 'F');
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
+    doc.roundedRect(ML, 62, CW, 26, 2, 2, 'S');
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text('LEARNER', ML+6, 70);
+    doc.text('DATE COMPLETED', ML+90, 70);
+    doc.text('ASSIGNMENT', ML+150, 70);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+    doc.text(g('learner_name') || 'Not provided', ML+6, 80);
+    doc.text(g('learner_date') || '—', ML+90, 80);
+    doc.setFontSize(10);
+    doc.text('Module 1 · Phase A', ML+150, 80);
+
+    y = 100;
+
+    // ── OBSERVATION LOG ──
+    sectionTitle('Section 04 — AI Observation Log');
+
+    const logs = [
+      {s:g('l1s'), a:g('l1a'), h:g('l1h'), b:g('l1b'), sf:g('l1sf')},
+      {s:g('l2s'), a:g('l2a'), h:g('l2h'), b:g('l2b'), sf:g('l2sf')},
+      {s:g('l3s'), a:g('l3a'), h:g('l3h'), b:g('l3b'), sf:g('l3sf')},
+    ];
+
+    logs.forEach((log, i) => {
+      checkY(16);
+      doc.setFillColor(...PURPLE);
+      doc.roundedRect(ML, y, CW, 9, 1.5, 1.5, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+      doc.text(`OBSERVATION ENTRY ${String(i+1).padStart(2,'0')}`, ML+4, y+6);
+      y += 12;
+      responseBox('System or Workflow Observed', log.s);
+      responseBox('What Is the AI Doing?', log.a);
+      responseBox('What Are Humans Doing?', log.h);
+      responseBox('Why Are Both Needed?', log.b);
+      responseBox('Safety Concerns', log.sf);
+      y += 4;
+    });
+
+    // ── THINKING PROMPTS ──
+    sectionTitle('Section 05 — Real-World Thinking Prompts');
+    const pqs = [
+      'Where does AI help workers the most?',
+      'Where should AI not be trusted alone?',
+      'What happens if workers ignore AI warnings?',
+      'How does AI change what factory workers need to know?',
+      'Can AI be wrong? What should workers do?',
+      'Which zone has the highest risk if AI and humans miscommunicate?',
+    ];
+    [g('p1'),g('p2'),g('p3'),g('p4'),g('p5'),g('p6')].forEach((val, i) => {
+      checkY(14);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TXT);
+      doc.text(`Prompt ${String(i+1).padStart(2,'0')}  —  ${pqs[i]}`, ML, y);
+      y += 5;
+      responseBox('Your Response', val);
+    });
+
+    // ── DECISION SCENARIOS ──
+    sectionTitle('Section 06 — Decision Scenarios');
+    const scenarios = [
+      { label: 'Scenario A — Robotics Assembly Line', desc: 'AI flags Robotic Arm #4 as unsafe. Technician disagrees and wants to keep the line running to hit production targets.', key: g('sc_a') },
+      { label: 'Scenario B — Production Scheduling', desc: 'AI recommends a 20% speed increase. Supervisor notes this would violate worker safety guidelines. AI only optimized for output.', key: g('sc_b') },
+      { label: 'Scenario C — Quality Control Lab', desc: 'AI passes a batch of 50 units. A technician manually finds a wiring defect the AI missed. Unclear if the whole batch is affected.', key: g('sc_c') },
+    ];
+    scenarios.forEach(sc => {
+      checkY(14);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...PURPLE_DARK);
+      doc.text(sc.label, ML, y); y += 5;
+      const dlines = doc.splitTextToSize(sc.desc, CW);
+      doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(...MUTED);
+      doc.text(dlines, ML, y); y += dlines.length * 4 + 3;
+      responseBox('Your Response', sc.key);
+    });
+
+    // ── PAGE FOOTERS ──
+    const total = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+      if (i > 1) {
+        doc.text(`NovaForge Robotics  ·  Module 1 Phase A`, ML, PH-8);
+        doc.text(`Page ${i} of ${total}`, PW/2, PH-8, {align:'center'});
+        doc.text(g('learner_name')||'', PW-MR, PH-8, {align:'right'});
+      }
+    }
+
+    const safe = (g('learner_name')||'learner').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+    doc.save(`novaforge_phase_a_${safe}.pdf`);
+  }
+</script>
+</body>
+</html>
