@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1 — AI on the Job Site & Shop Floor | NovaForge Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7B2FBE;
+    --purple-light: #9B59D9;
+    --purple-pale: #F0E8FA;
+    --purple-mid: #C49EE8;
+    --purple-dark: #4A1880;
+    --purple-deep: #2D0F52;
+    --white: #FFFFFF;
+    --off-white: #FAFAF8;
+    --text-main: #1A1020;
+    --text-muted: #6B5C7A;
+    --text-light: #9B8AAA;
+    --border: rgba(123, 47, 190, 0.15);
+    --border-strong: rgba(123, 47, 190, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--white);
+    color: var(--text-main);
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BADGE ── */
+  .top-bar {
+    background: var(--purple-deep);
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .top-bar .cert-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--purple-mid);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .top-bar .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #6BE8A0;
+    letter-spacing: 0.08em;
+  }
+  .top-bar .status-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #6BE8A0;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--purple-deep);
+    padding: 36px 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    right: -120px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    border: 1px solid rgba(155, 89, 217, 0.2);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    border: 1px solid rgba(155, 89, 217, 0.15);
+  }
+  .hero-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .module-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--purple-mid);
+    border: 1px solid rgba(196, 158, 232, 0.35);
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 38px;
+    font-weight: 500;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--purple-mid);
+  }
+  .hero .subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    color: rgba(196, 158, 232, 0.8);
+    font-weight: 300;
+    margin-bottom: 20px;
+  }
+  .hero-divider {
+    display: none;
+  }
+  .company-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(155, 89, 217, 0.15);
+    border: 1px solid rgba(155, 89, 217, 0.3);
+    padding: 14px 24px;
+    border-radius: 4px;
+  }
+  .company-badge .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--purple-light);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+  }
+  .company-badge .badge-text {
+    line-height: 1.3;
+  }
+  .company-badge .badge-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .company-badge .badge-sub {
+    font-size: 11px;
+    color: var(--purple-mid);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── CONTENT WRAPPER ── */
+  .content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 48px 80px;
+  }
+
+  /* ── MISSION BANNER ── */
+  .mission-banner {
+    background: var(--purple);
+    margin: 0 -48px;
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-bottom: 40px;
+  }
+  .mission-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 26px;
+  }
+  .mission-banner h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 4px;
+  }
+  .mission-banner p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    margin-bottom: 64px;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 20px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .section p {
+    font-size: 16px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.75;
+  }
+  .section p:last-child { margin-bottom: 0; }
+
+  /* ── BRIEFING CARD ── */
+  .briefing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .briefing-item {
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    padding: 20px 24px;
+    border-radius: 0 6px 6px 0;
+  }
+  .briefing-item .bi-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--purple);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Mono', monospace;
+  }
+  .briefing-item p {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 0;
+    line-height: 1.6;
+  }
+
+  /* ── OBJECTIVES LIST ── */
+  .objectives-list {
+    list-style: none;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .objectives-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 24px;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 15px;
+    color: var(--text-main);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .objectives-list li:hover {
+    border-color: var(--border-strong);
+    transform: translateX(4px);
+  }
+  .obj-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--purple);
+    background: var(--purple-pale);
+    padding: 3px 9px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-weight: 700;
+  }
+
+  /* ── FACTORY AREAS ── */
+  .factory-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .factory-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  .factory-card:hover {
+    border-color: var(--purple-light);
+    box-shadow: 0 0 0 3px rgba(123, 47, 190, 0.06);
+  }
+  .factory-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .factory-card:hover::before { opacity: 1; }
+  .factory-card.span-2 { grid-column: 1 / -1; }
+
+  .fc-icon {
+    font-size: 28px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .fc-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 10px;
+  }
+  .fc-area-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--purple);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .factory-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  /* ── AI SYSTEMS ── */
+  .systems-list {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .system-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .system-row:last-child { border-bottom: none; }
+  .system-row:hover { background: var(--purple-pale); }
+  .system-icon {
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    background: var(--purple-pale);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .system-info { flex: 1; }
+  .system-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 3px;
+  }
+  .system-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .system-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--purple);
+    background: var(--purple-pale);
+    border: 1px solid var(--border-strong);
+    padding: 4px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── HUMAN NOTE ── */
+  .human-note {
+    margin-top: 24px;
+    padding: 22px 28px;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .human-note .hn-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .human-note p {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.7;
+  }
+  .human-note p strong {
+    color: var(--purple-dark);
+    font-weight: 600;
+  }
+
+  /* ── ROLE CARDS ── */
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 28px;
+  }
+  .role-card {
+    padding: 22px 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    transition: border-color 0.2s;
+  }
+  .role-card:hover { border-color: var(--purple-light); }
+  .role-emoji { font-size: 24px; margin-bottom: 12px; display: block; }
+  .role-title {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 8px;
+  }
+  .role-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── SUCCESS CHECKLIST ── */
+  .success-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .success-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .success-item:hover {
+    background: var(--purple-pale);
+    border-color: var(--purple-light);
+  }
+  .check-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--purple-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--purple);
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .success-item:hover .check-circle {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: white;
+  }
+  .success-text {
+    flex: 1;
+  }
+  .success-text strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 3px;
+  }
+  .success-text span {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* ── CTA / TRANSITION ── */
+  .cta-block {
+    background: var(--purple-deep);
+    margin: 0 -48px -80px;
+    padding: 72px 48px 80px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .cta-block::before {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 300px;
+    border-radius: 50%;
+    border: 1px solid rgba(155, 89, 217, 0.2);
+  }
+  .cta-inner { position: relative; z-index: 1; }
+  .cta-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--purple-mid);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .cta-eyebrow::before,
+  .cta-eyebrow::after {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: rgba(155, 89, 217, 0.4);
+  }
+  .cta-block h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 46px;
+    font-weight: 500;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  .cta-block h2 em {
+    font-style: italic;
+    color: var(--purple-mid);
+  }
+  .cta-block p {
+    font-size: 17px;
+    color: rgba(196, 158, 232, 0.75);
+    max-width: 480px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--purple);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 16px 36px;
+    border-radius: 4px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: background 0.2s, transform 0.15s;
+    cursor: pointer;
+    border: none;
+  }
+  .cta-btn:hover {
+    background: var(--purple-light);
+    transform: translateY(-2px);
+  }
+  .cta-btn::after { content: '→'; font-size: 18px; }
+
+  .cta-sub-note {
+    margin-top: 24px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(155, 89, 217, 0.5);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── SCROLL ANIMATION ── */
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <span class="cert-label">Advanced AI for Manufacturing Certification &nbsp;·&nbsp; Module 1</span>
+  <span class="status-dot">Systems Active</span>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="module-tag">Module 1 &nbsp;·&nbsp; Activity Overview</div>
+    <h1>AI on the Job Site<br>&amp; <em>Shop Floor</em></h1>
+    <div class="subtitle">AI Awareness, Safety &amp; Operational Understanding</div>
+    <div class="hero-divider"></div>
+    <div class="company-badge">
+      <div class="logo-mark">NF</div>
+      <div class="badge-text">
+        <div class="badge-title">NovaForge Robotics</div>
+        <div class="badge-sub">Smart Factory Operations</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MISSION BANNER -->
+<div class="content">
+<div class="mission-banner">
+  <div class="mission-icon">🎯</div>
+  <div>
+    <h2>Mission: Inside the NovaForge Smart Factory</h2>
+    <p>Your first operational mission starts here. Read your briefing before Phase A begins.</p>
+  </div>
+</div>
+
+<!-- SECTION 1: WELCOME -->
+<div class="section" id="s1">
+  <div class="section-label">01 &nbsp; Welcome</div>
+  <h2>Welcome to NovaForge Robotics</h2>
+  <p>You've been assigned to the operations team at <strong>NovaForge Robotics</strong> — one of the most advanced manufacturing facilities in the country. This is a smart factory, meaning AI systems are running alongside human workers every single day.</p>
+  <p>Before you can take on real responsibilities here, you need to understand how this factory works — where AI fits in, where human judgment is still essential, and how the two work together to keep production moving safely.</p>
+  <p>This is your first mission inside the plant. Pay attention. The team is counting on you.</p>
+</div>
+
+<!-- SECTION 2: MISSION BRIEFING -->
+<div class="section" id="s2">
+  <div class="section-label">02 &nbsp; Mission Briefing</div>
+  <h2>What's Happening at NovaForge</h2>
+  <p>NovaForge is ramping up production of its newest product: the <strong>NovaBot</strong> — a warehouse robot used by logistics companies across the country. That means the factory is under pressure to move faster, work smarter, and stay safe.</p>
+  <p>Leadership has made a decision: <strong>AI systems will be used across all major operations.</strong> But here's the challenge — not every operations team member understands how these systems work, what decisions they make, and when a human needs to step in.</p>
+  <p>That's your mission. You'll investigate the factory floor, learn the systems, and develop the judgment to work alongside AI effectively.</p>
+
+  <div class="briefing-grid">
+    <div class="briefing-item">
+      <div class="bi-title">The Challenge</div>
+      <p>Production is expanding. AI tools are in place — but the team needs to understand how to use them safely and effectively.</p>
+    </div>
+    <div class="briefing-item">
+      <div class="bi-title">The Stakes</div>
+      <p>Misjudging an AI alert or skipping a human review could cause safety issues, defects, or production delays.</p>
+    </div>
+    <div class="briefing-item">
+      <div class="bi-title">Your Assignment</div>
+      <p>Investigate AI use across the factory. Learn where it helps, where it falls short, and where humans must lead.</p>
+    </div>
+    <div class="briefing-item">
+      <div class="bi-title">The Outcome</div>
+      <p>By the end of this mission, you'll be ready to make smart, confident operational decisions in an AI-powered workplace.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: WHAT YOU'LL DO -->
+<div class="section" id="s3">
+  <div class="section-label">03 &nbsp; Your Objectives</div>
+  <h2>What You'll Do in This Mission</h2>
+  <p>This isn't a lecture. You're going into the factory. Here's what you'll be doing across Phase A, Phase B, and Phase C:</p>
+
+  <ul class="objectives-list">
+    <li><span class="obj-num">01</span> Explore how NovaForge's operations work from the ground up</li>
+    <li><span class="obj-num">02</span> Identify where AI tools are being used — and what they're doing</li>
+    <li><span class="obj-num">03</span> Evaluate workplace safety risks and how AI helps detect them</li>
+    <li><span class="obj-num">04</span> Determine which decisions belong to AI systems and which require a human call</li>
+    <li><span class="obj-num">05</span> Analyze how AI is changing the pace and structure of manufacturing workflows</li>
+    <li><span class="obj-num">06</span> Practice making real operational decisions using the information you gather</li>
+  </ul>
+</div>
+
+<!-- SECTION 4: INSIDE THE FACTORY -->
+<div class="section" id="s4">
+  <div class="section-label">04 &nbsp; Inside the Smart Factory</div>
+  <h2>The Areas You'll Investigate</h2>
+  <p>NovaForge is a large facility. You won't be wandering — you have specific areas to visit. Each one runs differently, and each one uses AI in a different way.</p>
+
+  <div class="factory-grid">
+    <div class="factory-card">
+      <span class="fc-icon">🦾</span>
+      <span class="fc-area-tag">Zone 1</span>
+      <div class="fc-title">Robotics Assembly Line</div>
+      <p>Where NovaBot robots are built, piece by piece. Machines move fast here. AI monitors every step — and flags anything that looks off before it becomes a real problem.</p>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">🔬</span>
+      <span class="fc-area-tag">Zone 2</span>
+      <div class="fc-title">Quality Control Lab</div>
+      <p>Every unit gets inspected before it leaves. AI-powered cameras scan for defects too small for the human eye — but a human tech makes the final call on whether to pass or reject a unit.</p>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">🔧</span>
+      <span class="fc-area-tag">Zone 3</span>
+      <div class="fc-title">Maintenance Department</div>
+      <p>The team here keeps machines running. AI tells them which machines are starting to wear down — sometimes days before a breakdown would happen. Less downtime means more production.</p>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">📦</span>
+      <span class="fc-area-tag">Zone 4</span>
+      <div class="fc-title">Warehouse Automation Area</div>
+      <p>Finished NovaBot units are sorted, tracked, and staged for shipping. Automated inventory systems do the heavy lifting — but human coordinators manage exceptions and scheduling.</p>
+    </div>
+    <div class="factory-card span-2">
+      <span class="fc-icon">🖥️</span>
+      <span class="fc-area-tag">Zone 5</span>
+      <div class="fc-title">Operations Command Center</div>
+      <p>This is the brain of the factory. Real-time dashboards show what's happening across every zone — production rates, equipment status, safety alerts, and staffing. Leadership makes decisions here using AI-generated data, but human judgment still drives every major call.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: AI SYSTEMS -->
+<div class="section" id="s5">
+  <div class="section-label">05 &nbsp; AI Systems</div>
+  <h2>The AI You'll Encounter</h2>
+  <p>These are the AI tools already running inside the NovaForge facility. You'll interact with each of them during your investigation.</p>
+
+  <div class="systems-list">
+    <div class="system-row">
+      <div class="system-icon">📡</div>
+      <div class="system-info">
+        <div class="system-name">Predictive Maintenance Monitor</div>
+        <div class="system-desc">Watches machine sensors in real time and alerts the maintenance team before equipment fails.</div>
+      </div>
+      <span class="system-badge">AI Alerts · Human Acts</span>
+    </div>
+    <div class="system-row">
+      <div class="system-icon">🔍</div>
+      <div class="system-info">
+        <div class="system-name">AI Quality Inspector</div>
+        <div class="system-desc">Scans every unit for surface defects, misalignments, and inconsistencies with high-resolution cameras.</div>
+      </div>
+      <span class="system-badge">AI Detects · Human Decides</span>
+    </div>
+    <div class="system-row">
+      <div class="system-icon">📊</div>
+      <div class="system-info">
+        <div class="system-name">Automated Inventory Tracker</div>
+        <div class="system-desc">Logs every unit and part in real time — no manual counting required across the warehouse.</div>
+      </div>
+      <span class="system-badge">AI Tracks · Human Reviews</span>
+    </div>
+    <div class="system-row">
+      <div class="system-icon">🗓️</div>
+      <div class="system-info">
+        <div class="system-name">Production Scheduling System</div>
+        <div class="system-desc">Optimizes shift plans and machine usage to hit production targets without burning out resources.</div>
+      </div>
+      <span class="system-badge">AI Recommends · Human Approves</span>
+    </div>
+    <div class="system-row">
+      <div class="system-icon">🦺</div>
+      <div class="system-info">
+        <div class="system-name">Safety Monitoring Tools</div>
+        <div class="system-desc">Detects hazards on the factory floor — from unsafe movement patterns to equipment temperature spikes.</div>
+      </div>
+      <span class="system-badge">AI Flags · Human Responds</span>
+    </div>
+  </div>
+
+  <div class="human-note">
+    <div class="hn-icon">👷</div>
+    <p><strong>Important to remember:</strong> Every one of these AI systems is a tool — not a decision-maker. AI at NovaForge alerts, recommends, and detects. But the final call on safety, quality, and production always belongs to a human being. That's the philosophy here, and it will be yours too.</p>
+  </div>
+</div>
+
+<!-- SECTION 6: YOUR ROLE -->
+<div class="section" id="s6">
+  <div class="section-label">06 &nbsp; Your Role</div>
+  <h2>Who You Are at NovaForge</h2>
+  <p>Throughout this mission, you won't just be watching from the sidelines. You'll step into real operational roles — each one requiring you to think carefully about what AI can do, and what it can't.</p>
+
+  <div class="role-grid">
+    <div class="role-card">
+      <span class="role-emoji">📋</span>
+      <div class="role-title">Operations Analyst</div>
+      <p>Review factory data, monitor AI dashboards, and identify what's running smoothly and what needs attention.</p>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">🛡️</span>
+      <div class="role-title">Safety Reviewer</div>
+      <p>Evaluate safety alerts, assess risks, and determine when a situation needs immediate human response.</p>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">🔎</span>
+      <div class="role-title">Workflow Investigator</div>
+      <p>Map out how tasks move through the factory — and see where AI speeds things up or creates new challenges.</p>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">⚙️</span>
+      <div class="role-title">Manufacturing Decision-Maker</div>
+      <p>Use real data to make judgment calls — about maintenance, quality, scheduling, and team coordination.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 7: SUCCESS OBJECTIVES -->
+<div class="section" id="s7">
+  <div class="section-label">07 &nbsp; Mission Success</div>
+  <h2>How You'll Know You're Ready</h2>
+  <p>By the time you complete all three phases of this mission, you should be able to do each of the following. Hover over each item as a quick self-check.</p>
+
+  <div class="success-grid">
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>AI Awareness</strong>
+        <span>Identify AI tools in a manufacturing setting and explain what each one does</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Operational Understanding</strong>
+        <span>Describe how a smart factory works and how AI fits into daily operations</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Safety Thinking</strong>
+        <span>Evaluate a safety alert and decide when a human needs to respond immediately</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Workflow Analysis</strong>
+        <span>Explain how AI changes the speed, structure, and responsibilities in a production workflow</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Responsible AI Decision-Making</strong>
+        <span>Make an informed call about when to trust AI output — and when to override it</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA / TRANSITION -->
+<div class="cta-block" id="cta">
+  <div class="cta-inner">
+    <div class="cta-eyebrow">Mission Status</div>
+    <h2>The NovaForge<br>operations team is<br><em>counting on you.</em></h2>
+    <p>Your briefing is complete. Phase A is ready. Step onto the factory floor and begin your investigation.</p>
+    <div class="cta-sub-note">Phase A &nbsp;·&nbsp; Factory Floor Exploration &nbsp;·&nbsp; Module 1 of 5</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12 });
+  sections.forEach(s => observer.observe(s));
+
+  // Stagger hero animation on load
+  document.querySelector('.hero-inner').style.animation = 'fadeSlide 0.8s ease forwards';
+</script>
+</body>
+</html>
