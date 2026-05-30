@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2 — AI for Diagnostics & Troubleshooting | NovaForge Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #7B2FBE;
+    --purple-light: #9B59D9;
+    --purple-pale: #F0E8FA;
+    --purple-mid: #C49EE8;
+    --purple-dark: #4A1880;
+    --purple-deep: #2D0F52;
+    --white: #FFFFFF;
+    --off-white: #FAFAF8;
+    --text-main: #1A1020;
+    --text-muted: #6B5C7A;
+    --text-light: #9B8AAA;
+    --border: rgba(123,47,190,0.15);
+    --border-strong: rgba(123,47,190,0.3);
+    --red: #8A2020;
+    --red-bg: #FDF0EF;
+    --red-border: rgba(138,32,32,0.22);
+    --amber: #7A4F00;
+    --amber-bg: #FDF5E6;
+    --amber-border: rgba(122,79,0,0.22);
+    --green: #1A6645;
+    --green-bg: #EAF7F0;
+    --green-border: rgba(26,102,69,0.22);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--white); color:var(--text-main); font-size:16px; line-height:1.7; overflow-x:hidden; }
+
+  /* TOP BAR */
+  .top-bar { background:var(--white); border-bottom:1px solid var(--border); padding:10px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .top-bar .cert-label { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-light); letter-spacing:0.12em; text-transform:uppercase; }
+  .top-bar .status-dot { display:flex; align-items:center; gap:8px; font-family:'Space Mono',monospace; font-size:11px; color:#B06000; letter-spacing:0.08em; }
+  .top-bar .status-dot::before { content:''; width:7px; height:7px; border-radius:50%; background:#E8A020; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  /* HERO */
+  .hero { background:var(--white); border-bottom:1px solid var(--border); padding:36px 48px 40px; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; top:-120px; right:-120px; width:520px; height:520px; border-radius:50%; border:1px solid rgba(123,47,190,0.07); }
+  .hero::after { content:''; position:absolute; top:-60px; right:-60px; width:320px; height:320px; border-radius:50%; border:1px solid rgba(123,47,190,0.05); }
+  /* amber arc — investigation feel */
+  .hero .arc { content:''; position:absolute; bottom:-80px; left:-80px; width:360px; height:360px; border-radius:50%; border:1px solid rgba(232,160,32,0.08); pointer-events:none; }
+  .hero-inner { max-width:860px; margin:0 auto; position:relative; z-index:1; }
+  .module-tag { display:inline-block; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--purple); border:1px solid var(--border-strong); padding:6px 16px; border-radius:2px; margin-bottom:16px; }
+  .hero h1 { font-family:'Fraunces',serif; font-size:38px; font-weight:500; color:var(--text-main); line-height:1.15; margin-bottom:10px; letter-spacing:-0.02em; }
+  .hero h1 em { font-style:italic; color:var(--purple); }
+  .hero .subtitle { font-size:15px; color:var(--text-muted); font-weight:400; margin-bottom:8px; }
+  .hero .sub2 { font-size:13px; color:var(--text-light); font-weight:300; margin-bottom:22px; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  .company-badge { display:inline-flex; align-items:center; gap:12px; background:var(--purple-pale); border:1px solid var(--border-strong); padding:12px 20px; border-radius:4px; }
+  .company-badge .logo-mark { width:30px; height:30px; background:var(--purple); border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:white; }
+  .company-badge .badge-title { font-size:13px; font-weight:600; color:var(--text-main); }
+  .company-badge .badge-sub { font-size:10px; color:var(--text-muted); font-family:'Space Mono',monospace; letter-spacing:0.06em; }
+
+  /* ALERT BANNER */
+  .alert-banner { background:var(--amber-bg); border-bottom:1px solid var(--amber-border); border-top:1px solid var(--amber-border); padding:12px 48px; display:flex; align-items:center; gap:14px; }
+  .alert-banner .ab-icon { font-size:16px; flex-shrink:0; }
+  .alert-banner p { font-family:'Space Mono',monospace; font-size:11px; color:var(--amber); letter-spacing:0.06em; line-height:1.6; }
+  .alert-banner p strong { font-weight:700; }
+
+  /* CONTENT */
+  .content { max-width:860px; margin:0 auto; padding:0 48px 80px; }
+
+  /* MISSION BANNER */
+  .mission-banner { background:var(--purple); margin:0 -48px; padding:24px 48px; display:flex; align-items:center; gap:28px; margin-bottom:48px; }
+  .mission-icon { width:52px; height:52px; background:rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:24px; }
+  .mission-banner h2 { font-family:'Fraunces',serif; font-size:24px; font-weight:500; color:white; margin-bottom:4px; }
+  .mission-banner p { font-size:14px; color:rgba(255,255,255,0.72); }
+
+  /* SECTIONS */
+  .section { margin-bottom:60px; opacity:0; transform:translateY(22px); transition:opacity 0.6s ease,transform 0.6s ease; }
+  .section.visible { opacity:1; transform:translateY(0); }
+  .section-label { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--purple); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+  .section h2 { font-family:'Fraunces',serif; font-size:30px; font-weight:500; color:var(--text-main); margin-bottom:16px; line-height:1.25; letter-spacing:-0.01em; }
+  .section p { font-size:15px; color:var(--text-muted); margin-bottom:14px; line-height:1.75; }
+  .section p:last-child { margin-bottom:0; }
+
+  /* INCIDENT TICKER */
+  .incident-ticker { background:var(--off-white); border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-top:24px; }
+  .ticker-header { background:var(--purple-pale); padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .ticker-header .th-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--purple); font-weight:700; }
+  .ticker-header .th-status { font-family:'Space Mono',monospace; font-size:9px; color:#F4A342; letter-spacing:0.08em; display:flex; align-items:center; gap:6px; }
+  .ticker-header .th-status::before { content:''; width:6px; height:6px; border-radius:50%; background:#F4A342; animation:pulse 2s infinite; }
+  .incident-row { display:flex; align-items:center; gap:16px; padding:14px 20px; border-bottom:1px solid var(--border); transition:background 0.2s; }
+  .incident-row:last-child { border-bottom:none; }
+  .incident-row:hover { background:var(--purple-pale); }
+  .inc-sev { width:6px; height:36px; border-radius:3px; flex-shrink:0; }
+  .inc-sev.high { background:#D94040; }
+  .inc-sev.med { background:#E8A020; }
+  .inc-sev.low { background:#4CAF7D; }
+  .inc-area { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-light); flex-shrink:0; width:120px; }
+  .inc-desc { flex:1; font-size:14px; color:var(--text-main); line-height:1.5; }
+  .inc-tag { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.08em; padding:3px 9px; border-radius:3px; flex-shrink:0; font-weight:700; }
+  .inc-tag.critical { background:var(--red-bg); color:var(--red); }
+  .inc-tag.warning { background:var(--amber-bg); color:var(--amber); }
+  .inc-tag.monitoring { background:var(--purple-pale); color:var(--purple-dark); }
+
+  /* ROLE CHIPS */
+  .role-chips { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0; }
+  .chip { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border:1px solid var(--border-strong); border-radius:4px; font-size:13px; font-weight:500; color:var(--purple-dark); background:var(--purple-pale); }
+
+  /* FACTORY GRID */
+  .factory-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:24px; }
+  .factory-card { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:22px; position:relative; overflow:hidden; transition:border-color 0.25s,box-shadow 0.25s; }
+  .factory-card:hover { border-color:var(--purple-light); box-shadow:0 0 0 3px rgba(123,47,190,0.06); }
+  .factory-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--purple),var(--purple-light)); opacity:0; transition:opacity 0.25s; }
+  .factory-card:hover::before { opacity:1; }
+  .factory-card.span-2 { grid-column:1/-1; }
+  .fc-icon { font-size:26px; margin-bottom:12px; display:block; }
+  .fc-area-tag { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.14em; color:var(--purple); text-transform:uppercase; margin-bottom:7px; display:block; }
+  .fc-title { font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--text-main); margin-bottom:8px; }
+  .factory-card p { font-size:13px; color:var(--text-muted); line-height:1.65; }
+  .fc-alert { margin-top:10px; padding:6px 10px; background:var(--red-bg); border-radius:4px; font-size:12px; color:var(--red); font-family:'Space Mono',monospace; letter-spacing:0.06em; }
+  .fc-warn { margin-top:10px; padding:6px 10px; background:var(--amber-bg); border-radius:4px; font-size:12px; color:var(--amber); font-family:'Space Mono',monospace; letter-spacing:0.06em; }
+
+  /* OBJECTIVES LIST */
+  .objectives-list { list-style:none; margin-top:22px; display:flex; flex-direction:column; gap:10px; }
+  .objectives-list li { display:flex; align-items:flex-start; gap:16px; padding:16px 22px; background:var(--off-white); border:1px solid var(--border); border-radius:6px; font-size:15px; color:var(--text-main); transition:border-color 0.2s,transform 0.2s; }
+  .objectives-list li:hover { border-color:var(--border-strong); transform:translateX(4px); }
+  .obj-num { font-family:'Space Mono',monospace; font-size:11px; color:var(--purple); background:var(--purple-pale); padding:3px 9px; border-radius:3px; flex-shrink:0; margin-top:1px; font-weight:700; }
+
+  /* AI TOOLS */
+  .tools-list { display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-top:20px; }
+  .tool-row { display:flex; align-items:center; gap:18px; padding:18px 22px; border-bottom:1px solid var(--border); transition:background 0.2s; }
+  .tool-row:last-child { border-bottom:none; }
+  .tool-row:hover { background:var(--purple-pale); }
+  .tool-icon { font-size:20px; width:40px; height:40px; background:var(--purple-pale); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tool-info { flex:1; }
+  .tool-name { font-size:15px; font-weight:600; color:var(--text-main); margin-bottom:3px; }
+  .tool-desc { font-size:13px; color:var(--text-muted); line-height:1.5; }
+  .tool-badge { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.08em; color:var(--purple); background:var(--purple-pale); border:1px solid var(--border-strong); padding:4px 10px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+
+  /* HUMAN NOTE */
+  .human-note { margin-top:22px; padding:20px 26px; background:var(--off-white); border:1px solid var(--border); border-radius:6px; display:flex; gap:16px; align-items:flex-start; }
+  .human-note .hn-icon { font-size:22px; flex-shrink:0; margin-top:2px; }
+  .human-note p { font-size:15px; color:var(--text-muted); margin:0; line-height:1.7; }
+  .human-note p strong { color:var(--purple-dark); font-weight:600; }
+
+  /* SUCCESS CHECKLIST */
+  .success-grid { display:flex; flex-direction:column; gap:10px; margin-top:24px; }
+  .success-item { display:flex; align-items:center; gap:16px; padding:17px 22px; background:white; border:1px solid var(--border); border-radius:6px; transition:all 0.2s; cursor:default; }
+  .success-item:hover { background:var(--purple-pale); border-color:var(--purple-light); }
+  .check-circle { width:28px; height:28px; border-radius:50%; border:2px solid var(--purple-mid); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; color:var(--purple); font-weight:700; transition:all 0.2s; }
+  .success-item:hover .check-circle { background:var(--purple); border-color:var(--purple); color:white; }
+  .success-text strong { display:block; font-size:15px; font-weight:600; color:var(--text-main); margin-bottom:2px; }
+  .success-text span { font-size:13px; color:var(--text-muted); }
+
+  /* CTA */
+  .cta-block { background:var(--off-white); border-top:1px solid var(--border); margin:0 -48px -80px; padding:64px 48px 72px; position:relative; overflow:hidden; text-align:center; }
+  .cta-block::before { content:''; position:absolute; bottom:-60px; left:50%; transform:translateX(-50%); width:560px; height:280px; border-radius:50%; border:1px solid var(--border); }
+  .cta-block::after { display:none; }
+  .cta-inner { position:relative; z-index:1; }
+  .cta-eyebrow { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--purple); margin-bottom:24px; display:flex; align-items:center; justify-content:center; gap:12px; }
+  .cta-eyebrow::before,.cta-eyebrow::after { content:''; width:32px; height:1px; background:var(--border-strong); }
+  .cta-block h2 { font-family:'Fraunces',serif; font-size:40px; font-weight:500; color:var(--text-main); line-height:1.15; margin-bottom:16px; letter-spacing:-0.02em; }
+  .cta-block h2 em { font-style:italic; color:var(--purple); }
+  .cta-block p { font-size:16px; color:var(--text-muted); max-width:460px; margin:0 auto; line-height:1.7; }
+  .cta-sub-note { margin-top:28px; font-family:'Space Mono',monospace; font-size:11px; color:var(--text-light); letter-spacing:0.08em; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <span class="cert-label">Advanced AI for Manufacturing Certification &nbsp;·&nbsp; Module 2</span>
+  <span class="status-dot">Investigation Active</span>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner">
+  <div class="ab-icon">⚠️</div>
+  <p><strong>OPERATIONS ALERT:</strong> NovaBot assembly line reporting recurring failures. Production delays increasing. Investigation team requested immediately.</p>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="arc"></div>
+  <div class="hero-inner">
+    <div class="module-tag">Module 2 &nbsp;·&nbsp; Mission Overview</div>
+    <h1>AI for Diagnostics<br>&amp; <em>Troubleshooting</em></h1>
+    <div class="subtitle">Production Failure Investigation</div>
+    <div class="sub2">AI-Assisted Diagnostics, Operational Investigation &amp; Human Decision-Making</div>
+    <div class="company-badge">
+      <div class="logo-mark">NF</div>
+      <div>
+        <div class="badge-title">NovaForge Robotics</div>
+        <div class="badge-sub">Operations Investigation Team</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MISSION BANNER -->
+<div class="content">
+<div class="mission-banner">
+  <div class="mission-icon">🔍</div>
+  <div>
+    <h2>Mission: Production Failure Investigation</h2>
+    <p>Review your briefing before Phase A begins. The factory needs answers — and your team is the one to find them.</p>
+  </div>
+</div>
+
+<!-- ── SECTION 1: WELCOME ── -->
+<div class="section" id="s1">
+  <div class="section-label">01 &nbsp; Welcome to the Investigation</div>
+  <h2>Something Is Wrong at NovaForge</h2>
+  <p>NovaForge Robotics is one of the most advanced manufacturing facilities in the country — but right now, its flagship production line is in trouble. The NovaBot assembly line is experiencing repeated disruptions, and no one on the leadership team has a clear answer yet.</p>
+  <p>Shipment deadlines are approaching. Equipment errors are piling up. Downtime is increasing. And leadership needs the operations team to find the root cause before the situation gets worse.</p>
+  <p>That's where you come in. You've been brought onto the <strong>NovaForge Operations Investigation Team</strong> — a group of specialists assigned to dig into the data, review the evidence, and help the factory get back on track.</p>
+  <p>This is not a routine shift. This is an active investigation. And it starts now.</p>
+</div>
+
+<!-- ── SECTION 2: WHAT'S HAPPENING ── -->
+<div class="section" id="s2">
+  <div class="section-label">02 &nbsp; What's Happening at NovaForge</div>
+  <h2>The Production Problems — <em>By the Numbers</em></h2>
+  <p>The NovaForge operations team has been logging issues for the past two weeks. Here's what the data is showing so far. Read each incident carefully — you'll be investigating all of them.</p>
+
+  <div class="incident-ticker">
+    <div class="ticker-header">
+      <span class="th-label">Live Incident Log — NovaBot Assembly Line</span>
+      <span class="th-status">Monitoring Active</span>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev high"></div>
+      <div class="inc-area">Assembly Line</div>
+      <div class="inc-desc"><strong>Robotic arm interruptions</strong> — Arms R-4 and R-7 are pausing mid-cycle 3–5 times per shift with no clear trigger. Error codes are inconsistent each time.</div>
+      <div class="inc-tag critical">Critical</div>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev high"></div>
+      <div class="inc-area">Maintenance</div>
+      <div class="inc-desc"><strong>Repeated machine error codes</strong> — Error E-219 and E-341 are appearing across multiple machines. Technicians cannot find a consistent cause.</div>
+      <div class="inc-tag critical">Critical</div>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev med"></div>
+      <div class="inc-area">Production</div>
+      <div class="inc-desc"><strong>Production slowdowns</strong> — Output is down 23% compared to last month. Line speed has dropped without a formal adjustment being made.</div>
+      <div class="inc-tag warning">Warning</div>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev med"></div>
+      <div class="inc-area">Equipment</div>
+      <div class="inc-desc"><strong>Unplanned equipment downtime</strong> — Three machines have gone offline unexpectedly this week. Average unplanned downtime is up 40 minutes per shift.</div>
+      <div class="inc-tag warning">Warning</div>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev med"></div>
+      <div class="inc-area">Sensors</div>
+      <div class="inc-desc"><strong>Inconsistent sensor readings</strong> — Vibration and temperature sensors on two assembly stations are giving readings that don't match manual checks.</div>
+      <div class="inc-tag warning">Warning</div>
+    </div>
+    <div class="incident-row">
+      <div class="inc-sev low"></div>
+      <div class="inc-area">Shipping</div>
+      <div class="inc-desc"><strong>Delayed shipments</strong> — Two client orders have already missed their delivery windows. A third is at risk if production doesn't recover this week.</div>
+      <div class="inc-tag monitoring">Monitoring</div>
+    </div>
+  </div>
+
+  <p style="margin-top:20px;">Leadership doesn't know yet whether these problems share a single root cause — or whether they are separate issues stacking on top of each other. That's what your team needs to find out.</p>
+</div>
+
+<!-- ── SECTION 3: YOUR ROLE ── -->
+<div class="section" id="s3">
+  <div class="section-label">03 &nbsp; Your Role in the Mission</div>
+  <h2>You Are on the <em>Investigation Team</em></h2>
+  <p>You won't be a bystander in this mission. You'll be working directly with operations data, machine logs, technician notes, and AI tools to help figure out what's going wrong — and what NovaForge should do about it.</p>
+
+  <div class="role-chips">
+    <div class="chip"><span>🔍</span> Operations Investigator</div>
+    <div class="chip"><span>📊</span> Troubleshooting Analyst</div>
+    <div class="chip"><span>🔧</span> Maintenance Support Specialist</div>
+    <div class="chip"><span>🤖</span> AI Diagnostics Reviewer</div>
+  </div>
+
+  <p>You'll combine three things throughout this mission:</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:8px 0 16px;">
+    <div style="padding:18px;background:var(--off-white);border:1px solid var(--border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">📋</div>
+      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;margin-bottom:4px;">Operational Evidence</div>
+      <div style="font-size:12px;color:var(--text-muted);">Logs, reports, technician notes, and production data from the factory floor</div>
+    </div>
+    <div style="padding:18px;background:var(--off-white);border:1px solid var(--border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">🤖</div>
+      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;margin-bottom:4px;">AI Analysis</div>
+      <div style="font-size:12px;color:var(--text-muted);">AI-generated diagnostics, pattern recognition, and troubleshooting support</div>
+    </div>
+    <div style="padding:18px;background:var(--off-white);border:1px solid var(--border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">🧠</div>
+      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;margin-bottom:4px;">Human Judgment</div>
+      <div style="font-size:12px;color:var(--text-muted);">Your reasoning, safety thinking, and final operational decisions</div>
+    </div>
+  </div>
+
+  <p>None of these three alone is enough. Good manufacturing operations require all three working together — and that's exactly what you'll practice here.</p>
+</div>
+
+<!-- ── SECTION 4: INSIDE THE FACTORY ── -->
+<div class="section" id="s4">
+  <div class="section-label">04 &nbsp; Inside the Smart Factory</div>
+  <h2>The Areas You'll <em>Investigate</em></h2>
+  <p>Your investigation will take you across five operational zones inside the NovaForge facility. Each area is experiencing something connected to the overall problem — or might be.</p>
+
+  <div class="factory-grid">
+    <div class="factory-card">
+      <span class="fc-icon">🦾</span>
+      <span class="fc-area-tag">Zone 1</span>
+      <div class="fc-title">Robotics Assembly Line</div>
+      <p>This is the heart of NovaBot production. Robotic arms execute hundreds of precise movements per shift. Right now two arms are failing unpredictably — stopping the entire line.</p>
+      <div class="fc-alert">⚠ Arms R-4 & R-7 flagged — investigation required</div>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">🔧</span>
+      <span class="fc-area-tag">Zone 2</span>
+      <div class="fc-title">Maintenance Operations Center</div>
+      <p>The maintenance team tracks all equipment health data and responds to alerts. Their logs hold clues about when problems started and how often errors have been occurring.</p>
+      <div class="fc-warn">⚡ Error logs show patterns — review needed</div>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">🔬</span>
+      <span class="fc-area-tag">Zone 3</span>
+      <div class="fc-title">Quality Inspection Area</div>
+      <p>Every NovaBot unit passes through here before shipping. Inspectors are catching more defects than usual — and they suspect the assembly problems are connected to quality failures.</p>
+      <div class="fc-warn">⚡ Defect rate up 14% this month</div>
+    </div>
+    <div class="factory-card">
+      <span class="fc-icon">📡</span>
+      <span class="fc-area-tag">Zone 4</span>
+      <div class="fc-title">Production Monitoring Systems</div>
+      <p>Real-time dashboards track output rates, machine performance, and line efficiency across every shift. The data here tells the story of how production has changed — if you know what to look for.</p>
+      <div class="fc-warn">⚡ Output trending 23% below target</div>
+    </div>
+    <div class="factory-card span-2">
+      <span class="fc-icon">🖥️</span>
+      <span class="fc-area-tag">Zone 5</span>
+      <div class="fc-title">Operations Command Center</div>
+      <p>Leadership monitors the entire factory from here. This is where your investigation findings will ultimately go — turned into recommendations that operations directors can act on. Every decision you make feeds back to this room.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 5: OBJECTIVES ── -->
+<div class="section" id="s5">
+  <div class="section-label">05 &nbsp; Mission Objectives</div>
+  <h2>What You'll <em>Investigate</em></h2>
+  <p>This mission is structured around a series of investigations and decisions. Here's everything you'll work through across Phase A, Phase B, and Phase C.</p>
+
+  <ul class="objectives-list">
+    <li><span class="obj-num">01</span> Review equipment logs to find patterns in machine errors and failure timing</li>
+    <li><span class="obj-num">02</span> Investigate the robotic arm failures on the assembly line — what triggered them?</li>
+    <li><span class="obj-num">03</span> Analyze downtime reports to understand how often and when machines are going offline</li>
+    <li><span class="obj-num">04</span> Examine technician notes and maintenance records for overlooked warning signs</li>
+    <li><span class="obj-num">05</span> Identify patterns in the data — are these separate problems, or one connected root cause?</li>
+    <li><span class="obj-num">06</span> Use AI tools to assist the troubleshooting process and generate diagnostic insights</li>
+    <li><span class="obj-num">07</span> Evaluate AI recommendations critically — determine what is useful and what is incomplete</li>
+    <li><span class="obj-num">08</span> Make operational decisions about how NovaForge should respond to each finding</li>
+  </ul>
+</div>
+
+<!-- ── SECTION 6: AI TOOLS ── -->
+<div class="section" id="s6">
+  <div class="section-label">06 &nbsp; AI Tools in the Investigation</div>
+  <h2>How AI Supports <em>Troubleshooting</em></h2>
+  <p>NovaForge operations teams use AI tools as part of their diagnostic and troubleshooting workflow. In this mission, you'll learn how — and when — to use them effectively.</p>
+
+  <div class="tools-list">
+    <div class="tool-row">
+      <div class="tool-icon">📋</div>
+      <div class="tool-info">
+        <div class="tool-name">Maintenance Record Analysis</div>
+        <div class="tool-desc">AI reviews large sets of maintenance logs and surfaces patterns that would take hours to find manually — flagging which machines fail most often and when.</div>
+      </div>
+      <div class="tool-badge">Pattern Detection</div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon">📉</div>
+      <div class="tool-info">
+        <div class="tool-name">Failure Pattern Recognition</div>
+        <div class="tool-desc">By analyzing error code history, AI can identify whether machine failures share a common trigger — mechanical, software, environmental, or operational.</div>
+      </div>
+      <div class="tool-badge">Root Cause Support</div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon">📊</div>
+      <div class="tool-info">
+        <div class="tool-name">Operational Data Review</div>
+        <div class="tool-desc">AI tools can process production rate data, sensor readings, and shift schedules to show where efficiency dropped and what changed around that time.</div>
+      </div>
+      <div class="tool-badge">Data Synthesis</div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon">🔎</div>
+      <div class="tool-info">
+        <div class="tool-name">Troubleshooting Workflow Assistance</div>
+        <div class="tool-desc">AI can generate structured troubleshooting guides and suggest diagnostic steps — helping technicians work through complex problems more efficiently.</div>
+      </div>
+      <div class="tool-badge">Diagnostic Support</div>
+    </div>
+  </div>
+
+  <div class="human-note">
+    <div class="hn-icon">👷</div>
+    <p><strong>Critical reminder:</strong> AI tools help your team analyze data faster — but they do not understand the factory floor the way experienced workers do. AI can miss context, misread conditions, and generate incomplete recommendations. In this mission, <strong>every AI output must be reviewed by a human before any action is taken.</strong> That human is you.</p>
+  </div>
+</div>
+
+<!-- ── SECTION 7: SUCCESS ── -->
+<div class="section" id="s7">
+  <div class="section-label">07 &nbsp; Mission Success</div>
+  <h2>What Success <em>Looks Like</em></h2>
+  <p>By the time you complete all three phases of this mission, you should be able to demonstrate each of the following. Hover over each item as a quick self-check before you begin.</p>
+
+  <div class="success-grid">
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Troubleshooting Thinking</strong>
+        <span>Systematically review operational evidence and form hypotheses about what is causing the failures</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Operational Analysis</strong>
+        <span>Read and interpret equipment logs, maintenance records, and production data to draw meaningful conclusions</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>AI-Assisted Diagnostics</strong>
+        <span>Use AI tools to analyze patterns in data and generate diagnostic insights that support the investigation</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Safety Awareness</strong>
+        <span>Identify safety risks embedded in the production failures and prioritize worker safety in every recommendation</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Critical Thinking About AI</strong>
+        <span>Evaluate AI-generated diagnostics and recommendations — identifying what is useful, incomplete, or potentially wrong</span>
+      </div>
+    </div>
+    <div class="success-item">
+      <div class="check-circle">✓</div>
+      <div class="success-text">
+        <strong>Responsible Decision-Making</strong>
+        <span>Make and justify operational decisions using a combination of evidence, AI analysis, and your own judgment</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 8: TRANSITION ── -->
+<div class="cta-block" id="cta">
+  <div class="cta-inner">
+    <div class="cta-eyebrow">Mission Status</div>
+    <h2>The investigation<br>begins <em>now.</em></h2>
+    <p>Phase A is ready. You'll begin by reviewing the operational evidence — equipment logs, technician notes, and production records from the NovaBot assembly line.</p>
+    <div class="cta-sub-note">Phase A &nbsp;·&nbsp; Operational Evidence Review &nbsp;·&nbsp; Module 2 of 5</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
