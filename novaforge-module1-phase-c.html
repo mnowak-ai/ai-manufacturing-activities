@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase C — Operations Decision Command | NovaForge Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --purple:#7B2FBE; --purple-light:#9B59D9; --purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8; --purple-dark:#4A1880; --purple-deep:#2D0F52;
+  --white:#FFFFFF; --off:#FAFAF8; --off2:#F4F1F8;
+  --border:rgba(123,47,190,.13); --border-s:rgba(123,47,190,.28);
+  --txt:#1A1020; --muted:#6B5C7A; --light:#A090B0;
+  --green:#1A6645; --green-bg:#EAF7F0; --green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00; --amber-bg:#FDF5E6; --amber-border:rgba(122,79,0,.22);
+  --red:#8A2020; --red-bg:#FDF0EF; --red-border:rgba(138,32,32,.22);
+  --blue:#0F4F8A; --blue-bg:#EBF4FD; --blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 48px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-left .sep{color:var(--purple-mid);} .tb-left .cur{color:var(--purple);}
+.tb-right{display:flex;align-items:center;gap:14px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-s);padding:5px 14px;border-radius:20px;}
+.screen-counter{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.progress-wrap{background:var(--off2);border-bottom:1px solid var(--border);height:6px;}
+.progress-track{height:100%;background:var(--border);}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple-light));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* STEP DOTS */
+.step-dots{padding:14px 48px 0;display:flex;align-items:center;gap:6px;max-width:860px;margin:0 auto;width:100%;}
+.dot{width:28px;height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s,width .25s;}
+.dot.active{background:var(--purple);width:36px;} .dot.done{background:var(--purple-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:860px;margin:0 auto;width:100%;padding:0 48px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:40px;animation:fadeUp .4s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.screen-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.screen-eyebrow::before{content:'';width:20px;height:2px;background:var(--purple);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.lead{font-size:16px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:32px;}
+.screen-rule{height:1px;background:var(--border);margin-bottom:32px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:16px;}
+.card.accent{border-left:4px solid var(--purple);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.blue{border-left:4px solid #378ADD;background:var(--blue-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:8px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card ul{padding-left:18px;margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.card p+p{margin-top:10px;}
+
+/* UTILS */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px;display:block;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+
+/* SITUATION BLOCK */
+.situation-block{background:var(--off);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.sit-header{padding:14px 22px;background:var(--purple-pale);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sit-header .sit-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.sit-header .sit-icon{font-size:18px;}
+.sit-body{padding:20px 22px;}
+.sit-body p{font-size:15px;color:var(--txt);line-height:1.7;margin-bottom:0;}
+
+/* CONTEXT LIST */
+.context-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:12px 0 0;}
+.context-list li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);line-height:1.55;}
+.context-list li::before{content:'›';color:var(--purple);font-weight:700;font-size:15px;flex-shrink:0;margin-top:1px;}
+
+/* AI RECOMMENDATION */
+.ai-rec{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 24px;margin-bottom:20px;}
+.ai-rec .ai-rec-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.ai-rec .ai-rec-label::before{content:'🤖';font-size:14px;}
+.ai-rec blockquote{font-size:15px;color:var(--txt);line-height:1.7;font-style:italic;padding-left:14px;border-left:3px solid var(--blue-border);}
+.ai-rec .ai-note{margin-top:12px;font-size:12px;color:var(--blue);font-style:normal;}
+
+/* DECISION BUTTONS */
+.decision-row{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.dec-btn{flex:1;min-width:130px;padding:16px 18px;border-radius:8px;border:2px solid var(--border-s);background:var(--white);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.dec-btn .db-icon{font-size:26px;}
+.dec-btn .db-label{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt);}
+.dec-btn .db-hint{font-size:11px;color:var(--light);text-align:center;line-height:1.4;}
+.dec-btn:hover{border-color:var(--purple-light);background:var(--purple-pale);}
+.dec-btn.approve.selected{border-color:var(--green);background:var(--green-bg);}
+.dec-btn.approve.selected .db-label{color:var(--green);}
+.dec-btn.modify.selected{border-color:#E8A020;background:var(--amber-bg);}
+.dec-btn.modify.selected .db-label{color:var(--amber);}
+.dec-btn.reject.selected{border-color:#D94040;background:var(--red-bg);}
+.dec-btn.reject.selected .db-label{color:var(--red);}
+
+/* DECISION FEEDBACK */
+.dec-feedback{border-radius:8px;padding:16px 20px;margin-bottom:20px;display:none;font-size:14px;line-height:1.65;}
+.dec-feedback.approve{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);color:var(--green);}
+.dec-feedback.modify{background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #E8A020;color:var(--amber);}
+.dec-feedback.reject{background:var(--red-bg);border:1px solid var(--red-border);border-left:4px solid #D94040;color:var(--red);}
+.dec-feedback strong{font-weight:600;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:80px;border:1px dashed var(--border-s);border-radius:6px;background:var(--off);padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--purple-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:110px;}
+input.field{width:100%;padding:10px 14px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.field:focus{border-color:var(--purple-light);background:var(--white);}
+input.field::placeholder{color:var(--light);}
+
+/* REPORT SECTION */
+.report-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.rs-header{background:var(--purple-pale);padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.rs-icon{font-size:16px;} .rs-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.rs-body{padding:16px 20px;background:var(--white);display:flex;flex-direction:column;gap:14px;}
+
+/* RESPONSIBILITY TABLE */
+.resp-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.resp-table thead tr{background:var(--purple-pale);}
+.resp-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);padding:11px 16px;text-align:left;border-bottom:1px solid var(--border-s);font-weight:700;}
+.resp-table td{padding:13px 16px;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55;}
+.resp-table tr:last-child td{border-bottom:none;}
+.resp-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;align-items:center;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.ai{background:var(--purple-pale);color:var(--purple-dark);}
+.tag.human{background:var(--green-bg);color:var(--green);}
+.tag.both{background:var(--amber-bg);color:var(--amber);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.checklist li{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--off);border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--txt);cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk-box{background:var(--green);border-color:var(--green);color:white;}
+.chk-box{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent;transition:all .2s;margin-top:1px;}
+.chk-text strong{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-text span{font-size:13px;color:var(--muted);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:40px;border-top:1px solid var(--border);margin-top:40px;}
+.btn-back{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:11px 22px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s,color .15s;}
+.btn-back:hover{background:var(--off);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:16px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;}
+
+/* SUCCESS */
+.success-box{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:18px 24px;margin-top:20px;display:none;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+
+/* COMPLETION */
+.completion-hero{text-align:center;padding:40px 0 24px;}
+.completion-hero .c-icon{font-size:60px;margin-bottom:18px;display:block;}
+.completion-hero h2{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);margin-bottom:10px;}
+.completion-hero p{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 24px;line-height:1.7;}
+.port-badge{display:inline-flex;align-items:center;gap:14px;background:var(--purple-pale);border:1px solid var(--border-s);border-radius:8px;padding:16px 24px;margin-bottom:28px;}
+.port-badge .pb-icon{font-size:28px;}
+.port-badge .pb-title{font-weight:600;font-size:15px;color:var(--txt);}
+.port-badge .pb-sub{font-size:12px;color:var(--muted);}
+
+/* MODULE COMPLETE */
+.module-complete{text-align:center;padding:52px 0 32px;}
+.mc-badge{display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;background:var(--purple);border-radius:50%;font-size:36px;margin-bottom:24px;}
+.mc-badge-ring{display:inline-block;padding:4px;border-radius:50%;border:2px solid var(--purple-mid);margin-bottom:24px;}
+.module-complete h1{font-family:'Fraunces',serif;font-size:38px;font-weight:500;color:var(--txt);margin-bottom:14px;letter-spacing:-.02em;}
+.module-complete h1 em{color:var(--purple);font-style:italic;}
+.module-complete .mc-sub{font-size:18px;color:var(--muted);margin-bottom:32px;font-weight:300;}
+.missions-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px;text-align:left;}
+.mission-next{padding:18px 22px;background:var(--off);border:1px solid var(--border);border-radius:8px;transition:border-color .2s;}
+.mission-next:hover{border-color:var(--border-s);}
+.mission-next .mn-icon{font-size:22px;margin-bottom:10px;display:block;}
+.mission-next .mn-title{font-weight:600;font-size:14px;color:var(--txt);margin-bottom:4px;}
+.mission-next .mn-desc{font-size:12px;color:var(--muted);line-height:1.55;}
+.mission-next .mn-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple-mid);margin-bottom:8px;display:block;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 1</span><span class="sep">›</span>
+    <span class="cur">Phase C</span>
+  </div>
+  <div class="tb-right">
+    <span class="screen-counter" id="screenCounter">Screen 1 of 9</span>
+    <div class="phase-pill">Phase C · Final</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:11%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="step-dots" id="stepDots"></div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — ENTER DECISION COMMAND
+══════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="screen-eyebrow">Phase C · Screen 1 of 9</div>
+  <h1>Operations<br><em>Decision Command</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card accent">
+    <h3>⚡ You are entering the NovaForge Operations Decision Command Center</h3>
+    <p>Phase A gave you the map. Phase B gave you the analysis. Now comes the hardest part — <strong>making the calls.</strong></p>
+    <p>Leadership has reviewed the AI operations reports. Data is on the table. Recommendations are ready. But AI cannot decide what happens next. That's your job.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">Your role in Phase C</span>
+      <ul>
+        <li>Operations Decision Specialist</li>
+        <li>Manufacturing Supervisor</li>
+        <li>Safety Reviewer</li>
+        <li>Workflow Decision-Maker</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="label">What you must evaluate</span>
+      <ul>
+        <li>AI-generated recommendations</li>
+        <li>Production pressures and deadlines</li>
+        <li>Worker safety and risk factors</li>
+        <li>Operational tradeoffs</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>There are no easy answers here</h3>
+    <p>Every decision in Phase C involves tradeoffs. Efficiency vs. safety. Speed vs. quality. Cost savings vs. worker risk. Real operations leaders deal with these tensions every day — and so will you.</p>
+    <p>Your goal is not to find the "perfect" answer. It's to <strong>think clearly, reason carefully, and put safety first.</strong></p>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then enter the command center</span>
+    <button class="btn-next" onclick="goTo(2)">Enter Command Center</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — SITUATION REVIEW
+══════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="screen-eyebrow">Phase C · Screen 2 of 9</div>
+  <h1>Current Factory<br><em>Situation Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Before you make any decisions, review what the operations team has flagged across the factory. These are the live concerns you'll be addressing.</p>
+
+  <!-- Status Dashboard -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+    <div style="padding:18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:6px;">⚠️</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;">Safety Flags</div>
+      <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--red);margin-top:4px;">3</div>
+    </div>
+    <div style="padding:18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:6px;">📋</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;">Pending Decisions</div>
+      <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--amber);margin-top:4px;">3</div>
+    </div>
+    <div style="padding:18px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:6px;">🤖</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700;">AI Recommendations</div>
+      <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--blue);margin-top:4px;">3</div>
+    </div>
+  </div>
+
+  <span class="label">Phase A findings on file</span>
+  <div class="card" style="margin-bottom:20px;">
+    <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px;">
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>AI systems are active across all five factory zones — assembly, QC, maintenance, warehouse, and command center</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>Safety monitoring requires consistent human response — AI can flag but cannot act</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>Human workers identified several situations where AI output was incomplete or missed real-world factors</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>Quality control requires both AI scanning and human final approval on all units</li>
+    </ul>
+  </div>
+
+  <span class="label">Phase B analysis findings</span>
+  <div class="card" style="margin-bottom:20px;">
+    <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px;">
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>AI workflow analysis identified efficiency gains in production scheduling and inventory tracking</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>AI safety analysis missed worker fatigue, safety regulations, and emergency staffing minimums</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>The AI staffing recommendation was flagged as operationally risky by the operations team</li>
+      <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;">›</span>Operations team confirmed: AI supports decisions — humans must approve every final action</li>
+    </ul>
+  </div>
+
+  <span class="label">Current factory concerns requiring decisions</span>
+  <div class="grid-2">
+    <div class="card red"><p>🔧 <strong>Overnight maintenance staffing</strong> — AI recommends a reduction. Equipment failures are increasing.</p></div>
+    <div class="card amber"><p>⚙️ <strong>Assembly line speed increase</strong> — AI recommends +18%. Defect rates already rising.</p></div>
+    <div class="card red" style="grid-column:1/-1"><p>🔬 <strong>Sensor batch inspection discrepancy</strong> — AI cleared a batch. A human inspector flagged a calibration issue.</p></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Begin Decisions</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — DECISION SCENARIO #1
+══════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="screen-eyebrow">Phase C · Screen 3 of 9 — Decision Scenario 1</div>
+  <h1>Scenario 1 —<br><em>Overnight Staffing</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">🌙</span><span class="sit-label">Situation · Maintenance Department</span></div>
+    <div class="sit-body">
+      <p>The overnight maintenance shift currently runs with <strong>4 technicians</strong> on duty. They are responsible for equipment checks, emergency repairs, and safety monitoring across the entire factory floor.</p>
+      <p style="margin-top:10px;">The AI scheduling system has flagged overnight staffing as inefficient. It recommends cutting the shift to <strong>2 technicians</strong> to reduce labor costs.</p>
+    </div>
+  </div>
+
+  <span class="label">Additional context — what the AI didn't weigh</span>
+  <ul class="context-list" style="margin-bottom:20px;">
+    <li>Equipment failure incidents during overnight shifts have <strong>increased 22%</strong> over the past quarter</li>
+    <li>Emergency maintenance response times have slowed — average response is now <strong>34 minutes</strong>, up from 18</li>
+    <li>Maintenance staff submitted a formal workload concern report last month</li>
+    <li>State safety regulations require a minimum of <strong>3 technicians</strong> for facilities of NovaForge's size during any active shift</li>
+    <li>One technician is currently on medical leave — the shift is already running lean</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Scheduling Recommendation</div>
+    <blockquote>"Reducing overnight staffing from 4 to 2 technicians would improve labor efficiency by an estimated 18% and reduce monthly operating costs by approximately $14,000. Data shows overnight production output is consistently lower than day shifts, suggesting lower staffing requirements."</blockquote>
+    <div class="ai-note">⚠ This recommendation is based on production output data only. Regulatory minimums, emergency response capacity, and current workload conditions were not factored in.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec1-row">
+    <button class="dec-btn approve" onclick="selectDecision('dec1','approve',this)">
+      <span class="db-icon">✅</span>
+      <span class="db-label">Approve</span>
+      <span class="db-hint">Implement the AI recommendation as stated</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDecision('dec1','modify',this)">
+      <span class="db-icon">✏️</span>
+      <span class="db-label">Modify</span>
+      <span class="db-hint">Accept part of the recommendation with conditions</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDecision('dec1','reject',this)">
+      <span class="db-icon">🚫</span>
+      <span class="db-label">Reject</span>
+      <span class="db-hint">Do not move forward with this recommendation</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec1-fb-approve">
+    <strong>Approved.</strong> You've chosen to implement the reduction. Keep in mind: this would put the facility below the legal minimum staffing requirement and significantly increase safety risk. Make sure your justification addresses these factors.
+  </div>
+  <div class="dec-feedback modify" id="dec1-fb-modify">
+    <strong>Modified.</strong> Smart approach. You're not dismissing the cost concern entirely, but you're not accepting a dangerous reduction either. Use your justification field to explain exactly what modification you'd recommend.
+  </div>
+  <div class="dec-feedback reject" id="dec1-fb-reject">
+    <strong>Rejected.</strong> The safety and regulatory concerns are too significant to overlook. Use your justification to explain what factors made this recommendation unacceptable and what the operations team should do instead.
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">What operational risks or safety concerns drove your decision?</span><textarea id="d1_risks" class="field tall" placeholder="Explain the risks you weighed when making this decision. Be specific about the factors you considered…"></textarea></div>
+      <div><span class="label">What human factors did the AI fail to account for?</span><textarea id="d1_human" class="field" placeholder="List the real-world factors that the AI's data-based recommendation missed…"></textarea></div>
+      <div><span class="label">What would you recommend to leadership instead?</span><textarea id="d1_rec" class="field" placeholder="If you rejected or modified — what should happen? If you approved — what safeguards would you require?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Next Scenario</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — DECISION SCENARIO #2
+══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="screen-eyebrow">Phase C · Screen 4 of 9 — Decision Scenario 2</div>
+  <h1>Scenario 2 —<br><em>Assembly Line Speed</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">⚙️</span><span class="sit-label">Situation · Robotics Assembly Line</span></div>
+    <div class="sit-body">
+      <p>NovaForge has a high-priority order for <strong>1,200 NovaBot units</strong> due in 11 days. At the current production rate, the factory will fall short by approximately 180 units.</p>
+      <p style="margin-top:10px;">The AI production system recommends increasing robotic assembly line speed by <strong>18%</strong> to close the gap and meet the deadline.</p>
+    </div>
+  </div>
+
+  <span class="label">Additional context — what the AI optimized for</span>
+  <ul class="context-list" style="margin-bottom:20px;">
+    <li>Defect rates have <strong>increased 9%</strong> over the past three weeks — quality inspectors are flagging more issues</li>
+    <li>Workers on the line reported feeling <strong>rushed during quality checks</strong> — two informal complaints filed this week</li>
+    <li>A speed increase at this level will shorten inspection windows for each unit by approximately <strong>40%</strong></li>
+    <li>Shipping a defective NovaBot unit could result in a <strong>product recall</strong>, costing far more than a delayed order</li>
+    <li>Leadership wants to meet the deadline — the client is a major recurring account</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Production Recommendation</div>
+    <blockquote>"Increasing assembly line speed by 18% will allow NovaForge to meet the current order deadline within the 11-day window. Projected output increase: 210 additional units. Estimated on-time delivery probability: 94%."</blockquote>
+    <div class="ai-note">⚠ This recommendation optimizes for output volume and delivery timing only. It does not account for current defect trends, inspection capacity, or worker safety margins.</div>
+  </div>
+
+  <span class="label">Consider all four factors before deciding</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div style="padding:14px 18px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;font-weight:700;">Efficiency</div>
+      <div style="font-size:13px;color:var(--muted);">Speed increase closes the gap and satisfies the delivery commitment to a key client</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:6px;font-weight:700;">Quality Risk</div>
+      <div style="font-size:13px;color:var(--muted);">Defect rates already rising — faster line speed reduces time for inspection and correction</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:6px;font-weight:700;">Worker Safety</div>
+      <div style="font-size:13px;color:var(--muted);">Rushed line speeds increase error risk and physical injury risk for line workers</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:6px;font-weight:700;">Reliability</div>
+      <div style="font-size:13px;color:var(--muted);">Shipping a defective batch could damage customer trust and trigger costly recalls</div>
+    </div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec2-row">
+    <button class="dec-btn approve" onclick="selectDecision('dec2','approve',this)">
+      <span class="db-icon">✅</span>
+      <span class="db-label">Approve</span>
+      <span class="db-hint">Increase line speed as recommended</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDecision('dec2','modify',this)">
+      <span class="db-icon">✏️</span>
+      <span class="db-label">Modify</span>
+      <span class="db-hint">Adjust speed or add quality safeguards</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDecision('dec2','reject',this)">
+      <span class="db-icon">🚫</span>
+      <span class="db-label">Reject</span>
+      <span class="db-hint">Hold the line at current speed — address the deadline another way</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec2-fb-approve">
+    <strong>Approved.</strong> You've prioritized meeting the deadline. Be specific in your justification about how you would manage the rising defect risk and protect worker safety with the speed increase in place.
+  </div>
+  <div class="dec-feedback modify" id="dec2-fb-modify">
+    <strong>Modified.</strong> A balanced approach — perhaps a smaller speed increase with additional inspection steps, or overtime scheduling instead of a speed increase. Explain your modification clearly.
+  </div>
+  <div class="dec-feedback reject" id="dec2-fb-reject">
+    <strong>Rejected.</strong> Quality and safety win over the deadline. Explain how you'd communicate this to the client and what alternative approach you'd recommend to leadership.
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">How did you weigh efficiency against quality and safety?</span><textarea id="d2_tradeoff" class="field tall" placeholder="Explain the tradeoff you considered. What factor ultimately drove your decision?…"></textarea></div>
+      <div><span class="label">What conditions or safeguards are part of your decision?</span><textarea id="d2_conditions" class="field" placeholder="If you approved or modified — what must be in place? If rejected — what's your alternative plan?…"></textarea></div>
+      <div><span class="label">What would you tell the client about the delivery timeline?</span><textarea id="d2_client" class="field" placeholder="How do you communicate this decision to the client while maintaining the relationship?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Next Scenario</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 5 — DECISION SCENARIO #3
+══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="screen-eyebrow">Phase C · Screen 5 of 9 — Decision Scenario 3</div>
+  <h1>Scenario 3 —<br><em>The Inspector's Instinct</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">🔬</span><span class="sit-label">Situation · Quality Control Lab</span></div>
+    <div class="sit-body">
+      <p>The AI quality inspection system has just cleared a batch of <strong>80 NovaBot sensor units</strong> — flagging zero defects across all units. The batch is staged and ready to ship to a customer within 6 hours.</p>
+      <p style="margin-top:10px;">During a routine final walkthrough, QC Inspector <strong>Daria Chen</strong> notices unusual calibration readings on the handheld verification tool. The deviations are subtle — just outside normal tolerance — and the AI inspection camera did not detect them.</p>
+    </div>
+  </div>
+
+  <span class="label">Additional context — the situation on the ground</span>
+  <ul class="context-list" style="margin-bottom:20px;">
+    <li>The AI inspection system was last calibrated <strong>8 days ago</strong> — manufacturer recommends weekly calibration</li>
+    <li>These sensors are destined for a <strong>hospital logistics partner</strong> — reliability is mission-critical for the customer</li>
+    <li>Delaying the shipment will trigger a <strong>late delivery penalty</strong> in the contract</li>
+    <li>Inspector Chen has 7 years of experience and has caught <strong>4 production defects</strong> the AI missed in the past year</li>
+    <li>Her supervisor says the AI cleared the batch and to ship — he believes the calibration device may be the one with the error</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Inspection System Output</div>
+    <blockquote>"Batch #NB-8842 — 80 units scanned. Defect rate: 0.0%. All units pass quality threshold. Cleared for shipment."</blockquote>
+    <div class="ai-note">⚠ AI inspection camera calibration is overdue. Human verification tools flagged readings outside normal tolerance on at least one unit. The discrepancy between systems has not been resolved.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec3-row">
+    <button class="dec-btn approve" onclick="selectDecision('dec3','approve',this)">
+      <span class="db-icon">🚢</span>
+      <span class="db-label">Ship</span>
+      <span class="db-hint">Trust the AI result — proceed with shipping on schedule</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDecision('dec3','modify',this)">
+      <span class="db-icon">🔍</span>
+      <span class="db-label">Investigate</span>
+      <span class="db-hint">Delay shipment and conduct additional inspections before releasing</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDecision('dec3','reject',this)">
+      <span class="db-icon">⛔</span>
+      <span class="db-label">Hold Batch</span>
+      <span class="db-hint">Pull the entire batch from shipping until the discrepancy is fully resolved</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec3-fb-approve">
+    <strong>Shipping approved.</strong> You've chosen to trust the AI over the human inspector's concern. Be specific in your justification about why — and what safeguards or follow-up steps you would require after shipment.
+  </div>
+  <div class="dec-feedback modify" id="dec3-fb-modify">
+    <strong>Additional investigation requested.</strong> You're not dismissing the human concern, but you're also not halting everything. Explain what specific checks you'd run and who makes the final call.
+  </div>
+  <div class="dec-feedback reject" id="dec3-fb-reject">
+    <strong>Batch held.</strong> Human oversight wins. You've decided the unresolved discrepancy is too important to ignore, especially given the customer. Explain your reasoning and your recommended next steps.
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">Why does human oversight matter in this situation?</span><textarea id="d3_oversight" class="field tall" placeholder="Explain why Inspector Chen's concern cannot simply be overridden by the AI result — even though the AI cleared the batch…"></textarea></div>
+      <div><span class="label">What are the risks of relying fully on AI in quality inspection?</span><textarea id="d3_risks" class="field" placeholder="What could go wrong if AI inspection is always the final word — and no human review is required?…"></textarea></div>
+      <div><span class="label">What specific next steps would you take?</span><textarea id="d3_steps" class="field" placeholder="Who do you call? What gets inspected? Who makes the final call to ship or hold?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Continue</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 6 — HUMAN VS AI REVIEW
+══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="screen-eyebrow">Phase C · Screen 6 of 9</div>
+  <h1>Human vs. AI<br><em>Responsibility Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Based on what you've seen across Phases A, B, and C — here is the final picture. Review the table, then complete the reflection below.</p>
+
+  <table class="resp-table">
+    <thead>
+      <tr><th>Manufacturing Task</th><th>Best Handled By</th><th>Why This Matters</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Monitoring equipment sensors 24/7</td>
+        <td><span class="tag ai">AI</span></td>
+        <td>Continuous, high-volume monitoring at scale — humans can't maintain this level of focus</td>
+      </tr>
+      <tr>
+        <td>Approving or rejecting a staffing cut</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Safety regulations, worker wellbeing, and operational context require human judgment</td>
+      </tr>
+      <tr>
+        <td>Flagging potential equipment failure</td>
+        <td><span class="tag ai">AI</span></td>
+        <td>Pattern recognition in sensor data happens faster and more consistently with AI</td>
+      </tr>
+      <tr>
+        <td>Deciding when to stop production for safety</td>
+        <td><span class="tag human">Human</span></td>
+        <td>AI can flag — but the call to stop a line and impact production requires a human supervisor</td>
+      </tr>
+      <tr>
+        <td>Generating schedule optimization options</td>
+        <td><span class="tag both">Both</span></td>
+        <td>AI builds the options — humans evaluate tradeoffs, worker needs, and real conditions</td>
+      </tr>
+      <tr>
+        <td>Scanning units for surface defects</td>
+        <td><span class="tag both">Both</span></td>
+        <td>AI provides fast, consistent scanning — humans provide final judgment and catch what AI misses</td>
+      </tr>
+      <tr>
+        <td>Responding to a workplace emergency</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Physical response, communication, and judgment — AI has no ability to intervene in person</td>
+      </tr>
+      <tr>
+        <td>Approving a final shipment to a customer</td>
+        <td><span class="tag human">Human</span></td>
+        <td>Legal accountability and quality responsibility must rest with a person — not an automated system</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <span class="label">Mark the statements you agree with — based on your mission experience</span>
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text"><strong>AI works best for tasks that are repetitive, high-volume, or data-driven</strong><span>Pattern recognition, sensor monitoring, scheduling optimization</span></div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text"><strong>Humans are essential for judgment calls that involve safety, ethics, or context</strong><span>Staffing decisions, emergency response, final product approvals</span></div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text"><strong>AI recommendations should always be reviewed before implementation</strong><span>Even confident AI output may miss critical real-world factors</span></div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text"><strong>Worker expertise and experience is still a critical part of manufacturing operations</strong><span>Years of hands-on knowledge catches things data alone cannot</span></div>
+    </li>
+    <li onclick="toggleCheck(this)">
+      <div class="chk-box">✓</div>
+      <div class="chk-text"><strong>Safety must take priority over efficiency when they conflict</strong><span>No production target justifies putting workers at risk</span></div>
+    </li>
+  </ul>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Build Final Brief</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 7 — BUILD FINAL BRIEF
+══════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="screen-eyebrow">Phase C · Screen 7 of 9</div>
+  <h1>Build Your<br><em>Operations Decision Brief</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">You've made the calls. Now document your thinking in a professional brief. These sections will form your downloadable PDF deliverable.</p>
+
+  <div class="card accent" style="margin-bottom:24px;">
+    <h3>📋 NovaForge Operations Decision Brief</h3>
+    <p>This is a professional document showing leadership your operational reasoning. Think of it as a real deliverable in your manufacturing career — something you'd bring to a leadership meeting.</p>
+  </div>
+
+  <!-- Learner info -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">👤</span><span class="rs-title">Learner Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="field" placeholder="Your full name"></div>
+        <div><span class="label">Date</span><input type="date" id="r_date" class="field"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decisions Summary -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">⚖️</span><span class="rs-title">Part 1 — Decisions Made</span></div>
+    <div class="rs-body">
+      <div>
+        <span class="label">Overnight Staffing Decision</span>
+        <div id="dec1-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:12px;">No decision recorded yet — return to Screen 3 to make your selection.</div>
+        <textarea id="b_d1" class="field" placeholder="Summarize your reasoning for the overnight staffing decision…"></textarea>
+      </div>
+      <div>
+        <span class="label">Assembly Line Speed Decision</span>
+        <div id="dec2-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:12px;">No decision recorded yet — return to Screen 4 to make your selection.</div>
+        <textarea id="b_d2" class="field" placeholder="Summarize your reasoning for the assembly line speed decision…"></textarea>
+      </div>
+      <div>
+        <span class="label">Quality Inspection Batch Decision</span>
+        <div id="dec3-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:12px;">No decision recorded yet — return to Screen 5 to make your selection.</div>
+        <textarea id="b_d3" class="field" placeholder="Summarize your reasoning for the sensor batch inspection decision…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety Reasoning -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">🦺</span><span class="rs-title">Part 2 — Safety Reasoning</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where did safety concerns override efficiency or cost considerations?</span><textarea id="b_safety" class="field tall" placeholder="Describe a specific moment in these scenarios where safety took priority over a business goal — and explain why you made that call…"></textarea></div>
+      <div><span class="label">What safety principle guides your decision-making at NovaForge?</span><textarea id="b_principle" class="field" placeholder="Write your personal operations safety principle in one or two sentences…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- AI Tradeoffs -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">🤖</span><span class="rs-title">Part 3 — AI Limitations Identified</span></div>
+    <div class="rs-body">
+      <div><span class="label">What were the most significant limitations of AI in these scenarios?</span><textarea id="b_limits" class="field tall" placeholder="Describe what the AI got wrong, missed, or couldn't account for across the three decisions…"></textarea></div>
+      <div><span class="label">Which AI recommendations were useful — and which were risky?</span><textarea id="b_useful" class="field" placeholder="Be specific: which AI outputs added real value, and which required human correction?…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Final Recommendations -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">💡</span><span class="rs-title">Part 4 — Final Recommendations for NovaForge</span></div>
+    <div class="rs-body">
+      <div><span class="label">Recommendation 1 — How NovaForge should use AI responsibly going forward</span><textarea id="b_rec1" class="field" placeholder="Your first recommendation for leadership…"></textarea></div>
+      <div><span class="label">Recommendation 2 — Where human oversight must be strengthened</span><textarea id="b_rec2" class="field" placeholder="Your second recommendation…"></textarea></div>
+      <div><span class="label">Overall operational conclusion</span><textarea id="b_conclusion" class="field tall" placeholder="Write a brief professional summary: What did this mission teach you about AI in manufacturing — and what should NovaForge do to operate safely and efficiently?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Review &amp; Download</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 8 — DOWNLOAD REPORT
+══════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="screen-eyebrow">Phase C · Screen 8 of 9</div>
+  <h1>Your Brief is<br><em>Ready to Download</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="completion-hero">
+    <span class="c-icon">📋</span>
+    <h2>Operations Decision Brief Complete</h2>
+    <p>You've evaluated three high-stakes operational scenarios, applied safety-first thinking, and documented your reasoning like a manufacturing professional.</p>
+  </div>
+
+  <div class="port-badge" style="display:flex;margin:0 auto 28px;width:fit-content;">
+    <div class="pb-icon">🏭</div>
+    <div>
+      <div class="pb-title">NovaForge Operations Decision Brief</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 1 · Phase C</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:24px;">
+    <h3>What this report demonstrates</h3>
+    <ul>
+      <li>Ability to evaluate AI recommendations critically in a manufacturing context</li>
+      <li>Understanding of when to approve, modify, or reject AI-generated recommendations</li>
+      <li>Safety-first decision-making under operational pressure</li>
+      <li>Clear communication of operational tradeoffs and professional reasoning</li>
+    </ul>
+    <p style="margin-top:12px;font-size:13px;"><strong>Add this to your professional portfolio alongside your Phase A and Phase B reports.</strong> Together, these three documents demonstrate full-cycle AI literacy in manufacturing operations.</p>
+  </div>
+
+  <div style="background:var(--off);border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;">
+    <p style="font-size:15px;color:var(--muted);margin-bottom:6px;">Your Operations Decision Brief includes all three scenario decisions, safety reasoning, AI limitation analysis, and final recommendations.</p>
+    <p style="font-size:13px;color:var(--light);margin-bottom:24px;font-style:italic;">This report demonstrates your ability to evaluate AI recommendations, prioritize operational safety, and make responsible manufacturing decisions.</p>
+    <button class="btn-next" style="font-size:15px;padding:14px 36px;" onclick="downloadPDF()">⬇ Download PDF Brief</button>
+    <div class="success-box" id="dl_success">
+      <p><strong>Report downloaded.</strong> Your Phase C Operations Decision Brief has been saved. Keep all three reports — Phase A, Phase B, and Phase C — together as your Module 1 portfolio.</p>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Edit Brief</button>
+    <button class="btn-next" onclick="goTo(9)">Complete Mission</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 9 — MODULE COMPLETE
+══════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="screen-eyebrow">Phase C · Screen 9 of 9 — Mission Complete</div>
+
+  <div class="module-complete">
+    <div class="mc-badge-ring">
+      <div class="mc-badge">🏭</div>
+    </div>
+    <h1>Mission <em>Complete</em></h1>
+    <p class="mc-sub">You have completed your first operational mission at NovaForge Robotics.</p>
+    <p style="font-size:15px;color:var(--muted);max-width:520px;margin:0 auto 32px;line-height:1.75;">NovaForge leadership has reviewed your recommendations. Your work across Phase A, Phase B, and Phase C demonstrates the kind of operational thinking this factory needs — and that modern manufacturing employers are looking for.</p>
+  </div>
+
+  <div class="card green" style="margin-bottom:20px;">
+    <h3>What you accomplished in Module 1</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Investigated a smart factory environment and mapped AI use</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Used real AI tools to analyze workflows and safety risks</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Identified AI limitations and flawed recommendations</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Made three high-stakes operational decisions under pressure</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Built three professional portfolio deliverables</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Demonstrated responsible AI thinking in manufacturing</div>
+    </div>
+  </div>
+
+  <div class="card purple" style="margin-bottom:24px;">
+    <h3>The NovaForge Principle — You've lived it</h3>
+    <p style="font-size:15px;margin-top:4px;"><strong>AI supports operations. Humans lead operations.</strong></p>
+    <p>Every system, every recommendation, and every alert at NovaForge exists to help workers do their jobs better — not to replace the judgment, experience, and responsibility of the people inside this factory.</p>
+  </div>
+
+  <span class="label" style="font-size:10px;">Coming up in Module 2 and beyond</span>
+  <div class="missions-grid">
+    <div class="mission-next">
+      <span class="mn-tag">Module 2</span>
+      <span class="mn-icon">🔧</span>
+      <div class="mn-title">Predictive Maintenance & AI Diagnostics</div>
+      <div class="mn-desc">Use AI-powered maintenance tools to predict equipment failures before they happen and keep NovaForge running at full capacity.</div>
+    </div>
+    <div class="mission-next">
+      <span class="mn-tag">Module 3</span>
+      <span class="mn-icon">🔬</span>
+      <div class="mn-title">AI Quality Control Operations</div>
+      <div class="mn-desc">Lead quality control decisions using AI inspection systems — and determine when human review must override automated results.</div>
+    </div>
+    <div class="mission-next">
+      <span class="mn-tag">Module 4</span>
+      <span class="mn-icon">📦</span>
+      <div class="mn-title">Supply Chain & Production Intelligence</div>
+      <div class="mn-desc">Analyze AI-driven supply chain data to optimize inventory, forecast demand, and keep production flowing efficiently.</div>
+    </div>
+    <div class="mission-next">
+      <span class="mn-tag">Module 5</span>
+      <span class="mn-icon">🚀</span>
+      <div class="mn-title">Advanced Manufacturing Operations & Leadership</div>
+      <div class="mn-desc">Take on leadership-level operational challenges — managing AI systems, guiding teams, and driving responsible innovation.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:28px 0;border-top:1px solid var(--border);">
+    <p style="font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--txt);margin-bottom:8px;">The factory floor is yours.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--light);">Advanced AI for Manufacturing Certification · Module 1 Complete</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 9;
+const decisions = { dec1: null, dec2: null, dec3: null };
+const decLabels = {
+  dec1: { approve:'Approved — Implement Staffing Cut', modify:'Modified — Adjust with Conditions', reject:'Rejected — Do Not Reduce Staffing' },
+  dec2: { approve:'Approved — Increase Line Speed', modify:'Modified — Adjust Speed with Safeguards', reject:'Rejected — Hold Current Speed' },
+  dec3: { approve:'Approved — Ship Batch as Cleared', modify:'Investigate — Delay and Inspect Further', reject:'Hold Batch — Do Not Ship Until Resolved' },
+};
+
+function buildDots() {
+  const wrap = document.getElementById('stepDots');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  // Update decision summaries on screen 7
+  if (n === 7) updateDecisionSummaries();
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('screenCounter').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function selectDecision(key, choice, btn) {
+  // Deselect all in this row
+  document.querySelectorAll('#' + key + '-row .dec-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  decisions[key] = choice;
+  // Hide all feedback for this decision
+  ['approve','modify','reject'].forEach(c => {
+    const fb = document.getElementById(key + '-fb-' + c);
+    if (fb) fb.style.display = 'none';
+  });
+  // Show chosen feedback
+  const target = document.getElementById(key + '-fb-' + choice);
+  if (target) target.style.display = 'block';
+}
+
+function updateDecisionSummaries() {
+  ['dec1','dec2','dec3'].forEach((key, idx) => {
+    const el = document.getElementById(key + '-summary');
+    if (!el) return;
+    if (decisions[key]) {
+      const lbl = decLabels[key][decisions[key]];
+      const colors = { approve:'var(--green)', modify:'var(--amber)', reject:'var(--red)' };
+      const bgs = { approve:'var(--green-bg)', modify:'var(--amber-bg)', reject:'var(--red-bg)' };
+      el.style.background = bgs[decisions[key]];
+      el.style.color = colors[decisions[key]];
+      el.style.borderColor = 'transparent';
+      el.style.fontWeight = '600';
+      el.textContent = '→ ' + lbl;
+    } else {
+      el.style.background = 'var(--off)';
+      el.style.color = 'var(--muted)';
+      el.textContent = 'No decision recorded yet — return to Screen ' + (idx+3) + ' to make your selection.';
+    }
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+function g(id) { return (document.getElementById(id)||{}).value || ''; }
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'letter' });
+  const PW=215.9, PH=279.4, ML=18, MR=18, CW=PW-ML-MR;
+  const PURPLE=[123,47,190], PD=[74,24,128], PP=[243,237,251];
+  const TXT=[26,16,32], MUTED=[107,92,122], LIGHT=[160,144,176];
+  const BORDER=[220,210,230], OFF=[250,250,248];
+  const GREEN=[26,102,69], GREEN_BG=[234,247,240];
+  let y=0;
+
+  function newPage() {
+    doc.addPage(); y=22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML,11,PW-MR,11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 1 · Phase C',ML,9);
+    doc.text('Page '+doc.internal.getCurrentPageInfo().pageNumber,PW-MR,9,{align:'right'});
+  }
+  function checkY(need){ if(y+need>PH-20) newPage(); }
+  function sectionHead(icon,title){
+    checkY(18);
+    doc.setFillColor(...PP);
+    doc.roundedRect(ML,y,CW,10,1.5,1.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PD);
+    doc.text(icon+'  '+title,ML+5,y+6.8); y+=13;
+  }
+  function fieldLabel(txt){
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text(txt.toUpperCase(),ML+2,y); y+=4;
+  }
+  function responseBox(lbl,val){
+    const v=val&&val.trim()?val:'(No response provided)';
+    const lines=doc.splitTextToSize(v,CW-8);
+    const bh=Math.max(lines.length*4.5+10,16);
+    checkY(bh+12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML,y,CW,bh,1.5,1.5,'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines,ML+4,y+6); y+=bh+5;
+  }
+  function decisionBadge(label,choice){
+    checkY(14);
+    const colors={approve:[26,102,69],modify:[122,79,0],reject:[138,32,32],null:[120,120,120]};
+    const bgs={approve:[234,247,240],modify:[253,245,230],reject:[253,240,239],null:[250,250,248]};
+    const c=choice||'null';
+    doc.setFillColor(...(bgs[c]||bgs.null));
+    doc.setDrawColor(...(colors[c]||colors.null));
+    doc.setLineWidth(.4);
+    doc.roundedRect(ML,y,CW,10,1.5,1.5,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...(colors[c]||colors.null));
+    const dLabel = choice ? decLabels[label.toLowerCase().replace(/[^a-z0-9]/g,'')+''][choice] || ('Decision: '+choice.toUpperCase()) : 'No decision recorded';
+    doc.text(label+'  →  '+(choice?choice.toUpperCase()+' — '+dLabel:'Not recorded'),ML+4,y+6.5);
+    y+=13;
+  }
+
+  // COVER
+  doc.setFillColor(...PURPLE);
+  doc.rect(0,0,PW,68,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(196,158,232);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 1',ML,20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(255,255,255);
+  doc.text('Operations Decision Brief',ML,36);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(196,158,232);
+  doc.text('Operations Decision Command  ·  Module 1 Phase C',ML,48);
+
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(ML,58,CW,28,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+  doc.text('LEARNER',ML+6,67); doc.text('DATE',ML+100,67); doc.text('PHASE',ML+155,67);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(g('r_name')||'Not provided',ML+6,77);
+  doc.text(g('r_date')||'—',ML+100,77);
+  doc.setFontSize(10); doc.text('Module 1 · Phase C',ML+155,77);
+
+  y=100;
+
+  // PART 1 — Decisions
+  sectionHead('⚖️','Part 1 — Operational Decisions Made');
+
+  // Scenario 1
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 1 — Overnight Staffing Decision',ML,y); y+=5;
+  const d1choice=decisions.dec1;
+  const d1label=d1choice?(decLabels.dec1[d1choice]||d1choice.toUpperCase()):'No decision recorded';
+  const d1colors={approve:[26,102,69],modify:[122,79,0],reject:[138,32,32]};
+  const d1bgs={approve:[234,247,240],modify:[253,245,230],reject:[253,240,239]};
+  if(d1choice){
+    doc.setFillColor(...(d1bgs[d1choice])); doc.setDrawColor(...(d1colors[d1choice]));
+    doc.setLineWidth(.4); doc.roundedRect(ML,y,CW,9,1.5,1.5,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...(d1colors[d1choice]));
+    doc.text('DECISION: '+d1label,ML+4,y+6); y+=12;
+  }
+  responseBox('Operational Risks & Safety Concerns',g('d1_risks'));
+  responseBox('Human Factors AI Missed',g('d1_human'));
+  responseBox('Recommendation to Leadership',g('d1_rec'));
+  responseBox('Brief Summary',g('b_d1'));
+  y+=4;
+
+  // Scenario 2
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 2 — Assembly Line Speed Decision',ML,y); y+=5;
+  const d2choice=decisions.dec2;
+  if(d2choice){
+    const d2label=decLabels.dec2[d2choice]||d2choice.toUpperCase();
+    const d2colors={approve:[26,102,69],modify:[122,79,0],reject:[138,32,32]};
+    const d2bgs={approve:[234,247,240],modify:[253,245,230],reject:[253,240,239]};
+    doc.setFillColor(...(d2bgs[d2choice])); doc.setDrawColor(...(d2colors[d2choice]));
+    doc.setLineWidth(.4); doc.roundedRect(ML,y,CW,9,1.5,1.5,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...(d2colors[d2choice]));
+    doc.text('DECISION: '+d2label,ML+4,y+6); y+=12;
+  }
+  responseBox('Tradeoff Analysis — Efficiency vs Safety',g('d2_tradeoff'));
+  responseBox('Conditions & Safeguards',g('d2_conditions'));
+  responseBox('Client Communication Plan',g('d2_client'));
+  responseBox('Brief Summary',g('b_d2'));
+  y+=4;
+
+  // Scenario 3
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 3 — Quality Inspection Batch Decision',ML,y); y+=5;
+  const d3choice=decisions.dec3;
+  if(d3choice){
+    const d3label=decLabels.dec3[d3choice]||d3choice.toUpperCase();
+    const d3colors={approve:[26,102,69],modify:[122,79,0],reject:[138,32,32]};
+    const d3bgs={approve:[234,247,240],modify:[253,245,230],reject:[253,240,239]};
+    doc.setFillColor(...(d3bgs[d3choice])); doc.setDrawColor(...(d3colors[d3choice]));
+    doc.setLineWidth(.4); doc.roundedRect(ML,y,CW,9,1.5,1.5,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...(d3colors[d3choice]));
+    doc.text('DECISION: '+d3label,ML+4,y+6); y+=12;
+  }
+  responseBox('Why Human Oversight Matters Here',g('d3_oversight'));
+  responseBox('Risks of Relying on AI Alone',g('d3_risks'));
+  responseBox('Next Steps Taken',g('d3_steps'));
+  responseBox('Brief Summary',g('b_d3'));
+  y+=4;
+
+  // PART 2 — Safety
+  sectionHead('🦺','Part 2 — Safety Reasoning');
+  responseBox('Where Safety Overrode Efficiency',g('b_safety'));
+  responseBox('Personal Operations Safety Principle',g('b_principle'));
+  y+=4;
+
+  // PART 3 — AI Limitations
+  sectionHead('🤖','Part 3 — AI Limitations Identified');
+  responseBox('Most Significant AI Limitations Observed',g('b_limits'));
+  responseBox('What Was Useful vs What Was Risky',g('b_useful'));
+  y+=4;
+
+  // PART 4 — Recommendations
+  sectionHead('💡','Part 4 — Final Recommendations for NovaForge');
+  responseBox('Recommendation 1 — Responsible AI Use',g('b_rec1'));
+  responseBox('Recommendation 2 — Human Oversight Improvements',g('b_rec2'));
+  responseBox('Overall Operational Conclusion',g('b_conclusion'));
+
+  // FOOTERS
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if(i>1){
+      doc.text('NovaForge Robotics  ·  Module 1 Phase C  ·  Operations Decision Brief',ML,PH-8);
+      doc.text('Page '+i+' of '+total,PW/2,PH-8,{align:'center'});
+      doc.text(g('r_name')||'',PW-MR,PH-8,{align:'right'});
+    }
+  }
+
+  const safe=(g('r_name')||'learner').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  doc.save('novaforge_phase_c_'+safe+'.pdf');
+  document.getElementById('dl_success').style.display='block';
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate=new Date();
+</script>
+</body>
+</html>
