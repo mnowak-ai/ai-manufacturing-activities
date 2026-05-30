@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase C — Operational Response Command | NovaForge Robotics Module 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;--purple-deep:#2D0F52;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#F4F1F8;
+  --border:rgba(123,47,190,.13);--border-s:rgba(123,47,190,.28);
+  --txt:#1A1020;--muted:#6B5C7A;--light:#A090B0;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --blue:#0F4F8A;--blue-bg:#EBF4FD;--blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 48px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-left .sep{color:var(--purple-mid);}.tb-left .cur{color:var(--purple);}
+.tb-right{display:flex;align-items:center;gap:14px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-s);padding:5px 14px;border-radius:20px;}
+.screen-counter{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.progress-wrap{background:var(--off2);border-bottom:1px solid var(--border);height:6px;}
+.progress-track{height:100%;background:var(--border);}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple-light));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.step-dots{padding:14px 48px 0;display:flex;align-items:center;gap:6px;max-width:860px;margin:0 auto;width:100%;}
+.dot{width:28px;height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s,width .25s;}
+.dot.active{background:var(--purple);width:36px;}.dot.done{background:var(--purple-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:860px;margin:0 auto;width:100%;padding:0 48px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:40px;animation:fadeUp .4s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.screen-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.screen-eyebrow::before{content:'';width:20px;height:2px;background:var(--purple);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.lead{font-size:16px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:32px;}
+.screen-rule{height:1px;background:var(--border);margin-bottom:32px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:16px;}
+.card.accent{border-left:4px solid var(--purple);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.blue{border-left:4px solid #378ADD;background:var(--blue-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:8px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card ul{padding-left:18px;margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.card p+p{margin-top:10px;}
+
+/* UTILS */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px;display:block;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+
+/* SITUATION BLOCK */
+.situation-block{background:var(--off);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.sit-header{padding:13px 22px;background:var(--purple-pale);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sit-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.sit-icon{font-size:17px;}
+.sit-body{padding:20px 22px;}
+.sit-body p{font-size:15px;color:var(--txt);line-height:1.7;margin-bottom:0;}
+.sit-body p+p{margin-top:10px;}
+
+/* CONTEXT LIST */
+.ctx-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:12px 0 0;}
+.ctx-list li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);line-height:1.55;}
+.ctx-list li::before{content:'›';color:var(--purple);font-weight:700;font-size:15px;flex-shrink:0;margin-top:1px;}
+
+/* AI REC */
+.ai-rec{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 24px;margin-bottom:20px;}
+.ai-rec-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.ai-rec-label::before{content:'🤖';font-size:14px;}
+.ai-rec blockquote{font-size:15px;color:var(--txt);line-height:1.7;font-style:italic;padding-left:14px;border-left:3px solid var(--blue-border);}
+.ai-note{margin-top:12px;font-size:12px;color:var(--blue);}
+
+/* DECISION BUTTONS */
+.decision-row{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.dec-btn{flex:1;min-width:130px;padding:16px 14px;border-radius:8px;border:2px solid var(--border-s);background:var(--white);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.dec-btn .db-icon{font-size:26px;}
+.dec-btn .db-label{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt);}
+.dec-btn .db-hint{font-size:11px;color:var(--light);text-align:center;line-height:1.4;}
+.dec-btn:hover{border-color:var(--purple-light);background:var(--purple-pale);}
+.dec-btn.approve.selected{border-color:var(--green);background:var(--green-bg);}
+.dec-btn.approve.selected .db-label{color:var(--green);}
+.dec-btn.modify.selected{border-color:#E8A020;background:var(--amber-bg);}
+.dec-btn.modify.selected .db-label{color:var(--amber);}
+.dec-btn.reject.selected{border-color:#D94040;background:var(--red-bg);}
+.dec-btn.reject.selected .db-label{color:var(--red);}
+.dec-btn.alt1.selected{border-color:#378ADD;background:var(--blue-bg);}
+.dec-btn.alt1.selected .db-label{color:var(--blue);}
+
+/* DECISION FEEDBACK */
+.dec-feedback{border-radius:8px;padding:16px 20px;margin-bottom:20px;display:none;font-size:14px;line-height:1.65;}
+.dec-feedback.approve{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);color:var(--green);}
+.dec-feedback.modify{background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #E8A020;color:var(--amber);}
+.dec-feedback.reject{background:var(--red-bg);border:1px solid var(--red-border);border-left:4px solid #D94040;color:var(--red);}
+.dec-feedback.alt1{background:var(--blue-bg);border:1px solid var(--blue-border);border-left:4px solid #378ADD;color:var(--blue);}
+.dec-feedback strong{font-weight:600;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:80px;border:1px dashed var(--border-s);border-radius:6px;background:var(--off);padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--purple-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:110px;}
+input.field{width:100%;padding:10px 14px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.field:focus{border-color:var(--purple-light);background:var(--white);}
+input.field::placeholder{color:var(--light);}
+
+/* REPORT SECTION */
+.report-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.rs-header{background:var(--purple-pale);padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.rs-icon{font-size:16px;}.rs-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.rs-body{padding:16px 20px;background:var(--white);display:flex;flex-direction:column;gap:14px;}
+
+/* COMPARE TABLE */
+.compare-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.compare-table thead tr{background:var(--purple-pale);}
+.compare-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);padding:11px 16px;text-align:left;border-bottom:1px solid var(--border-s);font-weight:700;}
+.compare-table td{padding:13px 16px;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.ai{background:var(--purple-pale);color:var(--purple-dark);}
+.tag.human{background:var(--green-bg);color:var(--green);}
+.tag.both{background:var(--amber-bg);color:var(--amber);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.checklist li{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--off);border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--txt);cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk-box{background:var(--green);border-color:var(--green);color:white;}
+.chk-box{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent;transition:all .2s;margin-top:1px;}
+.chk-text strong{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-text span{font-size:13px;color:var(--muted);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:40px;border-top:1px solid var(--border);margin-top:40px;}
+.btn-back{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:11px 22px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s,color .15s;}
+.btn-back:hover{background:var(--off);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:16px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;}
+
+/* SUCCESS */
+.success-box{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:18px 24px;margin-top:20px;display:none;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+
+/* DOWNLOAD */
+.btn-download{display:none;align-items:center;gap:8px;background:var(--white);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:2px solid var(--purple);cursor:pointer;transition:background .2s;}
+.btn-download:hover{background:var(--purple-pale);}
+
+/* COMPLETION */
+.completion-hero{text-align:center;padding:44px 0 28px;}
+.c-icon{font-size:60px;margin-bottom:18px;display:block;}
+.completion-hero h2{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);margin-bottom:10px;}
+.completion-hero p{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 24px;line-height:1.7;}
+.port-badge{display:flex;align-items:center;gap:14px;background:var(--purple-pale);border:1px solid var(--border-s);border-radius:8px;padding:16px 24px;margin:0 auto 28px;width:fit-content;}
+.pb-icon{font-size:28px;}.pb-title{font-weight:600;font-size:15px;color:var(--txt);}
+.pb-sub{font-size:12px;color:var(--muted);}
+
+/* MODULE COMPLETE */
+.mc-wrap{text-align:center;padding:48px 0 28px;}
+.mc-ring{display:inline-block;padding:5px;border-radius:50%;border:2px solid var(--purple-mid);margin-bottom:20px;}
+.mc-badge{width:76px;height:76px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:34px;}
+.mc-wrap h1{font-family:'Fraunces',serif;font-size:36px;font-weight:500;letter-spacing:-.02em;margin-bottom:12px;}
+.mc-wrap h1 em{font-style:italic;color:var(--purple);}
+.mc-wrap .mc-sub{font-size:17px;color:var(--muted);font-weight:300;margin-bottom:28px;}
+.next-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left;margin-top:24px;}
+.next-card{padding:18px 20px;background:var(--off);border:1px solid var(--border);border-radius:8px;transition:border-color .2s;}
+.next-card:hover{border-color:var(--border-s);}
+.next-card .nc-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple-mid);margin-bottom:8px;display:block;}
+.next-card .nc-icon{font-size:20px;margin-bottom:8px;display:block;}
+.next-card .nc-title{font-weight:600;font-size:14px;color:var(--txt);margin-bottom:4px;}
+.next-card .nc-desc{font-size:12px;color:var(--muted);line-height:1.55;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 2</span><span class="sep">›</span>
+    <span class="cur">Phase C</span>
+  </div>
+  <div class="tb-right">
+    <span class="screen-counter" id="screenCounter">Screen 1 of 10</span>
+    <div class="phase-pill">Phase C · Final</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="step-dots" id="stepDots"></div>
+
+<div class="main">
+
+<!-- ════════════════════════════════
+     SCREEN 1 — ENTER COMMAND CENTER
+════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="screen-eyebrow">Phase C · Screen 1 of 10</div>
+  <h1>Operational Response<br><em>Command Center</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card accent">
+    <h3>⚡ You are entering the NovaForge Operations Command Center</h3>
+    <p>Phase A gave you the evidence. Phase B gave you the AI analysis. Now the factory is waiting for decisions — and you are the one making them.</p>
+    <p>Leadership has reviewed all investigation reports. The data is on the table. The AI recommendations are ready. But AI cannot decide what happens next. <strong>That responsibility belongs to you.</strong></p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">Your Role in Phase C</span>
+      <ul>
+        <li>Operations Decision Specialist</li>
+        <li>Troubleshooting Supervisor</li>
+        <li>Manufacturing Response Coordinator</li>
+        <li>Safety & Quality Decision-Maker</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="label">What You Must Decide</span>
+      <ul>
+        <li>Final maintenance response actions</li>
+        <li>Production speed and safety tradeoffs</li>
+        <li>Overnight staffing adjustments</li>
+        <li>Root cause conclusion and action plan</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>There is no single correct answer</h3>
+    <p>Every decision in Phase C involves real operational tradeoffs. Production speed vs. worker safety. Cost savings vs. reliability. Fast response vs. thorough investigation. Real operations leaders navigate these tensions every day — and now so will you.</p>
+    <p>Your goal is to <strong>think clearly, reason with evidence, and prioritize safety.</strong> Justify every call you make.</p>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then proceed</span>
+    <button class="btn-next" onclick="goTo(2)">Enter Command Center</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 2 — SITUATION SUMMARY
+════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="screen-eyebrow">Phase C · Screen 2 of 10</div>
+  <h1>Current<br><em>Situation Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Before making decisions, review the full picture. This is what Phase A investigation and Phase B AI analysis found across the NovaBot production line.</p>
+
+  <!-- Status indicators -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;">
+    <div style="padding:16px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;text-align:center;">
+      <div style="font-size:26px;margin-bottom:4px;">🔴</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;">Critical Issues</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--red);margin-top:2px;">4</div>
+    </div>
+    <div style="padding:16px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;text-align:center;">
+      <div style="font-size:26px;margin-bottom:4px;">⏱</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;">Total Downtime</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--amber);margin-top:2px;">758 min</div>
+    </div>
+    <div style="padding:16px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;text-align:center;">
+      <div style="font-size:26px;margin-bottom:4px;">🤖</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700;">AI Recommendations</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--blue);margin-top:2px;">3</div>
+    </div>
+    <div style="padding:16px;background:var(--purple-pale);border:1px solid var(--border-s);border-radius:8px;text-align:center;">
+      <div style="font-size:26px;margin-bottom:4px;">📋</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);font-weight:700;">Pending Decisions</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--purple);margin-top:2px;">3</div>
+    </div>
+  </div>
+
+  <span class="label">Phase A — Human investigation findings</span>
+  <div class="card" style="margin-bottom:20px;">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;padding:0;">
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;flex-shrink:0;">›</span><span><strong>Arm-02</strong> showing escalating motor temperature all week — from 71°C Monday to 91°C Friday, consistently exceeding the 75°C threshold</span></li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;flex-shrink:0;">›</span><span><strong>Arm-04</strong> encoder faults cluster every night shift — wiring flagged as worn in February but never replaced</span></li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;flex-shrink:0;">›</span><span><strong>Conveyor-01</strong> is 30 days overdue for service — belt replacement requested 3 weeks ago, parts never ordered; drove a 155-minute outage Friday</span></li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;flex-shrink:0;">›</span><span><strong>Station-03 temperature sensor</strong> flagged twice — may be faulty or may reflect real heat buildup near Arm-02</span></li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--purple);font-weight:700;flex-shrink:0;">›</span><span>Technician M. Reyes formally documented that maintenance requests were submitted and ignored for three consecutive days</span></li>
+    </ul>
+  </div>
+
+  <span class="label">Phase B — AI analysis summary</span>
+  <div class="card" style="margin-bottom:20px;">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;padding:0;">
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--blue);font-weight:700;flex-shrink:0;">›</span>AI identified Sensor Unit B (SN-3T at Station-03) as a potential primary failure cause based on repeated high-temperature alerts</li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--blue);font-weight:700;flex-shrink:0;">›</span>AI recommended restoring Arm-02 to full production speed after thermal shutdown, citing average resolution time data</li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--blue);font-weight:700;flex-shrink:0;">›</span>AI recommended reducing overnight maintenance staffing by 40% to improve cost efficiency based on lower overnight production output</li>
+      <li style="display:flex;gap:12px;font-size:14px;color:var(--muted);"><span style="color:var(--blue);font-weight:700;flex-shrink:0;">›</span>AI did not account for maintenance backlog, overdue service schedules, or documented escalation patterns in its recommendations</li>
+    </ul>
+  </div>
+
+  <div class="card red">
+    <h3>⚠ Unresolved issues requiring decisions</h3>
+    <div class="grid-2" style="margin-top:12px;">
+      <div style="padding:12px;background:white;border:1px solid var(--red-border);border-radius:6px;font-size:13px;color:var(--muted);">🔧 Should the faulty sensor be replaced — or is it a symptom, not the cause?</div>
+      <div style="padding:12px;background:white;border:1px solid var(--red-border);border-radius:6px;font-size:13px;color:var(--muted);">⚙️ Should Arm-02 return to full speed — or does the thermal escalation demand further investigation?</div>
+      <div style="padding:12px;background:white;border:1px solid var(--red-border);border-radius:6px;font-size:13px;color:var(--muted);grid-column:1/-1;">🌙 Should overnight staffing be reduced — even though most failures happen at night?</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Begin Decisions</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 3 — DECISION 1: SENSOR
+════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="screen-eyebrow">Phase C · Screen 3 of 10 — Decision Scenario 1</div>
+  <h1>Scenario 1 —<br><em>Maintenance Response</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">🔧</span><span class="sit-label">Situation · Station-03 & Arm-02</span></div>
+    <div class="sit-body">
+      <p>The Station-03 temperature sensor (SN-3T) has fired high-temperature alerts twice this week. Based on this pattern, AI has flagged the sensor as a likely primary cause of production disruptions and recommends replacing it immediately.</p>
+      <p>However, the broader data tells a more complicated story. Arm-02's motor temperature has been climbing all week — from 71°C to 91°C — well before the sensor alerts. Technician J. Park noted uncertainty about whether the sensor is faulty or actually detecting real heat from Arm-02 nearby.</p>
+    </div>
+  </div>
+
+  <span class="label">Additional context — what the AI didn't fully analyze</span>
+  <ul class="ctx-list" style="margin-bottom:20px;">
+    <li>Arm-02 is <strong>27 days overdue for maintenance</strong> — its motor has been running dangerously hot all week</li>
+    <li>Arm-02 and Station-03 are <strong>physically close</strong> on the assembly line — heat from Arm-02 may be elevating Station-03 sensor readings</li>
+    <li>Technician notes describe Arm-02 as the most likely root cause — motor bearing wear is consistent with the thermal escalation pattern observed</li>
+    <li>Station-03 sensor (SN-3T) has not been replaced in <strong>8 months</strong> — typical lifespan is 12 months, so it may be aging toward failure</li>
+    <li>Replacing the sensor without addressing Arm-02 may not resolve the underlying temperature issue</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Diagnostic Recommendation</div>
+    <blockquote>"Primary failure identified: Sensor Unit B (SN-3T, Station-03). Recommend immediate sensor replacement to restore accurate temperature monitoring. High-temperature alerts are likely caused by sensor malfunction based on alert frequency and deviation from baseline."</blockquote>
+    <div class="ai-note">⚠ AI analysis is based on alert frequency patterns only. It did not cross-reference Arm-02 motor temperature escalation, physical proximity of equipment, or maintenance overdue status.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec1-row">
+    <button class="dec-btn approve" onclick="selectDec('dec1','approve',this)">
+      <span class="db-icon">✅</span><span class="db-label">Approve</span>
+      <span class="db-hint">Replace Sensor B as AI recommends — treat it as the primary fix</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDec('dec1','modify',this)">
+      <span class="db-icon">✏️</span><span class="db-label">Modify</span>
+      <span class="db-hint">Address both the sensor AND Arm-02 motor — treat them as connected</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDec('dec1','reject',this)">
+      <span class="db-icon">🚫</span><span class="db-label">Reject</span>
+      <span class="db-hint">Focus on Arm-02 first — sensor may be a symptom, not the cause</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec1-fb-approve"><strong>Approved.</strong> You're following the AI's recommendation. In your justification, explain how you'll handle Arm-02's escalating temperatures if the sensor replacement doesn't resolve the issue.</div>
+  <div class="dec-feedback modify" id="dec1-fb-modify"><strong>Modified.</strong> Smart integration of multiple evidence sources. Explain exactly what you'd fix first, what you'd do second, and what you'd monitor to know if the approach is working.</div>
+  <div class="dec-feedback reject" id="dec1-fb-reject"><strong>Rejected.</strong> You're prioritizing the motor over the sensor. Explain what evidence led you here — and what you'd do about the sensor readings while Arm-02 is being serviced.</div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">What evidence supports your decision?</span><textarea id="d1_evidence" class="field tall" placeholder="Which data points — from the error log, sensor readings, maintenance history, or tech notes — support your choice?…"></textarea></div>
+      <div><span class="label">What did the AI miss or get wrong?</span><textarea id="d1_ai_gap" class="field" placeholder="Identify any context, patterns, or physical factors the AI failed to account for in its recommendation…"></textarea></div>
+      <div><span class="label">What are your next steps?</span><textarea id="d1_steps" class="field" placeholder="What specific actions would you authorize? In what order? Who is responsible for each?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Next Scenario</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 4 — DECISION 2: SPEED
+════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="screen-eyebrow">Phase C · Screen 4 of 10 — Decision Scenario 2</div>
+  <h1>Scenario 2 —<br><em>Production Speed vs. Safety</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">⚙️</span><span class="sit-label">Situation · Arm-02 & Assembly Line</span></div>
+    <div class="sit-body">
+      <p>After Arm-02's latest thermal shutdown, it has been offline for inspection. Leadership is now pressing to restore the full assembly line to normal production speed — missed shipments are piling up and client relationships are at risk.</p>
+      <p>The AI production system recommends returning Arm-02 to <strong>full capacity immediately</strong>, citing historical data showing that arms in this error category typically recover within 2–4 hours. But the data from this week tells a different story.</p>
+    </div>
+  </div>
+
+  <span class="label">The full picture — before you decide</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div style="padding:14px 18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:6px;">⚠ Thermal Escalation</div>
+      <div style="font-size:13px;color:var(--muted);">Motor temp has climbed from 71°C to 91°C over 5 days — not a one-time event. Returning to full speed risks triggering another immediate shutdown.</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:6px;">⚡ Maintenance Backlog</div>
+      <div style="font-size:13px;color:var(--muted);">Arm-02 is 27 days overdue for service. Running it at full speed before a proper inspection may permanently damage the motor.</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:6px;">📉 Defect Rate Rising</div>
+      <div style="font-size:13px;color:var(--muted);">Quality data shows defect rates increased during high-speed cycles. Rushing production could mean more units fail QC — compounding the shipment problem.</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:6px;">📦 Production Pressure</div>
+      <div style="font-size:13px;color:var(--muted);">Two shipments already missed. A third is due in 48 hours. Leadership is watching closely and wants the line running at full capacity today.</div>
+    </div>
+  </div>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Production Recommendation</div>
+    <blockquote>"Based on historical recovery data for Error Code E-217 (thermal shutdown), Arm-02 units in this category return to full operational capacity within 2–4 hours of shutdown. Recommend restoring full production speed to minimize delivery delay impact."</blockquote>
+    <div class="ai-note">⚠ This recommendation is based on average recovery time for past E-217 incidents — it does not account for the 5-day escalation pattern, the current overdue maintenance status, or the rising defect rate this unit has shown.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec2-row">
+    <button class="dec-btn approve" onclick="selectDec('dec2','approve',this)">
+      <span class="db-icon">🚀</span><span class="db-label">Full Speed</span>
+      <span class="db-hint">Restore Arm-02 to full production capacity now</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDec('dec2','modify',this)">
+      <span class="db-icon">🔄</span><span class="db-label">Reduced Speed</span>
+      <span class="db-hint">Resume at reduced capacity with temperature monitoring</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDec('dec2','reject',this)">
+      <span class="db-icon">⛔</span><span class="db-label">Hold for Inspection</span>
+      <span class="db-hint">Keep Arm-02 offline until motor is fully inspected and cleared</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec2-fb-approve"><strong>Full speed approved.</strong> You've prioritized the delivery deadline. Explain what monitoring safeguards you would require and what threshold would trigger another shutdown.</div>
+  <div class="dec-feedback modify" id="dec2-fb-modify"><strong>Reduced speed selected.</strong> A balanced approach. Define what speed reduction you'd authorize, what temperature threshold you'd set as the limit, and how long before you'd re-evaluate.</div>
+  <div class="dec-feedback reject" id="dec2-fb-reject"><strong>Held for inspection.</strong> Safety and reliability first. Explain how you'd communicate the delay to leadership and what specific inspection steps you'd require before clearing Arm-02 for production.</div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">How did you balance production pressure against safety and quality risk?</span><textarea id="d2_balance" class="field tall" placeholder="Explain the tradeoff. What factor was most important in your decision?…"></textarea></div>
+      <div><span class="label">What conditions or safeguards are attached to your decision?</span><textarea id="d2_conditions" class="field" placeholder="What must be in place — monitoring thresholds, inspection steps, or escalation triggers — as part of your decision?…"></textarea></div>
+      <div><span class="label">How would you communicate this decision to leadership?</span><textarea id="d2_comms" class="field" placeholder="How do you explain the production delay — or the risk of returning to speed — to the people waiting on results?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Next Scenario</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 5 — DECISION 3: STAFFING
+════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="screen-eyebrow">Phase C · Screen 5 of 10 — Decision Scenario 3</div>
+  <h1>Scenario 3 —<br><em>Overnight Staffing</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="situation-block">
+    <div class="sit-header"><span class="sit-icon">🌙</span><span class="sit-label">Situation · Overnight Shift Operations</span></div>
+    <div class="sit-body">
+      <p>The AI cost optimization system has flagged overnight maintenance staffing as inefficient. Overnight production output is <strong>22% lower</strong> than day shifts, and the AI recommends reducing overnight maintenance staff by 40% to cut operational costs.</p>
+      <p>But this week's data tells a different story about what actually happens overnight at NovaForge.</p>
+    </div>
+  </div>
+
+  <span class="label">What the data actually shows about overnight shifts</span>
+  <ul class="ctx-list" style="margin-bottom:20px;">
+    <li><strong>Arm-04 encoder faults occurred every single night shift this week</strong> — the worsening vibration pattern is exclusively a night occurrence</li>
+    <li>The <strong>longest downtime event this period (155 minutes)</strong> was Conveyor-01 overnight — occurred Thursday night with minimal staff</li>
+    <li>Station-05 vibration spikes also happened exclusively on night shifts — source still unconfirmed</li>
+    <li>Technician S. Huang's notes document that response times are already slower overnight — adding a staffing cut would make this worse</li>
+    <li>Fatigue and reduced staffing at night means smaller problems can become larger ones before anyone catches them</li>
+    <li>Safety regulations at facilities of NovaForge's size typically require minimum staffing thresholds during any active shift</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-label">AI Cost Optimization Recommendation</div>
+    <blockquote>"Overnight production output averages 22% below day shift levels. Reducing overnight maintenance staffing by 40% would improve labor cost efficiency by approximately $11,200 per month. Overnight shift data does not show proportional output to justify current staffing levels."</blockquote>
+    <div class="ai-note">⚠ This recommendation is based solely on production output volume. It does not account for the fact that the majority of this week's critical failures occurred overnight, current response time concerns, or regulatory minimum staffing requirements.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="decision-row" id="dec3-row">
+    <button class="dec-btn approve" onclick="selectDec('dec3','approve',this)">
+      <span class="db-icon">✅</span><span class="db-label">Reduce Staff</span>
+      <span class="db-hint">Implement the 40% overnight staff reduction as recommended</span>
+    </button>
+    <button class="dec-btn modify" onclick="selectDec('dec3','modify',this)">
+      <span class="db-icon">✏️</span><span class="db-label">Maintain Staff</span>
+      <span class="db-hint">Keep current overnight staffing while investigation is ongoing</span>
+    </button>
+    <button class="dec-btn reject" onclick="selectDec('dec3','reject',this)">
+      <span class="db-icon">⬆️</span><span class="db-label">Increase Staff</span>
+      <span class="db-hint">Temporarily increase overnight coverage until failures are resolved</span>
+    </button>
+  </div>
+
+  <div class="dec-feedback approve" id="dec3-fb-approve"><strong>Reduction approved.</strong> You're accepting the cost efficiency argument. In your justification, explain how you would address the overnight failure pattern if staffing is cut — and what your escalation plan is if issues worsen.</div>
+  <div class="dec-feedback modify" id="dec3-fb-modify"><strong>Staffing maintained.</strong> Sound reasoning during an active investigation. Explain what specific conditions would need to change before you'd revisit the staffing question — and what you'd do with the cost concern in the meantime.</div>
+  <div class="dec-feedback reject" id="dec3-fb-reject"><strong>Staffing increased.</strong> You're prioritizing overnight reliability over short-term cost savings. Explain what you'd add, for how long, and what the investigation needs to find before you'd return to current levels.</div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">✍️</span><span class="rs-title">Justify Your Decision</span></div>
+    <div class="rs-body">
+      <div><span class="label">Why is the AI recommendation risky or incomplete in this situation?</span><textarea id="d3_risk" class="field tall" placeholder="Explain what the AI missed — specifically referencing the overnight failure data from this week…"></textarea></div>
+      <div><span class="label">What safety or operational factors drove your choice?</span><textarea id="d3_factors" class="field" placeholder="Walk through your reasoning. What would have happened if staffing was already reduced during this week's overnight failures?…"></textarea></div>
+      <div><span class="label">What would you tell the finance team about this decision?</span><textarea id="d3_finance" class="field" placeholder="How do you make the case for your staffing call to someone focused on cost reduction?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Continue</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 6 — AI OVERSIGHT REVIEW
+════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="screen-eyebrow">Phase C · Screen 6 of 10</div>
+  <h1>Human vs. AI<br><em>Oversight Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Based on everything you've seen across this mission — the data, the AI analysis, and the decisions you just made — here is the full picture of where AI helped and where it fell short.</p>
+
+  <table class="compare-table">
+    <thead><tr><th>Task or Situation</th><th>Source</th><th>Value Added</th></tr></thead>
+    <tbody>
+      <tr><td>Identifying high-frequency error patterns across 31 error log entries</td><td><span class="tag ai">AI</span></td><td>AI processed volume quickly — surfaced Arm-02 as the most frequent failure source</td></tr>
+      <tr><td>Detecting the temperature escalation chain (E-204 → E-217 → E-219)</td><td><span class="tag both">Both</span></td><td>AI spotted the error code pattern; human investigator connected it to motor bearing wear</td></tr>
+      <tr><td>Understanding WHY Arm-04 faults only occur at night</td><td><span class="tag human">Human</span></td><td>Technician S. Huang's note about vibration and cable loosening was essential — AI never flagged it</td></tr>
+      <tr><td>Recommending sensor replacement as primary fix</td><td><span class="tag ai">AI</span></td><td>Recommendation was incomplete — AI missed the Arm-02 proximity context and thermal escalation data</td></tr>
+      <tr><td>Recognizing that Conveyor-01 and Station-05 issues may be physically linked</td><td><span class="tag human">Human</span></td><td>Technician walked the floor and noted shared line segment — AI had no spatial awareness</td></tr>
+      <tr><td>Flagging that maintenance was overdue across multiple machines</td><td><span class="tag both">Both</span></td><td>AI flagged alert frequency; human cross-referenced maintenance log to find the overdue context</td></tr>
+      <tr><td>Deciding whether to reduce overnight staffing</td><td><span class="tag human">Human</span></td><td>AI used production output data only — human judgment recognized that overnight is when failures are worst</td></tr>
+      <tr><td>Identifying that ignored maintenance requests were a systemic problem</td><td><span class="tag human">Human</span></td><td>This was only in the technician notes — not in any structured data the AI could analyze</td></tr>
+    </tbody>
+  </table>
+
+  <span class="label">Mark the statements that reflect your experience in this mission</span>
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)"><div class="chk-box">✓</div><div class="chk-text"><strong>AI was most valuable for processing high volumes of structured data quickly</strong><span>Error logs, sensor readings, and frequency patterns benefited most from AI analysis</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk-box">✓</div><div class="chk-text"><strong>AI missed context that only existed in unstructured human observations</strong><span>Technician notes contained crucial physical and situational details AI could not access</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk-box">✓</div><div class="chk-text"><strong>AI recommendations needed cross-referencing before any action was taken</strong><span>Every AI recommendation in Phase B was partially or fully incomplete without additional human context</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk-box">✓</div><div class="chk-text"><strong>Human investigators provided spatial and operational context AI cannot replicate</strong><span>Physical proximity of machines, floor conditions, and shift experience changed the picture entirely</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk-box">✓</div><div class="chk-text"><strong>Final decisions require human accountability — AI cannot bear responsibility for outcomes</strong><span>Every decision in Phase C required a human to own the reasoning and the consequences</span></div></li>
+  </ul>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Build Conclusion</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 7 — FINAL DIAGNOSTIC
+════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="screen-eyebrow">Phase C · Screen 7 of 10</div>
+  <h1>Final Diagnostic<br><em>Conclusion</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">You've reviewed the evidence, evaluated the AI analysis, and made three operational decisions. Now synthesize everything into a clear diagnostic conclusion. This becomes the foundation of your Operations Response Brief.</p>
+
+  <div class="card accent" style="margin-bottom:24px;">
+    <h3>Think like an operations leader</h3>
+    <p>A diagnostic conclusion is not a list of everything that went wrong. It's a focused, prioritized statement of the most likely root cause, what supports it, and what the factory must do in response. Keep it clear, direct, and evidence-based.</p>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">🔎</span><span class="rs-title">Root Cause Hypothesis</span></div>
+    <div class="rs-body">
+      <div><span class="label">What do you believe is the primary root cause of the NovaBot production failures?</span><textarea id="c_root" class="field tall" placeholder="State your main hypothesis clearly. Example: 'The primary cause is deferred maintenance on Arm-02 — a worn motor bearing is causing thermal escalation that triggers cascading shutdowns across the line.'…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">📋</span><span class="rs-title">Supporting Evidence</span></div>
+    <div class="rs-body">
+      <div><span class="label">What specific data points support your hypothesis?</span><textarea id="c_evidence" class="field tall" placeholder="Reference specific findings: error codes, sensor readings, maintenance dates, technician notes. Be precise — cite what you observed in the data files…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">❌</span><span class="rs-title">Rejected AI Assumptions</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which AI recommendations did you reject or modify — and why?</span><textarea id="c_rejected" class="field tall" placeholder="Explain which AI outputs were wrong, incomplete, or missing critical context. Be specific about what the AI missed and why it matters…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">⚠️</span><span class="rs-title">Key Operational Risks</span></div>
+    <div class="rs-body">
+      <div><span class="label">What are the top risks NovaForge faces if the root cause is not addressed?</span><textarea id="c_risks" class="field" placeholder="What happens if Arm-02 runs unserviced? If the maintenance backlog continues? If overnight staffing is reduced during active failure patterns?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">📌</span><span class="rs-title">Recommended Action Plan</span></div>
+    <div class="rs-body">
+      <div><span class="label">What should NovaForge do — in order of priority?</span><textarea id="c_actions" class="field tall" placeholder="Write a prioritized list of actions. Example: 1) Emergency motor inspection on Arm-02. 2) Replace Arm-04 encoder cable. 3) Order Conveyor-01 belt replacement parts. 4) Clear maintenance backlog on overdue machines…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Build Final Brief</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 8 — BUILD FINAL REPORT
+════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="screen-eyebrow">Phase C · Screen 8 of 10</div>
+  <h1>Build Your<br><em>Operational Response Brief</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Your three decisions and diagnostic conclusion are ready. Now compile everything into a formal brief. This is your final Phase C deliverable — a professional document showing your operational reasoning.</p>
+
+  <div class="card accent" style="margin-bottom:24px;">
+    <h3>📋 NovaForge Operational Response Brief</h3>
+    <p>This document represents how an operations professional summarizes a complex investigation and communicates final decisions to leadership. Make it clear, structured, and evidence-based.</p>
+  </div>
+
+  <!-- Learner info -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">👤</span><span class="rs-title">Investigator Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="field" placeholder="Your full name"></div>
+        <div><span class="label">Date</span><input type="date" id="r_date" class="field"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decisions summary -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">⚖️</span><span class="rs-title">Part 1 — Final Decisions Made</span></div>
+    <div class="rs-body">
+      <div>
+        <span class="label">Maintenance Response Decision</span>
+        <div id="dec1-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:10px;">No decision recorded yet — return to Screen 3.</div>
+        <textarea id="b_d1" class="field" placeholder="Summarize your maintenance response decision and its key justification…"></textarea>
+      </div>
+      <div>
+        <span class="label">Production Speed Decision</span>
+        <div id="dec2-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:10px;">No decision recorded yet — return to Screen 4.</div>
+        <textarea id="b_d2" class="field" placeholder="Summarize your production speed decision and the tradeoffs you weighed…"></textarea>
+      </div>
+      <div>
+        <span class="label">Overnight Staffing Decision</span>
+        <div id="dec3-summary" style="padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:10px;">No decision recorded yet — return to Screen 5.</div>
+        <textarea id="b_d3" class="field" placeholder="Summarize your staffing decision and why the AI recommendation was insufficient…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety reasoning -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">🦺</span><span class="rs-title">Part 2 — Safety Reasoning</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where did safety considerations override efficiency or cost in your decisions?</span><textarea id="b_safety" class="field tall" placeholder="Describe a specific moment where safety thinking changed your decision — and what you would have missed if you had followed the AI recommendation…"></textarea></div>
+      <div><span class="label">What is your core safety principle as an operations decision-maker?</span><textarea id="b_principle" class="field" placeholder="Write one or two sentences that capture your safety-first philosophy for manufacturing operations…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- AI limitations -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">🤖</span><span class="rs-title">Part 3 — AI Limitations Identified</span></div>
+    <div class="rs-body">
+      <div><span class="label">What were the most significant ways AI analysis fell short in this investigation?</span><textarea id="b_limits" class="field tall" placeholder="Be specific: what did the AI miss, get wrong, or fail to connect — and why did that matter for the decisions you had to make?…"></textarea></div>
+      <div><span class="label">Which AI outputs were genuinely useful — and how did you use them?</span><textarea id="b_useful" class="field" placeholder="AI wasn't wrong about everything. Where did it add real value to your investigation?…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Final recommendations -->
+  <div class="report-section">
+    <div class="rs-header"><span class="rs-icon">💡</span><span class="rs-title">Part 4 — Final Recommendations for NovaForge</span></div>
+    <div class="rs-body">
+      <div><span class="label">Recommendation 1 — Immediate operational priority</span><textarea id="b_rec1" class="field" placeholder="What is the single most important thing NovaForge must do right now?…"></textarea></div>
+      <div><span class="label">Recommendation 2 — Systemic improvement needed</span><textarea id="b_rec2" class="field" placeholder="What process, policy, or system at NovaForge allowed these failures to escalate — and what should change?…"></textarea></div>
+      <div><span class="label">Overall operational conclusion</span><textarea id="b_conclusion" class="field tall" placeholder="Summarize the investigation: what happened, what caused it, what should be done, and what NovaForge needs to do differently to prevent a recurrence…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <button class="btn-next" onclick="goTo(9)">Review &amp; Download</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 9 — DOWNLOAD
+════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="screen-eyebrow">Phase C · Screen 9 of 10</div>
+  <h1>Your Brief is<br><em>Ready to Download</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="completion-hero">
+    <span class="c-icon">📋</span>
+    <h2>Operational Response Brief Complete</h2>
+    <p>You've evaluated three high-stakes scenarios, applied diagnostic reasoning, and documented your decisions and conclusions like a manufacturing operations professional.</p>
+  </div>
+
+  <div class="port-badge">
+    <div class="pb-icon">🏭</div>
+    <div>
+      <div class="pb-title">NovaForge Operational Response Brief</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 2 · Phase C</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:24px;">
+    <h3>What this document demonstrates</h3>
+    <ul>
+      <li>Ability to evaluate AI diagnostic outputs critically and identify their limitations</li>
+      <li>Skill at making operational decisions under uncertainty and production pressure</li>
+      <li>Safety-first reasoning in a complex manufacturing environment</li>
+      <li>Professional-level communication of technical decisions and tradeoffs</li>
+    </ul>
+    <p style="margin-top:12px;font-size:13px;"><strong>Add this to your portfolio alongside your Phase A and Phase B reports.</strong> Together, all three documents demonstrate a complete diagnostic investigation cycle — from evidence gathering through AI analysis to final operational decisions.</p>
+  </div>
+
+  <div style="background:var(--off);border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;">
+    <p style="font-size:15px;color:var(--muted);margin-bottom:6px;">Your Operations Response Brief includes all three scenario decisions, your diagnostic conclusion, AI limitation analysis, and final recommendations.</p>
+    <p style="font-size:13px;color:var(--light);margin-bottom:24px;font-style:italic;">This report demonstrates your ability to evaluate AI diagnostic outputs, make operational decisions under uncertainty, prioritize safety and production constraints, and apply human judgment in AI-assisted environments.</p>
+    <button class="btn-next" style="font-size:15px;padding:14px 36px;" onclick="downloadPDF()">⬇ Download PDF Brief</button>
+    <div class="success-box" id="dl_success">
+      <p><strong>Report downloaded.</strong> Your Phase C Operations Response Brief has been saved. Keep it with your Phase A and Phase B reports — together they form your complete Module 2 portfolio.</p>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(8)">← Edit Brief</button>
+    <button class="btn-next" onclick="goTo(10)">Complete Mission</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 10 — MODULE COMPLETE
+════════════════════════════════ -->
+<div class="screen" id="screen-10">
+  <div class="screen-eyebrow">Phase C · Screen 10 of 10 — Mission Complete</div>
+
+  <div class="mc-wrap">
+    <div class="mc-ring"><div class="mc-badge">🔍</div></div>
+    <h1>Mission <em>Complete</em></h1>
+    <p class="mc-sub">The NovaBot production line has stabilized based on your operational decisions.</p>
+    <p style="font-size:15px;color:var(--muted);max-width:520px;margin:0 auto 32px;line-height:1.75;">NovaForge leadership has reviewed your Operational Response Brief. Your investigation identified the root causes, exposed the limitations of AI-only diagnostics, and produced a prioritized action plan that the maintenance team is now executing.</p>
+  </div>
+
+  <div class="card green" style="margin-bottom:20px;">
+    <h3>What you demonstrated in Module 2</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Investigated real operational data across 5 evidence sources</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Used AI tools to analyze manufacturing failure patterns</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Identified where AI analysis was incomplete or misleading</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Made three high-stakes operational decisions with evidence</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Built a professional diagnostics and response report</div>
+      <div style="padding:12px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Demonstrated responsible AI oversight in manufacturing</div>
+    </div>
+  </div>
+
+  <div class="card purple" style="margin-bottom:24px;">
+    <h3>The NovaForge Diagnostics Lesson</h3>
+    <p style="font-size:15px;margin-top:4px;"><strong>AI accelerates analysis. Humans direct the investigation.</strong></p>
+    <p>AI tools processed your error logs, spotted frequency patterns, and generated recommendations — all faster than any human could. But every critical insight in this mission came from combining that speed with human context: technician experience, physical floor knowledge, and the judgment to know when a data pattern is telling only part of the story.</p>
+  </div>
+
+  <span class="label" style="font-size:10px;">What's coming in Module 3 and beyond</span>
+  <div class="next-grid">
+    <div class="next-card">
+      <span class="nc-tag">Module 3</span>
+      <span class="nc-icon">📡</span>
+      <div class="nc-title">Predictive Maintenance Systems</div>
+      <div class="nc-desc">Move from reactive troubleshooting to proactive prediction — use AI sensor analytics to catch failures before they happen and optimize maintenance schedules across the factory.</div>
+    </div>
+    <div class="next-card">
+      <span class="nc-tag">Module 4</span>
+      <span class="nc-icon">⚡</span>
+      <div class="nc-title">Production Optimization</div>
+      <div class="nc-desc">Analyze production line efficiency at scale — balance throughput targets with quality and safety constraints using AI-assisted scheduling and resource allocation tools.</div>
+    </div>
+    <div class="next-card">
+      <span class="nc-tag">Module 5</span>
+      <span class="nc-icon">🔗</span>
+      <div class="nc-title">Supply Chain Intelligence</div>
+      <div class="nc-desc">Trace operational decisions upstream — use AI to analyze supplier data, inventory risk, and delivery forecasts to keep the NovaBot production line supplied and on schedule.</div>
+    </div>
+    <div class="next-card">
+      <span class="nc-tag">Capstone</span>
+      <span class="nc-icon">🏆</span>
+      <div class="nc-title">Advanced Manufacturing Operations Leadership</div>
+      <div class="nc-desc">Apply everything — lead a full-scale AI-assisted operations response across all factory systems in the NovaForge certification capstone mission.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:28px 0;border-top:1px solid var(--border);">
+    <p style="font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--txt);margin-bottom:8px;">The investigation is closed. The factory moves forward.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--light);">Advanced AI for Manufacturing Certification · Module 2 Complete</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 10;
+const decisions = { dec1: null, dec2: null, dec3: null };
+const decLabels = {
+  dec1: { approve:'Approved — Replace Sensor B as AI Recommended', modify:'Modified — Address Sensor AND Arm-02 Motor Together', reject:'Rejected — Focus on Arm-02 Motor First' },
+  dec2: { approve:'Full Speed — Restore Arm-02 to Full Capacity Immediately', modify:'Reduced Speed — Resume with Temperature Monitoring', reject:'Held for Inspection — Keep Arm-02 Offline Until Cleared' },
+  dec3: { approve:'Approved — Implement 40% Overnight Staff Reduction', modify:'Maintained — Keep Current Staffing During Investigation', reject:'Increased — Add Overnight Coverage Until Failures Resolved' }
+};
+
+function buildDots() {
+  const wrap = document.getElementById('stepDots');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  if (n === 8) updateDecisionSummaries();
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('screenCounter').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function selectDec(key, choice, btn) {
+  document.querySelectorAll('#' + key + '-row .dec-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  decisions[key] = choice;
+  ['approve','modify','reject'].forEach(c => {
+    const fb = document.getElementById(key + '-fb-' + c);
+    if (fb) fb.style.display = 'none';
+  });
+  const fb = document.getElementById(key + '-fb-' + choice);
+  if (fb) fb.style.display = 'block';
+}
+
+function updateDecisionSummaries() {
+  ['dec1','dec2','dec3'].forEach((key, idx) => {
+    const el = document.getElementById(key + '-summary');
+    if (!el) return;
+    if (decisions[key]) {
+      const lbl = decLabels[key][decisions[key]];
+      const colors = { approve:'var(--green)', modify:'var(--amber)', reject:'var(--red)' };
+      const bgs = { approve:'var(--green-bg)', modify:'var(--amber-bg)', reject:'var(--red-bg)' };
+      el.style.background = bgs[decisions[key]];
+      el.style.color = colors[decisions[key]];
+      el.style.fontWeight = '600';
+      el.textContent = '→ ' + lbl;
+    } else {
+      el.textContent = 'No decision recorded yet — return to Screen ' + (idx + 3) + '.';
+    }
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const PURPLE = [123,47,190], PD = [74,24,128], PP = [243,237,251];
+  const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+  const BORDER = [220,210,230], OFF = [250,250,248];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 2 Phase C', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...PP);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...PD);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+  function decBadge(decKey, screenNum) {
+    const choice = decisions[decKey];
+    const label = choice ? decLabels[decKey][choice] : 'No decision recorded';
+    const colors = { approve:[26,102,69], modify:[122,79,0], reject:[138,32,32], null:[120,120,120] };
+    const bgs = { approve:[234,247,240], modify:[253,245,230], reject:[253,240,239], null:[250,250,248] };
+    const k = choice || 'null';
+    checkY(14);
+    doc.setFillColor(...bgs[k]); doc.setDrawColor(...colors[k]); doc.setLineWidth(.4);
+    doc.roundedRect(ML, y, CW, 9, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...colors[k]);
+    doc.text('DECISION: ' + label, ML + 4, y + 6.2); y += 12;
+  }
+
+  // COVER
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 0, PW, 68, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(196, 158, 232);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 2', ML, 20);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
+  doc.text('Operational Response Brief', ML, 35);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(196, 158, 232);
+  doc.text('Operational Response Command  ·  Module 2 Phase C', ML, 47);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(ML, 58, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+  doc.text('INVESTIGATOR', ML + 6, 67); doc.text('DATE', ML + 100, 67); doc.text('ASSIGNMENT', ML + 152, 67);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(g('r_name') || 'Not provided', ML + 6, 77);
+  doc.text(g('r_date') || '—', ML + 100, 77);
+  doc.setFontSize(10); doc.text('Module 2 · Phase C', ML + 152, 77);
+  y = 100;
+
+  // PART 1 — DECISIONS
+  secHead('⚖️', 'Part 1 — Final Operational Decisions');
+
+  checkY(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 1 — Maintenance Response', ML, y); y += 6;
+  decBadge('dec1', 3);
+  box('Evidence Supporting Decision', g('d1_evidence'));
+  box('AI Gaps Identified', g('d1_ai_gap'));
+  box('Next Steps Authorized', g('d1_steps'));
+  box('Brief Summary', g('b_d1'));
+  y += 4;
+
+  checkY(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 2 — Production Speed Decision', ML, y); y += 6;
+  decBadge('dec2', 4);
+  box('Production vs Safety Balance', g('d2_balance'));
+  box('Conditions & Safeguards', g('d2_conditions'));
+  box('Leadership Communication', g('d2_comms'));
+  box('Brief Summary', g('b_d2'));
+  y += 4;
+
+  checkY(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...PD);
+  doc.text('Scenario 3 — Overnight Staffing Decision', ML, y); y += 6;
+  decBadge('dec3', 5);
+  box('Why AI Recommendation Was Risky', g('d3_risk'));
+  box('Safety & Operational Factors', g('d3_factors'));
+  box('Finance Team Communication', g('d3_finance'));
+  box('Brief Summary', g('b_d3'));
+  y += 4;
+
+  // PART 2 — DIAGNOSTIC
+  secHead('🔎', 'Part 2 — Final Diagnostic Conclusion');
+  box('Root Cause Hypothesis', g('c_root'));
+  box('Supporting Evidence', g('c_evidence'));
+  box('Rejected AI Assumptions', g('c_rejected'));
+  box('Key Operational Risks', g('c_risks'));
+  box('Recommended Action Plan', g('c_actions'));
+  y += 4;
+
+  // PART 3 — SAFETY + AI
+  secHead('🦺', 'Part 3 — Safety Reasoning');
+  box('Where Safety Overrode Efficiency', g('b_safety'));
+  box('Core Safety Principle', g('b_principle'));
+  y += 4;
+
+  secHead('🤖', 'Part 4 — AI Limitations Identified');
+  box('Most Significant AI Gaps', g('b_limits'));
+  box('Where AI Added Genuine Value', g('b_useful'));
+  y += 4;
+
+  // PART 4 — RECOMMENDATIONS
+  secHead('💡', 'Part 5 — Final Recommendations for NovaForge');
+  box('Recommendation 1 — Immediate Priority', g('b_rec1'));
+  box('Recommendation 2 — Systemic Improvement', g('b_rec2'));
+  box('Overall Operational Conclusion', g('b_conclusion'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 2 Phase C  ·  Operational Response Brief', ML, PH - 8);
+      doc.text('Page ' + i + ' of ' + total, PW / 2, PH - 8, { align: 'center' });
+      doc.text(g('r_name') || '', PW - MR, PH - 8, { align: 'right' });
+    }
+  }
+
+  const safe = (g('r_name') || 'learner').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  doc.save('novaforge_m2_phase_c_' + safe + '.pdf');
+  document.getElementById('dl_success').style.display = 'block';
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+</script>
+</body>
+</html>
