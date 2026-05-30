@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase A — Diagnostics Investigation | NovaForge Robotics Module 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --purple:#7B2FBE; --purple-light:#9B59D9; --purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8; --purple-dark:#4A1880;
+  --white:#FFFFFF; --off:#FAFAF8; --off2:#F4F1F8;
+  --border:rgba(123,47,190,.13); --border-s:rgba(123,47,190,.28);
+  --txt:#1A1020; --muted:#6B5C7A; --light:#A090B0;
+  --green:#1A6645; --green-bg:#EAF7F0; --green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00; --amber-bg:#FDF5E6; --amber-border:rgba(122,79,0,.22);
+  --red:#8A2020; --red-bg:#FDF0EF; --red-border:rgba(138,32,32,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--txt);font-size:16px;line-height:1.75;}
+
+/* TOPBAR */
+.top-bar{background:var(--white);border-bottom:1px solid var(--border);padding:12px 48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.breadcrumb{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.breadcrumb .sep{color:var(--purple-mid);} .breadcrumb .cur{color:var(--purple);}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-s);padding:5px 14px;border-radius:20px;}
+
+/* HERO */
+.hero{padding:44px 48px 36px;border-bottom:1px solid var(--border);max-width:860px;margin:0 auto;}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.hero-eyebrow::before{content:'';width:24px;height:2px;background:var(--purple);border-radius:2px;}
+.hero h1{font-family:'Fraunces',serif;font-size:38px;font-weight:500;color:var(--txt);line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;}
+.hero h1 em{font-style:italic;color:var(--purple);}
+.hero-sub{font-size:16px;color:var(--muted);font-weight:300;max-width:580px;line-height:1.7;margin-bottom:24px;}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap;}
+.meta-item{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--light);}
+.meta-dot{width:6px;height:6px;border-radius:50%;background:var(--purple-mid);}
+
+/* ALERT */
+.alert-wrap{max-width:860px;margin:28px auto 0;padding:0 48px;}
+.alert-inner{background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #E8A020;border-radius:0 6px 6px 0;padding:16px 22px;display:flex;gap:14px;align-items:flex-start;}
+.alert-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.alert-inner p{font-size:14px;color:var(--amber);line-height:1.6;}
+.alert-inner p strong{font-weight:600;}
+
+/* CONTENT */
+.content{max-width:860px;margin:0 auto;padding:0 48px 80px;}
+
+/* SECTION */
+.section{padding-top:52px;opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease;}
+.section.visible{opacity:1;transform:translateY(0);}
+.sec-header{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+.sec-num{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--white);background:var(--purple);padding:5px 11px;border-radius:3px;flex-shrink:0;}
+.section h2{font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.01em;}
+.sec-rule{height:1px;background:var(--border);margin-bottom:26px;}
+.section p{font-size:15px;color:var(--muted);line-height:1.75;margin-bottom:14px;}
+.section p:last-child{margin-bottom:0;}
+
+/* ROLE CHIPS */
+.role-chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0;}
+.chip{display:flex;align-items:center;gap:8px;padding:9px 18px;border:1px solid var(--border-s);border-radius:4px;font-size:13px;font-weight:500;color:var(--purple-dark);background:var(--purple-pale);}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:14px;}
+.card.accent{border-left:4px solid var(--purple);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card h3{font-family:'Fraunces',serif;font-size:17px;font-weight:500;color:var(--txt);margin-bottom:8px;}
+.card p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:0;}
+
+/* EVIDENCE PACKET TABS */
+.packet-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:0;}
+.ptab{flex:1;padding:11px 8px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--off);border-right:1px solid var(--border);cursor:pointer;text-align:center;transition:background .2s,color .2s;font-weight:700;}
+.ptab:last-child{border-right:none;}
+.ptab.active{background:var(--purple);color:white;}
+.ptab:hover:not(.active){background:var(--purple-pale);color:var(--purple);}
+.packet-content{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden;margin-bottom:24px;}
+.pane{display:none;padding:0;}
+.pane.active{display:block;}
+
+/* LOG TABLE */
+.log-table{width:100%;border-collapse:collapse;}
+.log-table thead tr{background:var(--purple-pale);}
+.log-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border-s);font-weight:700;}
+.log-table td{padding:12px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.log-table tr:last-child td{border-bottom:none;}
+.log-table tr:hover td{background:var(--off);}
+.sev{display:inline-block;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px;font-weight:700;}
+.sev.crit{background:var(--red-bg);color:var(--red);}
+.sev.high{background:#FFF0E0;color:#A04000;}
+.sev.med{background:var(--amber-bg);color:var(--amber);}
+.sev.low{background:var(--green-bg);color:var(--green);}
+.machine{font-weight:600;color:var(--txt);font-size:13px;}
+.code{font-family:'Space Mono',monospace;font-size:11px;color:var(--purple);background:var(--purple-pale);padding:2px 7px;border-radius:3px;}
+
+/* TECHNICIAN NOTE */
+.tech-note{background:var(--off);border-left:3px solid var(--purple-mid);padding:14px 18px;margin-bottom:10px;}
+.tech-note .tn-meta{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--light);margin-bottom:6px;}
+.tech-note .tn-text{font-size:13px;color:var(--txt);line-height:1.6;font-style:italic;}
+.tech-note .tn-flag{margin-top:8px;font-size:11px;color:var(--amber);font-family:'Space Mono',monospace;letter-spacing:.06em;}
+
+/* STEP LIST */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:16px 0 24px;}
+.steps-list li{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6;}
+.steps-list li:last-child{border-bottom:none;}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--purple);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* PATTERN CHECKLIST */
+.pattern-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:16px 0;}
+.pattern-list li{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--off);border:1px solid var(--border);border-radius:7px;cursor:pointer;user-select:none;transition:border-color .2s,background .2s;}
+.pattern-list li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.pattern-list li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.pattern-list li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.pt-text strong{display:block;font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.pt-text span{font-size:12px;color:var(--muted);}
+
+/* REPORT SECTION */
+.report-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.rs-head{background:var(--purple-pale);padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.rs-icon{font-size:15px;} .rs-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.rs-body{padding:16px 20px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:72px;border:1px dashed var(--border-s);border-radius:5px;background:var(--off);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--purple-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.field{width:100%;padding:9px 14px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.field:focus{border-color:var(--purple-light);background:var(--white);}
+input.field::placeholder{color:var(--light);}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:6px;display:block;}
+
+/* CAUSE CARDS */
+.cause-grid{display:flex;flex-direction:column;gap:12px;margin:16px 0;}
+.cause-card{border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.cause-head{background:var(--purple-pale);padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.cause-num{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.cause-head .type-tag{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px;font-weight:700;}
+.cause-head .type-tag.mech{background:#FFF0E0;color:#A04000;}
+.cause-head .type-tag.sensor{background:var(--purple-pale);color:var(--purple-dark);}
+.cause-head .type-tag.maint{background:var(--amber-bg);color:var(--amber);}
+.cause-head .type-tag.ops{background:var(--green-bg);color:var(--green);}
+.cause-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:8px;}
+
+/* REFLECTION PROMPTS */
+.prompts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.prompt-card{border:1px solid var(--border);border-radius:7px;padding:18px;background:var(--white);transition:border-color .2s,background .2s;}
+.prompt-card:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.pq-num{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px;}
+.pq-text{font-size:14px;font-weight:500;color:var(--txt);line-height:1.5;margin-bottom:10px;}
+.pq-hint{font-size:12px;color:var(--light);font-style:italic;margin-bottom:10px;line-height:1.45;}
+
+/* TRANSITION */
+.phase-transition{margin-top:52px;padding:36px 40px;border-top:1px solid var(--border);display:flex;align-items:center;gap:28px;background:var(--off);margin-left:-48px;margin-right:-48px;}
+.trans-icon{width:52px;height:52px;border-radius:50%;background:var(--purple-pale);border:1px solid var(--border-s);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.trans-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--purple);margin-bottom:7px;}
+.trans-text h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--txt);margin-bottom:7px;letter-spacing:-.01em;}
+.trans-text p{font-size:13px;color:var(--muted);line-height:1.6;margin:0;}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:44px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--purple-pale);padding:18px 26px;border-bottom:1px solid var(--border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:19px;font-weight:500;color:var(--txt);margin-bottom:5px;}
+.sz-head p{font-size:14px;color:var(--muted);margin:0;}
+.sz-body{padding:22px 26px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-submit{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-submit:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-download{display:none;align-items:center;gap:8px;background:var(--white);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 26px;border-radius:4px;border:2px solid var(--purple);cursor:pointer;transition:background .2s;}
+.btn-download:hover{background:var(--purple-pale);}
+.submit-note{font-size:12px;color:var(--light);font-style:italic;}
+.success-box{display:none;margin-top:18px;padding:14px 20px;background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 6px 6px 0;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.error-msg{display:none;margin-top:12px;padding:10px 16px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="breadcrumb">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 2</span><span class="sep">›</span>
+    <span class="cur">Phase A</span>
+  </div>
+  <div class="phase-pill">Phase A of 3</div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Diagnostics Investigation</div>
+  <h1>Evidence Gathering on<br>the <em>NovaBot Line</em></h1>
+  <p class="hero-sub">Before any AI tools are used, your team must investigate the evidence directly. Read the data. Find the patterns. Build the case.</p>
+  <div class="hero-meta">
+    <div class="meta-item"><div class="meta-dot"></div>Module 2 · Mission Assignment</div>
+    <div class="meta-item"><div class="meta-dot"></div>Phase A · Human Investigation First</div>
+    <div class="meta-item"><div class="meta-dot"></div>Operations Investigation Team</div>
+  </div>
+</div>
+
+<!-- ALERT -->
+<div class="alert-wrap">
+  <div class="alert-inner">
+    <div class="alert-icon">⚠️</div>
+    <p><strong>Active investigation underway.</strong> Work through each section in order. Review the evidence packet, identify patterns, document your findings, and complete your report before Phase B begins.</p>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═════════════════════════════════
+     SECTION 1 — MISSION BRIEFING
+═════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="sec-header"><div class="sec-num">Section 01</div><h2>Mission Briefing — What Is Happening?</h2></div>
+  <div class="sec-rule"></div>
+  <p>Something is wrong on the NovaBot production line. Over the past two weeks, the NovaForge operations team has recorded a growing number of incidents — and nobody has a clear answer yet about what is causing them.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 20px;">
+    <div style="padding:16px 18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:8px;">🦾 Robotic Arm Errors</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.55;">Arms R-4 and R-7 are stopping mid-cycle multiple times per shift. The error codes change each time — no consistent pattern found yet.</div>
+    </div>
+    <div style="padding:16px 18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:8px;">⏱ Unexpected Downtime</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.55;">Three machines went offline without warning this week. Unplanned downtime is up 40 minutes per shift compared to last month.</div>
+    </div>
+    <div style="padding:16px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:8px;">📡 Sensor Irregularities</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.55;">Vibration and temperature sensors at stations 3 and 5 are giving readings that don't match manual checks. Something is off.</div>
+    </div>
+    <div style="padding:16px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:8px;">📦 Production Delays</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.55;">Output is down 23% from last month. Two shipment deadlines have already been missed. A third is at risk this week.</div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>Leadership needs answers — fast</h3>
+    <p>NovaForge leadership does not yet know the root cause. They have assigned your team to investigate the situation before it gets worse. Your job in Phase A is to review the evidence and build a picture of what is actually happening.</p>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 2 — YOUR ROLE
+═════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="sec-header"><div class="sec-num">Section 02</div><h2>Your Role as an Investigator</h2></div>
+  <div class="sec-rule"></div>
+  <p>In Phase A, you are not using AI tools yet. You are doing the foundational work that makes AI analysis useful — reviewing the actual evidence and thinking critically about what it means.</p>
+
+  <div class="role-chips">
+    <div class="chip"><span>🔍</span> Operations Investigator</div>
+    <div class="chip"><span>📊</span> Troubleshooting Analyst</div>
+    <div class="chip"><span>🔧</span> Manufacturing Support Specialist</div>
+  </div>
+
+  <div class="card accent">
+    <h3>The golden rule of troubleshooting</h3>
+    <p>Good troubleshooting starts with understanding the data yourself — before handing it to any tool or system. If you don't understand the evidence first, you won't be able to evaluate whether the AI's analysis is correct. <strong>Your job right now: read, observe, and think.</strong></p>
+  </div>
+
+  <p>You will collect and organize evidence from five sources inside the NovaForge investigation packet. Then you will identify patterns, form hypotheses, and document your findings so they are ready for AI analysis in Phase B.</p>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 3 — INVESTIGATION PACKET
+═════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="sec-header"><div class="sec-num">Section 03</div><h2>The NovaForge Investigation Packet</h2></div>
+  <div class="sec-rule"></div>
+  <p>Click each tab below to review the five data sources available for your investigation. Read each one carefully — you will be referencing this evidence throughout Phase A.</p>
+
+  <div class="packet-tabs" id="tabs">
+    <div class="ptab active" onclick="showPane('errors',this)">Error Logs</div>
+    <div class="ptab" onclick="showPane('downtime',this)">Downtime</div>
+    <div class="ptab" onclick="showPane('notes',this)">Tech Notes</div>
+    <div class="ptab" onclick="showPane('maintenance',this)">Maintenance</div>
+    <div class="ptab" onclick="showPane('sensors',this)">Sensors</div>
+  </div>
+
+  <div class="packet-content">
+
+    <!-- ERRORS -->
+    <div class="pane active" id="pane-errors">
+      <table class="log-table">
+        <thead><tr><th>Machine</th><th>Error Code</th><th>Timestamp</th><th>Description</th><th>Severity</th></tr></thead>
+        <tbody>
+          <tr><td><span class="machine">Arm R-4</span></td><td><span class="code">E-219</span></td><td>Mon 06:14</td><td>Motor torque exceeded threshold — arm stopped mid-cycle</td><td><span class="sev crit">Critical</span></td></tr>
+          <tr><td><span class="machine">Arm R-7</span></td><td><span class="code">E-341</span></td><td>Mon 06:31</td><td>Position encoder lost signal during rotation sequence</td><td><span class="sev crit">Critical</span></td></tr>
+          <tr><td><span class="machine">Station 3</span></td><td><span class="code">E-112</span></td><td>Mon 08:45</td><td>Temperature sensor reading 14°C above baseline</td><td><span class="sev high">High</span></td></tr>
+          <tr><td><span class="machine">Arm R-4</span></td><td><span class="code">E-219</span></td><td>Tue 06:08</td><td>Motor torque exceeded threshold — arm stopped mid-cycle</td><td><span class="sev crit">Critical</span></td></tr>
+          <tr><td><span class="machine">Arm R-4</span></td><td><span class="code">E-220</span></td><td>Tue 14:22</td><td>Motor temperature warning — 87°C during assembly cycle</td><td><span class="sev high">High</span></td></tr>
+          <tr><td><span class="machine">Station 5</span></td><td><span class="code">E-088</span></td><td>Tue 19:50</td><td>Vibration sensor spike — 3.2x normal operating range</td><td><span class="sev high">High</span></td></tr>
+          <tr><td><span class="machine">Arm R-7</span></td><td><span class="code">E-341</span></td><td>Wed 07:15</td><td>Position encoder lost signal — second occurrence this week</td><td><span class="sev crit">Critical</span></td></tr>
+          <tr><td><span class="machine">Arm R-4</span></td><td><span class="code">E-219</span></td><td>Wed 07:44</td><td>Motor torque exceeded threshold — third occurrence this week</td><td><span class="sev crit">Critical</span></td></tr>
+          <tr><td><span class="machine">Conveyor C-2</span></td><td><span class="code">E-055</span></td><td>Wed 15:30</td><td>Belt speed inconsistency — slowing 12% without command input</td><td><span class="sev med">Medium</span></td></tr>
+          <tr><td><span class="machine">Station 3</span></td><td><span class="code">E-112</span></td><td>Thu 09:05</td><td>Temperature reading again above baseline — same sensor</td><td><span class="sev high">High</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DOWNTIME -->
+    <div class="pane" id="pane-downtime">
+      <table class="log-table">
+        <thead><tr><th>Date / Time</th><th>Machine</th><th>Duration Offline</th><th>Shift</th><th>Cause (if known)</th></tr></thead>
+        <tbody>
+          <tr><td>Mon 06:14–06:52</td><td><span class="machine">Arm R-4</span></td><td>38 min</td><td>Day</td><td>Motor torque fault — technician manual reset required</td></tr>
+          <tr><td>Mon 06:31–06:55</td><td><span class="machine">Arm R-7</span></td><td>24 min</td><td>Day</td><td>Encoder fault — reboot resolved temporarily</td></tr>
+          <tr><td>Tue 14:22–15:10</td><td><span class="machine">Arm R-4</span></td><td>48 min</td><td>Day</td><td>Thermal shutdown — arm motor overheated at 87°C</td></tr>
+          <tr><td>Tue 22:35–23:40</td><td><span class="machine">Station 5</span></td><td>65 min</td><td>Overnight</td><td>Vibration anomaly — cause not yet confirmed</td></tr>
+          <tr><td>Wed 07:15–07:58</td><td><span class="machine">Arm R-7</span></td><td>43 min</td><td>Day</td><td>Encoder fault recurrence — same fault as Monday</td></tr>
+          <tr><td>Wed 07:44–08:30</td><td><span class="machine">Arm R-4</span></td><td>46 min</td><td>Day</td><td>Third torque fault this week — root cause unknown</td></tr>
+          <tr><td>Thu 02:10–04:45</td><td><span class="machine">Conveyor C-2</span></td><td>155 min</td><td>Overnight</td><td>Belt speed fault — longest downtime event this period</td></tr>
+          <tr><td>Thu 09:05–09:40</td><td><span class="machine">Station 3</span></td><td>35 min</td><td>Day</td><td>Temperature warning — same sensor as Monday</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TECH NOTES -->
+    <div class="pane" id="pane-notes">
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:0;">
+        <div class="tech-note">
+          <div class="tn-meta">Technician: M. Reyes &nbsp;·&nbsp; Monday AM Shift</div>
+          <div class="tn-text">"R-4 stopped again this morning during the wrist rotation step. Same as last week but different error code. I reset it manually. Felt like the motor was straining before it cut out — maybe it's running hot? Hard to say."</div>
+          <div class="tn-flag">⚠ Possible thermal issue noted</div>
+        </div>
+        <div class="tech-note">
+          <div class="tn-meta">Technician: D. Okafor &nbsp;·&nbsp; Monday PM Shift</div>
+          <div class="tn-text">"R-7 threw an encoder error at start of shift. Rebooted and it seemed fine. But I've seen this before — it usually comes back. Not sure if it's the encoder itself or a wiring issue somewhere upstream. Nobody's checked the cable routing in a while."</div>
+          <div class="tn-flag">⚠ Wiring/cable routing flagged as unverified</div>
+        </div>
+        <div class="tech-note">
+          <div class="tn-meta">Technician: S. Huang &nbsp;·&nbsp; Tuesday Night Shift</div>
+          <div class="tn-text">"Station 5 went offline around 10:35pm. Vibration reading spiked out of nowhere — way above normal. Walked the floor and couldn't find an obvious cause. Floor vibration from C-2 maybe? The conveyor's been acting weird too. Both issues on the same stretch of line."</div>
+          <div class="tn-flag">⚠ Possible link between Station 5 and Conveyor C-2</div>
+        </div>
+        <div class="tech-note">
+          <div class="tn-meta">Technician: M. Reyes &nbsp;·&nbsp; Wednesday AM Shift</div>
+          <div class="tn-text">"R-4 again. Third time this week. The motor temp hit 87°C right before shutdown. I think it's overheating because it's been running a lot of overtime cycles. Maintenance hasn't serviced it since... I actually don't know when the last service was. Can someone check the log?"</div>
+          <div class="tn-flag">⚠ Last service date unknown — maintenance log check needed</div>
+        </div>
+        <div class="tech-note">
+          <div class="tn-meta">Technician: J. Park &nbsp;·&nbsp; Thursday AM Shift</div>
+          <div class="tn-text">"Station 3 temp sensor is reading high again. Same sensor was flagged Monday. I'm not sure if the sensor is faulty or if something nearby is actually running hot. Didn't have time to dig into it today. Worth getting someone to look at the physical environment around that station."</div>
+          <div class="tn-flag">⚠ Sensor accuracy vs actual heat source — needs verification</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAINTENANCE -->
+    <div class="pane" id="pane-maintenance">
+      <table class="log-table">
+        <thead><tr><th>Machine</th><th>Last Service</th><th>Service Interval</th><th>Overdue?</th><th>Repeat Issues</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="machine">Arm R-4</span></td>
+            <td>47 days ago</td>
+            <td>Every 30 days</td>
+            <td><span class="sev crit">17 days overdue</span></td>
+            <td>Motor torque fault — 3 occurrences this week, 2 last month</td>
+          </tr>
+          <tr>
+            <td><span class="machine">Arm R-7</span></td>
+            <td>34 days ago</td>
+            <td>Every 30 days</td>
+            <td><span class="sev high">4 days overdue</span></td>
+            <td>Encoder fault — 2 occurrences this week, first time last week</td>
+          </tr>
+          <tr>
+            <td><span class="machine">Station 3</span></td>
+            <td>62 days ago</td>
+            <td>Every 45 days</td>
+            <td><span class="sev crit">17 days overdue</span></td>
+            <td>Temperature sensor alert — 2 occurrences this week</td>
+          </tr>
+          <tr>
+            <td><span class="machine">Station 5</span></td>
+            <td>29 days ago</td>
+            <td>Every 30 days</td>
+            <td><span class="sev low">Current</span></td>
+            <td>Vibration anomaly — first occurrence this period</td>
+          </tr>
+          <tr>
+            <td><span class="machine">Conveyor C-2</span></td>
+            <td>51 days ago</td>
+            <td>Every 30 days</td>
+            <td><span class="sev crit">21 days overdue</span></td>
+            <td>Belt speed inconsistency — first major event, minor flags 2 weeks ago</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="padding:14px 20px;background:var(--amber-bg);border-top:1px solid var(--amber-border);">
+        <p style="font-size:13px;color:var(--amber);font-family:'Space Mono',monospace;letter-spacing:.04em;">⚡ Note: 3 of 5 machines are overdue for scheduled maintenance. Arm R-4 and Conveyor C-2 are the most overdue.</p>
+      </div>
+    </div>
+
+    <!-- SENSORS -->
+    <div class="pane" id="pane-sensors">
+      <table class="log-table">
+        <thead><tr><th>Sensor ID</th><th>Location</th><th>Type</th><th>Alert Triggered</th><th>Reading vs Baseline</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="code">SN-3T</span></td>
+            <td>Station 3</td>
+            <td>Temperature</td>
+            <td>Mon &amp; Thu</td>
+            <td>+14°C above baseline — sensor may be faulty or local heat source present</td>
+          </tr>
+          <tr>
+            <td><span class="code">SN-5V</span></td>
+            <td>Station 5</td>
+            <td>Vibration</td>
+            <td>Tue night</td>
+            <td>3.2× normal range — source unclear, possible C-2 conveyor transmission</td>
+          </tr>
+          <tr>
+            <td><span class="code">SN-R4T</span></td>
+            <td>Arm R-4 Motor</td>
+            <td>Temperature</td>
+            <td>Tue &amp; Wed</td>
+            <td>87°C peak — threshold is 75°C. Motor running consistently above safe range</td>
+          </tr>
+          <tr>
+            <td><span class="code">SN-C2S</span></td>
+            <td>Conveyor C-2</td>
+            <td>Speed / Belt</td>
+            <td>Wed &amp; Thu</td>
+            <td>12% speed drop without command — mechanical wear or drive unit issue suspected</td>
+          </tr>
+          <tr>
+            <td><span class="code">SN-R7P</span></td>
+            <td>Arm R-7</td>
+            <td>Position / Encoder</td>
+            <td>Mon &amp; Wed</td>
+            <td>Signal dropout on rotation — intermittent, may be wiring or encoder wear</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="padding:14px 20px;background:var(--purple-pale);border-top:1px solid var(--border);">
+        <p style="font-size:13px;color:var(--purple-dark);font-family:'Space Mono',monospace;letter-spacing:.04em;">📡 Cross-reference: SN-5V (Station 5 vibration) and SN-C2S (Conveyor C-2) are geographically adjacent on the line. Possible transmission link.</p>
+      </div>
+    </div>
+
+  </div><!-- /packet-content -->
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 4 — TASK 1: REVIEW
+═════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="sec-header"><div class="sec-num">Section 04</div><h2>Task 1 — Review the Evidence</h2></div>
+  <div class="sec-rule"></div>
+  <p>You've reviewed the five data sources. Now it's time to examine the data more deliberately. Work through the three steps below.</p>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div><strong>Scan all five data sources</strong> — go back through each tab and make mental notes about anything that stands out. Don't skip the technician notes — real-world observations often contain details that logs miss.</div></li>
+    <li><div class="step-n">2</div><div><strong>Look for patterns</strong> — are the same machines failing repeatedly? Do issues happen more on certain shifts? Are any machines overdue for maintenance AND showing errors? Do sensor readings match what technicians are observing?</div></li>
+    <li><div class="step-n">3</div><div><strong>Flag anything unusual or inconsistent</strong> — pay special attention to situations where two or more data sources point to the same problem, or where data sources contradict each other.</div></li>
+  </ol>
+
+  <span class="label">Check off patterns you noticed in the evidence</span>
+  <ul class="pattern-list" id="cl4">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>Arm R-4 is failing repeatedly with the same core error</strong><span>Error E-219 (motor torque) appears 3 times this week — all during day shifts</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>Maintenance is overdue on the most problematic machines</strong><span>R-4 is 17 days overdue, Conveyor C-2 is 21 days overdue — both are in the failure list</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>Station 5 vibration and Conveyor C-2 issues may be connected</strong><span>Technician S. Huang noted the link, and both sensors are on the same line segment</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>R-4's motor temperature is consistently above the safe threshold</strong><span>87°C vs 75°C limit — overheating is recurring and may be the root cause of torque faults</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>Station 3 temperature sensor has fired twice — but may be a faulty sensor</strong><span>Technician J. Park flagged uncertainty about whether the sensor is accurate or broken</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="pt-text"><strong>Downtime is clustering in both day and overnight shifts</strong><span>Longest event (Conveyor C-2, 155 min) happened overnight — staffing levels may be relevant</span></div></li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 5 — TASK 2: CAUSES
+═════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="sec-header"><div class="sec-num">Section 05</div><h2>Task 2 — Identify Possible Causes</h2></div>
+  <div class="sec-rule"></div>
+  <p>You are not drawing final conclusions yet — you are forming <strong>hypotheses</strong>. A hypothesis is an educated guess based on the evidence you've seen. It might be right. It might be partially right. That's okay. The goal is to document your best thinking so it can be tested.</p>
+  <p>Think about each of the five possible cause categories below. For each one, type a short possible cause based on what you observed in the data.</p>
+
+  <div class="cause-grid">
+    <div class="cause-card">
+      <div class="cause-head"><span class="cause-num">Possible Cause 1</span><span class="type-tag mech">Mechanical</span></div>
+      <div class="cause-body">
+        <span class="label">What mechanical issue might be happening?</span>
+        <textarea id="cause1" class="field" placeholder="e.g. Arm R-4's motor may be worn down from overuse — it is overheating and repeatedly hitting the torque limit, suggesting the motor needs replacement or service…"></textarea>
+      </div>
+    </div>
+    <div class="cause-card">
+      <div class="cause-head"><span class="cause-num">Possible Cause 2</span><span class="type-tag sensor">Sensor / Data</span></div>
+      <div class="cause-body">
+        <span class="label">What sensor or data issue might be involved?</span>
+        <textarea id="cause2" class="field" placeholder="e.g. Station 3's temperature sensor may be giving false readings — technicians have flagged that the environment around it hasn't changed, suggesting the sensor itself may be faulty…"></textarea>
+      </div>
+    </div>
+    <div class="cause-card">
+      <div class="cause-head"><span class="cause-num">Possible Cause 3</span><span class="type-tag maint">Maintenance Gap</span></div>
+      <div class="cause-body">
+        <span class="label">How might missed maintenance be contributing?</span>
+        <textarea id="cause3" class="field" placeholder="e.g. Three machines are overdue for service. R-4 (17 days), C-2 (21 days), and Station 3 (17 days) are all showing problems — deferred maintenance may be the common thread…"></textarea>
+      </div>
+    </div>
+    <div class="cause-card">
+      <div class="cause-head"><span class="cause-num">Possible Cause 4</span><span class="type-tag ops">Operational / Timing</span></div>
+      <div class="cause-body">
+        <span class="label">What operational or timing factor could be involved?</span>
+        <textarea id="cause4" class="field" placeholder="e.g. Many errors occur at the start of day shifts — equipment may not be warming up properly, or overnight minimal staffing may mean problems aren't caught early enough…"></textarea>
+      </div>
+    </div>
+    <div class="cause-card">
+      <div class="cause-head"><span class="cause-num">Possible Cause 5</span><span class="type-tag mech">Equipment / System Link</span></div>
+      <div class="cause-body">
+        <span class="label">Might two or more systems be causing each other's problems?</span>
+        <textarea id="cause5" class="field" placeholder="e.g. Conveyor C-2's belt speed inconsistency may be causing vibration that triggers Station 5's sensor spikes — they are on the same section of the line…"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 6 — TASK 3: ORGANIZE
+═════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="sec-header"><div class="sec-num">Section 06</div><h2>Task 3 — Organize Your Findings</h2></div>
+  <div class="sec-rule"></div>
+  <p>Now pull everything together into a structured set of troubleshooting notes. These will form the foundation of your Phase A deliverable — and the input for AI analysis in Phase B.</p>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🔎</span><span class="rs-title">Key Issues Observed</span></div>
+    <div class="rs-body">
+      <div><span class="label">What are the most significant problems you identified?</span><textarea id="f_issues" class="field tall" placeholder="List the most important issues you found across the five data sources. Be specific — mention machines, error codes, or sensor IDs where relevant…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🔄</span><span class="rs-title">Patterns Identified</span></div>
+    <div class="rs-body">
+      <div><span class="label">What recurring patterns did you notice?</span><textarea id="f_patterns" class="field tall" placeholder="Describe any patterns — same machine failing repeatedly, errors at specific times, maintenance overdue on machines with failures, connected equipment issues…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🦾</span><span class="rs-title">Affected Machines</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which machines or systems are involved?</span><textarea id="f_machines" class="field" placeholder="List all equipment showing problems: Arm R-4, Arm R-7, Station 3, Station 5, Conveyor C-2 — add notes about each one…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">💡</span><span class="rs-title">Initial Hypotheses</span></div>
+    <div class="rs-body">
+      <div><span class="label">What do you think might be causing the problems?</span><textarea id="f_hypotheses" class="field tall" placeholder="Summarize your best guesses from Task 2. Which cause do you think is most likely — and why? It's okay to list more than one…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">❓</span><span class="rs-title">Questions That Still Need Answers</span></div>
+    <div class="rs-body">
+      <div><span class="label">What don't you know yet — and what would help you find out?</span><textarea id="f_questions" class="field tall" placeholder="What data is missing? What would a technician need to physically check? What additional logs would help confirm your hypotheses?…"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 7 — REFLECTION
+═════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="sec-header"><div class="sec-num">Section 07</div><h2>Quick Reflection Checkpoint</h2></div>
+  <div class="sec-rule"></div>
+  <p>Before you complete your report, answer these short reflection questions. Keep your answers practical and direct — one to three sentences each.</p>
+
+  <div class="prompts-grid">
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 01</div>
+      <div class="pq-text">What patterns stood out most in the data?</div>
+      <div class="pq-hint">Think about which findings showed up across multiple data sources.</div>
+      <textarea id="r1" class="field" placeholder="Write your response…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 02</div>
+      <div class="pq-text">Which machine appears to fail most often — and why do you think that is?</div>
+      <div class="pq-hint">Look at error frequency, maintenance history, and technician notes together.</div>
+      <textarea id="r2" class="field" placeholder="Write your response…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 03</div>
+      <div class="pq-text">What types of issues seem most common — mechanical, sensor, maintenance, or operational?</div>
+      <div class="pq-hint">You may find more than one category is involved.</div>
+      <textarea id="r3" class="field" placeholder="Write your response…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 04</div>
+      <div class="pq-text">What additional information would help confirm your hypotheses?</div>
+      <div class="pq-hint">Think about what a technician would need to physically inspect or what log data is missing.</div>
+      <textarea id="r4" class="field" placeholder="Write your response…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 05</div>
+      <div class="pq-text">Did the technician notes reveal anything that the logs alone didn't show?</div>
+      <div class="pq-hint">Real-world observations often contain context that structured data misses.</div>
+      <textarea id="r5" class="field" placeholder="Write your response…"></textarea>
+    </div>
+    <div class="prompt-card">
+      <div class="pq-num">Prompt 06</div>
+      <div class="pq-text">If you had to act on one finding right now — before AI analysis — what would you do first?</div>
+      <div class="pq-hint">What immediate action seems most justified by the evidence you've reviewed?</div>
+      <textarea id="r6" class="field" placeholder="Write your response…"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 8 — PHASE B TRANSITION
+═════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="sec-header"><div class="sec-num">Section 08</div><h2>Prepare for AI Analysis</h2></div>
+  <div class="sec-rule"></div>
+
+  <div class="card green">
+    <h3>Your human investigation is complete</h3>
+    <p>In Phase B, you will take the evidence you've gathered here and run it through AI tools. The AI will help you look for patterns you may have missed, generate additional troubleshooting hypotheses, and organize your findings into a structured diagnostic report.</p>
+  </div>
+
+  <p>In Phase B, AI tools will help you:</p>
+  <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;margin:12px 0 20px;">
+    <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);padding:12px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;"><span style="color:var(--purple);font-weight:700;">›</span>Analyze your investigation data and identify patterns across all five data sources simultaneously</li>
+    <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);padding:12px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;"><span style="color:var(--purple);font-weight:700;">›</span>Surface connections and patterns that are harder to spot manually across large datasets</li>
+    <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);padding:12px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;"><span style="color:var(--purple);font-weight:700;">›</span>Generate structured troubleshooting insights and potential root cause explanations</li>
+    <li style="display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);padding:12px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;"><span style="color:var(--purple);font-weight:700;">›</span>Compare AI findings with your human observations — and identify where they agree or differ</li>
+  </ul>
+
+  <div class="card amber">
+    <h3>Critical reminder before Phase B</h3>
+    <p>AI will help you analyze the data — but it cannot replace your judgment. You already know context the AI doesn't have: what the technicians said, what the floor looks like, what felt off when you reviewed the logs. <strong>Your job in Phase B is to use AI as a tool, then validate its output against your own investigation.</strong></p>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════
+     SECTION 9 — DELIVERABLE + SUBMIT
+═════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="sec-header"><div class="sec-num">Section 09</div><h2>Phase A Deliverable</h2></div>
+  <div class="sec-rule"></div>
+  <p>Compile your findings into your Phase A report. Your completed answers from Sections 5, 6, and 7 will be pulled directly into your downloadable PDF. Make sure all fields are filled in before submitting.</p>
+
+  <div class="report-section" style="margin-bottom:20px;">
+    <div class="rs-head"><span class="rs-icon">📄</span><span class="rs-title">NovaForge Diagnostics Investigation Report — Contents</span></div>
+    <div class="rs-body" style="gap:8px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);">
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--purple);flex-shrink:0;">✓</div>
+        <div><strong>Equipment Issues Identified</strong> — your key issues and affected machines from Section 6</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);">
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--purple);flex-shrink:0;">✓</div>
+        <div><strong>Downtime &amp; Pattern Observations</strong> — patterns identified across the five data sources</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);">
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--purple);flex-shrink:0;">✓</div>
+        <div><strong>Possible Causes List</strong> — your five hypotheses from Task 2</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);">
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--purple);flex-shrink:0;">✓</div>
+        <div><strong>Troubleshooting Notes &amp; Open Questions</strong> — your initial hypotheses and gaps in the data</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);">
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--purple-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--purple);flex-shrink:0;">✓</div>
+        <div><strong>Reflection Checkpoint Responses</strong> — your six reflection answers from Section 7</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMIT ZONE -->
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Investigation Report</h3>
+      <p>Enter your name and today's date, then submit. Your PDF will be ready immediately after.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name</span><input type="text" id="r_name" class="field" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date" class="field"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-submit" id="btn_sub" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-download" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="submit-note" id="sub_note">All typed answers will be included in your PDF.</span>
+      </div>
+      <div class="error-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Report submitted successfully.</strong> Your Phase A investigation is complete. Download your PDF and keep it with your notes — you will reference this evidence in Phase B when you run it through AI tools.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSITION -->
+<div class="phase-transition">
+  <div class="trans-icon">🤖</div>
+  <div class="trans-text">
+    <div class="trans-label">Coming Up · Phase B</div>
+    <h3>AI-Assisted Diagnostics Lab</h3>
+    <p>You've gathered the evidence and formed your hypotheses. In Phase B, you'll use AI tools to analyze this same data — then compare what the AI finds with what you found manually. The investigation goes deeper.</p>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+// Scroll reveal
+const io = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('visible'); }), {threshold:.07});
+document.querySelectorAll('.section').forEach(s => io.observe(s));
+
+// Default date
+document.getElementById('r_date').valueAsDate = new Date();
+
+// Tab switching
+function showPane(id, tab) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  document.getElementById('pane-' + id).classList.add('active');
+  tab.classList.add('active');
+}
+
+// Checklist toggle
+function toggleCheck(el) { el.classList.toggle('checked'); }
+
+// Value getter
+function g(id) { return (document.getElementById(id)||{}).value || ''; }
+
+function handleSubmit() {
+  const name = g('r_name').trim();
+  if (!name) { document.getElementById('err_msg').style.display='block'; document.getElementById('r_name').focus(); return; }
+  document.getElementById('err_msg').style.display='none';
+  document.getElementById('success_box').style.display='block';
+  document.getElementById('btn_dl').style.display='inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent='✓ Submitted'; b.style.background='#1A6645'; b.style.cursor='default'; b.onclick=null;
+  document.getElementById('sub_note').style.display='none';
+  document.getElementById('success_box').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'letter' });
+  const PW=215.9, PH=279.4, ML=18, MR=18, CW=PW-ML-MR;
+  const PURPLE=[123,47,190], PD=[74,24,128], PP=[243,237,251];
+  const TXT=[26,16,32], MUTED=[107,92,122], LIGHT=[160,144,176];
+  const BORDER=[220,210,230], OFF=[250,250,248];
+  const GREEN=[26,102,69], GREEN_BG=[234,247,240];
+  let y=0;
+
+  function newPage(){
+    doc.addPage(); y=22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML,11,PW-MR,11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 2 Phase A',ML,9);
+    doc.text('Page '+doc.internal.getCurrentPageInfo().pageNumber,PW-MR,9,{align:'right'});
+  }
+  function checkY(n){ if(y+n>PH-20) newPage(); }
+  function secHead(icon,title){
+    checkY(18);
+    doc.setFillColor(...PP);
+    doc.roundedRect(ML,y,CW,10,1.5,1.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PD);
+    doc.text(icon+'  '+title,ML+5,y+6.8); y+=13;
+  }
+  function fieldLabel(txt){
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text(txt.toUpperCase(),ML+2,y); y+=4;
+  }
+  function box(lbl,val){
+    const v=val&&val.trim()?val:'(No response provided)';
+    const lines=doc.splitTextToSize(v,CW-8);
+    const bh=Math.max(lines.length*4.5+10,16);
+    checkY(bh+12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML,y,CW,bh,1.5,1.5,'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines,ML+4,y+6); y+=bh+5;
+  }
+
+  // COVER
+  doc.setFillColor(...PURPLE);
+  doc.rect(0,0,PW,68,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(196,158,232);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 2',ML,20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(255,255,255);
+  doc.text('Diagnostics Investigation Report',ML,35);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(196,158,232);
+  doc.text('Evidence Gathering on the NovaBot Line  ·  Phase A',ML,47);
+
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(ML,58,CW,27,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+  doc.text('INVESTIGATOR',ML+6,67); doc.text('DATE',ML+100,67); doc.text('ASSIGNMENT',ML+152,67);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(g('r_name')||'Not provided',ML+6,77);
+  doc.text(g('r_date')||'—',ML+100,77);
+  doc.setFontSize(10); doc.text('Module 2 · Phase A',ML+152,77);
+
+  y=100;
+
+  // POSSIBLE CAUSES
+  secHead('💡','Possible Causes — Task 2 Hypotheses');
+  box('Possible Cause 1 — Mechanical Issue',g('cause1'));
+  box('Possible Cause 2 — Sensor / Data Issue',g('cause2'));
+  box('Possible Cause 3 — Maintenance Gap',g('cause3'));
+  box('Possible Cause 4 — Operational / Timing Factor',g('cause4'));
+  box('Possible Cause 5 — Equipment / System Link',g('cause5'));
+  y+=4;
+
+  // ORGANIZED FINDINGS
+  secHead('🔎','Organized Findings — Task 3 Notes');
+  box('Key Issues Observed',g('f_issues'));
+  box('Patterns Identified',g('f_patterns'));
+  box('Affected Machines & Systems',g('f_machines'));
+  box('Initial Hypotheses',g('f_hypotheses'));
+  box('Questions That Still Need Answers',g('f_questions'));
+  y+=4;
+
+  // REFLECTION
+  secHead('💬','Reflection Checkpoint — Section 7');
+  const rqs=[
+    'What patterns stood out most in the data?',
+    'Which machine fails most often — and why?',
+    'What types of issues are most common?',
+    'What additional information would help?',
+    'What did technician notes reveal that logs didn\'t?',
+    'If you had to act right now — what would you do first?'
+  ];
+  [g('r1'),g('r2'),g('r3'),g('r4'),g('r5'),g('r6')].forEach((v,i)=>{
+    box('Prompt '+(i+1)+'  —  '+rqs[i], v);
+  });
+
+  // FOOTERS
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if(i>1){
+      doc.text('NovaForge Robotics  ·  Module 2 Phase A  ·  Diagnostics Investigation Report',ML,PH-8);
+      doc.text('Page '+i+' of '+total,PW/2,PH-8,{align:'center'});
+      doc.text(g('r_name')||'',PW-MR,PH-8,{align:'right'});
+    }
+  }
+
+  const safe=(g('r_name')||'learner').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  doc.save('novaforge_m2_phase_a_'+safe+'.pdf');
+}
+</script>
+</body>
+</html>
