@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase B — AI Diagnostics Lab | NovaForge Robotics Module 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#F4F1F8;
+  --border:rgba(123,47,190,.13);--border-s:rgba(123,47,190,.28);
+  --txt:#1A1020;--muted:#6B5C7A;--light:#A090B0;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --blue:#0F4F8A;--blue-bg:#EBF4FD;--blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 48px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-left .sep{color:var(--purple-mid);}.tb-left .cur{color:var(--purple);}
+.tb-right{display:flex;align-items:center;gap:14px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);background:var(--purple-pale);border:1px solid var(--border-s);padding:5px 14px;border-radius:20px;}
+.screen-counter{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.progress-wrap{background:var(--off2);border-bottom:1px solid var(--border);height:6px;}
+.progress-track{height:100%;background:var(--border);}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple-light));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.step-dots{padding:14px 48px 0;display:flex;align-items:center;gap:6px;max-width:860px;margin:0 auto;width:100%;}
+.dot{width:28px;height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s,width .25s;}
+.dot.active{background:var(--purple);width:36px;}.dot.done{background:var(--purple-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:860px;margin:0 auto;width:100%;padding:0 48px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:40px;animation:fadeUp .4s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:20px;height:2px;background:var(--purple);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.lead{font-size:16px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:32px;}
+.screen-rule{height:1px;background:var(--border);margin-bottom:32px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:14px;}
+.card.accent{border-left:4px solid var(--purple);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.blue{border-left:4px solid #378ADD;background:var(--blue-bg);}
+.card h3{font-family:'Fraunces',serif;font-size:17px;font-weight:500;color:var(--txt);margin-bottom:8px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card ul{padding-left:18px;margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.card p+p{margin-top:8px;}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px;display:block;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+
+/* FILES LIST */
+.files-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+.file-row{display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border);transition:background .2s;}
+.file-row:last-child{border-bottom:none;}
+.file-row:hover{background:var(--purple-pale);}
+.file-icon{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.file-icon.xl{background:#E8F5E9;}.file-icon.txt{background:var(--off2);}
+.file-info{flex:1;}
+.file-name{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.file-desc{font-size:12px;color:var(--muted);}
+.file-badge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;flex-shrink:0;}
+.file-badge.data{background:var(--purple-pale);color:var(--purple-dark);}
+.file-badge.text{background:var(--amber-bg);color:var(--amber);}
+
+/* STEPS */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:16px 0 20px;}
+.steps-list li{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6;}
+.steps-list li:last-child{border-bottom:none;}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--purple);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* PROMPT BOX */
+.prompt-box{background:var(--off);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.prompt-head{background:var(--purple-pale);padding:11px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.prompt-head .ph-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.copy-btn{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);background:var(--white);border:1px solid var(--border-s);padding:4px 12px;border-radius:3px;cursor:pointer;transition:background .15s;}
+.copy-btn:hover{background:var(--purple-pale);}
+.copy-btn.copied{color:var(--green);border-color:var(--green-border);}
+.prompt-text{padding:14px 18px;font-family:'Space Mono',monospace;font-size:12px;color:var(--txt);line-height:1.7;white-space:pre-wrap;}
+
+/* AI BUBBLE */
+.ai-bubble{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 22px;margin-bottom:18px;}
+.ai-bubble::before{content:'🤖  AI Output (Example)';font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700;display:block;margin-bottom:10px;}
+.ai-bubble p{font-size:14px;color:var(--txt);line-height:1.7;}
+.ai-bubble .ai-caution{margin-top:12px;padding:10px 14px;background:rgba(122,79,0,.07);border:1px solid var(--amber-border);border-radius:5px;font-size:12px;color:var(--amber);font-style:italic;}
+
+/* REPORT SECTION */
+.report-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:13px;}
+.rs-head{background:var(--purple-pale);padding:11px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.rs-icon{font-size:15px;}.rs-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);font-weight:700;}
+.rs-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* COMPARE TABLE */
+.cmp-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.cmp-table thead tr{background:var(--purple-pale);}
+.cmp-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);padding:11px 14px;text-align:left;border-bottom:1px solid var(--border-s);font-weight:700;}
+.cmp-table td{padding:13px 14px;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.ai{background:var(--purple-pale);color:var(--purple-dark);}
+.tag.human{background:var(--green-bg);color:var(--green);}
+.tag.both{background:var(--amber-bg);color:var(--amber);}
+.tag.wrong{background:var(--red-bg);color:var(--red);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:22px;}
+.checklist li{display:flex;align-items:flex-start;gap:14px;padding:13px 17px;background:var(--off);border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--txt);cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.chk-text strong{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-text span{font-size:12px;color:var(--muted);}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:80px;border:1px dashed var(--border-s);border-radius:6px;background:var(--off);padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--purple-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.ifield{width:100%;padding:9px 13px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.ifield:focus{border-color:var(--purple-light);background:var(--white);}
+input.ifield::placeholder{color:var(--light);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:40px;border-top:1px solid var(--border);margin-top:40px;}
+.btn-back{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:11px 22px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s,color .15s;}
+.btn-back:hover{background:var(--off);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 28px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:16px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;}
+
+/* SUCCESS */
+.success-box{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:16px 22px;margin-top:18px;display:none;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.err-msg{display:none;margin-top:12px;padding:10px 16px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:40px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--purple-pale);padding:18px 24px;border-bottom:1px solid var(--border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:5px;}
+.sz-head p{font-size:14px;color:var(--muted);margin:0;}
+.sz-body{padding:20px 24px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-submit{display:inline-flex;align-items:center;gap:10px;background:var(--purple);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-submit:hover{background:var(--purple-light);transform:translateY(-1px);}
+.btn-dl{display:none;align-items:center;gap:8px;background:var(--white);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 26px;border-radius:4px;border:2px solid var(--purple);cursor:pointer;transition:background .2s;}
+.btn-dl:hover{background:var(--purple-pale);}
+.sub-note{font-size:12px;color:var(--light);font-style:italic;}
+
+/* COMPLETION */
+.comp-hero{text-align:center;padding:40px 0 24px;}
+.c-icon{font-size:56px;margin-bottom:16px;display:block;}
+.comp-hero h2{font-family:'Fraunces',serif;font-size:30px;font-weight:500;color:var(--txt);margin-bottom:10px;}
+.comp-hero p{font-size:15px;color:var(--muted);max-width:480px;margin:0 auto 20px;line-height:1.7;}
+.port-badge{display:flex;align-items:center;gap:12px;background:var(--purple-pale);border:1px solid var(--border-s);border-radius:7px;padding:14px 20px;margin:0 auto 24px;width:fit-content;}
+.pb-icon{font-size:24px;}.pb-title{font-weight:600;font-size:14px;color:var(--txt);}
+.pb-sub{font-size:11px;color:var(--muted);}
+
+/* TRANSITION BOX */
+.trans-box{background:var(--off);border:1px solid var(--border);border-radius:10px;padding:32px;text-align:center;margin-top:16px;}
+.trans-eyebrow{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);margin-bottom:14px;}
+.trans-box h2{font-family:'Fraunces',serif;font-size:24px;font-weight:500;color:var(--txt);margin-bottom:10px;letter-spacing:-.01em;}
+.trans-box h2 em{font-style:italic;color:var(--purple);}
+.trans-box p{font-size:14px;color:var(--muted);max-width:440px;margin:0 auto;line-height:1.7;}
+.trans-list{list-style:none;display:flex;flex-direction:column;gap:7px;max-width:320px;margin:16px auto 0;text-align:left;}
+.trans-list li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);}
+.trans-list li::before{content:'›';color:var(--purple);font-weight:700;font-size:16px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 2</span><span class="sep">›</span>
+    <span class="cur">Phase B</span>
+  </div>
+  <div class="tb-right">
+    <span class="screen-counter" id="screenCounter">Screen 1 of 10</span>
+    <div class="phase-pill">Phase B of 3</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="step-dots" id="stepDots"></div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — ENTER AI DIAGNOSTICS LAB
+══════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="eyebrow">Phase B · Screen 1 of 10</div>
+  <h1>Welcome to the<br><em>AI Diagnostics Lab</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card accent">
+    <h3>🔬 You are entering the NovaForge AI Diagnostics Lab</h3>
+    <p>In Phase A, you investigated the factory floor manually. You read the logs, reviewed technician notes, and formed your own hypotheses about what is going wrong on the NovaBot production line.</p>
+    <p>Now you are going to use AI tools to analyze that same data — and see what AI finds, what it misses, and where your human judgment still matters most.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">What you finished in Phase A</span>
+      <p>✅ Reviewed 5 operational data sources<br>✅ Identified patterns in machine failures<br>✅ Formed hypotheses about root causes<br>✅ Documented your findings</p>
+    </div>
+    <div class="card">
+      <span class="label">What you will do in Phase B</span>
+      <p>🔍 Upload files into ChatGPT or Copilot<br>🔍 Analyze patterns using AI prompts<br>🔍 Compare AI findings to yours<br>🔍 Identify where AI is right — and wrong</p>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>Your role in this lab</h3>
+    <p>You are the diagnostics analyst — not the AI. AI is your tool, the same way a calculator is a tool for a mathematician. <strong>You read the output. You decide what it means. You determine if it's correct.</strong> The AI does not know the factory floor. You do.</p>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then proceed</span>
+    <button class="btn-next" onclick="goTo(2)">Enter the Lab</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — YOUR INVESTIGATION FILES
+══════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="eyebrow">Phase B · Screen 2 of 10</div>
+  <h1>Your<br><em>Investigation Files</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">These are the five data files provided by NovaForge Robotics. You received them before Phase A. You will use these same files to run your AI analysis.</p>
+
+  <div class="files-list">
+    <div class="file-row">
+      <div class="file-icon xl">📊</div>
+      <div class="file-info">
+        <div class="file-name">novaforge_m2_error_log.xlsx</div>
+        <div class="file-desc">31 machine error entries — timestamps, error codes, severity levels, and operator notes across a 5-day period</div>
+      </div>
+      <div class="file-badge data">Excel · Data</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon xl">📉</div>
+      <div class="file-info">
+        <div class="file-name">novaforge_m2_downtime_report.xlsx</div>
+        <div class="file-desc">19 unplanned downtime events — machine name, duration, shift, and known or unknown causes</div>
+      </div>
+      <div class="file-badge data">Excel · Data</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon txt">📝</div>
+      <div class="file-info">
+        <div class="file-name">novaforge_m2_technician_notes.txt</div>
+        <div class="file-desc">Real-world operator observations — 5 technicians, daily entries, written in authentic field note style</div>
+      </div>
+      <div class="file-badge text">Text · Notes</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon xl">🔧</div>
+      <div class="file-info">
+        <div class="file-name">novaforge_m2_maintenance_history.xlsx</div>
+        <div class="file-desc">8 machines tracked — last service dates, overdue status, recurring issues, and technician observations</div>
+      </div>
+      <div class="file-badge data">Excel · Data</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon xl">📡</div>
+      <div class="file-info">
+        <div class="file-name">novaforge_m2_sensor_readings.xlsx</div>
+        <div class="file-desc">32 sensor data points — temperature, vibration, and cycle speed readings across 5 machines and 5 days</div>
+      </div>
+      <div class="file-badge data">Excel · Data</div>
+    </div>
+  </div>
+
+  <div class="card green">
+    <h3>Which AI tool should you use?</h3>
+    <p>Either of these work for this task — both accept file uploads:</p>
+    <div class="grid-2" style="margin-top:12px;">
+      <div style="padding:13px 16px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">ChatGPT</strong><br>chatgpt.com — free account, supports file uploads</div>
+      <div style="padding:13px 16px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">Microsoft Copilot</strong><br>copilot.microsoft.com — free, works with .xlsx and .txt</div>
+    </div>
+  </div>
+
+  <div class="card" style="border-color:var(--border-s);">
+    <p style="font-size:13px;margin:0;"><strong>💡 Tip:</strong> Keep your Phase A report open in a separate tab while working through Phase B — you will compare your human findings with what the AI discovers.</p>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Start the Analysis</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — UPLOAD & FIRST ANALYSIS
+══════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="eyebrow">Phase B · Screen 3 of 10 — Task 1</div>
+  <h1>Upload &amp;<br><em>First Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Start simple. Upload one or two files and run your first AI analysis. Follow each step below before moving on.</p>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Open <strong>ChatGPT</strong> or <strong>Microsoft Copilot</strong> in a new browser tab. Make sure you are logged in.</div></li>
+    <li><div class="step-n">2</div><div>Upload the <strong>Equipment Error Log</strong> and the <strong>Downtime Report</strong> — these two files together give AI the strongest starting signal.</div></li>
+    <li><div class="step-n">3</div><div>Copy one of the prompts below, paste it into the AI chat after uploading, and press send.</div></li>
+    <li><div class="step-n">4</div><div>Read the AI response carefully. Then come back here and answer the reflection questions below.</div></li>
+  </ol>
+
+  <span class="label">Choose a starting prompt — copy and paste into your AI tool</span>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span class="ph-label">Prompt A — Pattern Analysis</span>
+      <button class="copy-btn" id="cb1" onclick="copyText('cb1','Analyze this manufacturing data and identify possible causes of repeated machine failures. Look for patterns in error codes, timing, and which machines fail most often. Summarize your findings in plain language.')">Copy</button>
+    </div>
+    <div class="prompt-text">Analyze this manufacturing data and identify possible causes of repeated machine failures. Look for patterns in error codes, timing, and which machines fail most often. Summarize your findings in plain language.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span class="ph-label">Prompt B — Downtime Focus</span>
+      <button class="copy-btn" id="cb2" onclick="copyText('cb2','Look for patterns in these downtime and error logs. Which machine has the most downtime? When do failures tend to happen — what time of day or shift? What might be causing the repeated issues? Keep your explanation simple.')">Copy</button>
+    </div>
+    <div class="prompt-text">Look for patterns in these downtime and error logs. Which machine has the most downtime? When do failures tend to happen — what time of day or shift? What might be causing the repeated issues? Keep your explanation simple.</div>
+  </div>
+
+  <div class="card blue" style="margin-top:4px;">
+    <p><strong>While the AI runs:</strong> Note the time you sent the prompt. When the response comes back, read it all the way through before answering the questions below — don't just skim it.</p>
+  </div>
+
+  <span class="label" style="margin-top:20px;">After the AI responds — record what you found</span>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">📋</span><span class="rs-title">First Analysis — Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which files did you upload?</span><textarea id="t3_files" class="field" placeholder="List the file names you uploaded into your AI tool…"></textarea></div>
+      <div><span class="label">What patterns did the AI identify?</span><textarea id="t3_patterns" class="field tall" placeholder="Summarize the main patterns or findings the AI surfaced. What did it say about which machines fail most, when they fail, or what might be causing it?…"></textarea></div>
+      <div><span class="label">What causes did the AI suggest?</span><textarea id="t3_causes" class="field" placeholder="List the possible causes the AI named. Use its words if helpful…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Review AI Output</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — WHAT DID AI FIND?
+══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="eyebrow">Phase B · Screen 4 of 10</div>
+  <h1>What Did<br><em>the AI Find?</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Before you move to deeper analysis, take a moment to evaluate what the AI just told you. Not everything it says will be correct — and some of the most important details might be missing entirely.</p>
+
+  <div class="card amber">
+    <h3>AI can be confidently incomplete</h3>
+    <p>AI tools are very good at pattern matching in structured data — but they don't know things like: how long maintenance has been delayed, what a machine sounds like when it's struggling, or what the technician noticed while walking the floor. That kind of context only exists in the human investigation.</p>
+    <p>Your job right now is to <strong>read the AI output critically</strong> — not just accept it.</p>
+  </div>
+
+  <span class="label">Evaluate the AI's first response — mark what applies</span>
+  <ul class="checklist" id="cl4">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>AI correctly identified the most frequently failing machine</strong><span>Arm-02 should appear prominently in any honest pattern analysis of this dataset</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>AI mentioned the motor temperature escalation on Arm-02</strong><span>The 71°C → 91°C progression across the week is a key signal — did AI notice it?</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>AI flagged maintenance overdue status as a contributing factor</strong><span>Three machines are significantly overdue — did AI connect this to the failure pattern?</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>AI noted that Arm-04 failures are exclusively on night shifts</strong><span>This is a subtle but important pattern — does the AI's response reflect it?</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>AI missed context that only exists in the technician notes</strong><span>Field observations about vibration, wiring wear, and ignored maintenance requests are not in structured data</span></div></li>
+  </ul>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">💬</span><span class="rs-title">Critical Evaluation</span></div>
+    <div class="rs-body">
+      <div><span class="label">Did anything in the AI response feel incomplete or questionable?</span><textarea id="t4_questionable" class="field tall" placeholder="What seemed off, oversimplified, or missing? Think about what you learned in Phase A that the AI might not be seeing…"></textarea></div>
+      <div><span class="label">What did the AI miss that you already knew from Phase A?</span><textarea id="t4_missed" class="field" placeholder="Compare the AI's findings against your Phase A notes. What important context did AI not capture?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Deeper Analysis</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 5 — SECOND / DEEPER ANALYSIS
+══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="eyebrow">Phase B · Screen 5 of 10 — Task 2</div>
+  <h1>Deeper<br><em>Pattern Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now you go further. Add more files and push the AI harder. A second pass with richer data often surfaces connections that the first prompt missed.</p>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>In the same AI conversation, upload the remaining files — <strong>Maintenance History</strong>, <strong>Sensor Readings</strong>, and <strong>Technician Notes</strong>.</div></li>
+    <li><div class="step-n">2</div><div>Use one of the deeper analysis prompts below to push the AI to cross-reference all five data sources together.</div></li>
+    <li><div class="step-n">3</div><div>Pay special attention to whether the AI finds the <strong>connection between Arm-02 overheating and the Conveyor-01 failures</strong>, and whether it picks up the <strong>Arm-04 night-shift pattern</strong>.</div></li>
+    <li><div class="step-n">4</div><div>When the response comes back, answer the questions below before continuing.</div></li>
+  </ol>
+
+  <span class="label">Deeper analysis prompts — try at least one</span>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span class="ph-label">Prompt C — Cross-File Root Cause</span>
+      <button class="copy-btn" id="cb3" onclick="copyText('cb3','Now that you have all five data files, look for connections across them. Is there a single root cause that explains most of the failures? Look at which machines are most overdue for maintenance, which ones are overheating, and whether there are timing patterns across shifts. Give me a prioritized list of likely causes.')">Copy</button>
+    </div>
+    <div class="prompt-text">Now that you have all five data files, look for connections across them. Is there a single root cause that explains most of the failures? Look at which machines are most overdue for maintenance, which ones are overheating, and whether there are timing patterns across shifts. Give me a prioritized list of likely causes.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span class="ph-label">Prompt D — Maintenance & Failure Link</span>
+      <button class="copy-btn" id="cb4" onclick="copyText('cb4','Compare the maintenance history against the error log and downtime report. Do the machines that are most overdue for service also appear most in the failure data? What does the sensor data show in the days leading up to each major failure event? Walk me through any correlations you find.')">Copy</button>
+    </div>
+    <div class="prompt-text">Compare the maintenance history against the error log and downtime report. Do the machines that are most overdue for service also appear most in the failure data? What does the sensor data show in the days leading up to each major failure event? Walk me through any correlations you find.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span class="ph-label">Prompt E — Shift Pattern Analysis</span>
+      <button class="copy-btn" id="cb5" onclick="copyText('cb5','Focus on the night shift data. Do certain machines fail more often overnight? Look at both the error log and the technician notes together — is there anything in the notes that might explain a shift-specific failure pattern that isn\'t obvious from the numbers alone?')">Copy</button>
+    </div>
+    <div class="prompt-text">Focus on the night shift data. Do certain machines fail more often overnight? Look at both the error log and the technician notes together — is there anything in the notes that might explain a shift-specific failure pattern that isn't obvious from the numbers alone?</div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🔄</span><span class="rs-title">Second Analysis — Findings</span></div>
+    <div class="rs-body">
+      <div><span class="label">What new patterns or connections did the AI find this time?</span><textarea id="t5_new" class="field tall" placeholder="Did AI find anything new when you added more files? What connections did it make across the different data sources?…"></textarea></div>
+      <div><span class="label">Did the AI connect Arm-02's overheating to the broader failure picture?</span><textarea id="t5_arm2" class="field" placeholder="Did AI recognize the escalating motor temperature as a key pattern — and link it to the downtime events?…"></textarea></div>
+      <div><span class="label">What is still missing from the AI's analysis?</span><textarea id="t5_gaps" class="field" placeholder="What important context, physical observations, or operational factors still hasn't appeared in the AI output?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">AI Was Wrong</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 6 — AI WAS WRONG
+══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="eyebrow">Phase B · Screen 6 of 10 — Critical Thinking</div>
+  <h1>When AI Gets<br><em>It Wrong</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">This is one of the most important screens in the entire mission. Read carefully.</p>
+
+  <div class="card red">
+    <h3>⚠ The AI Diagnostic Recommendation</h3>
+    <p>After reviewing the data, the AI operations diagnostics system has issued the following recommendation to NovaForge leadership:</p>
+  </div>
+
+  <div class="ai-bubble">
+    <p>"Based on analysis of the equipment error log and sensor data, the primary failure driver is <strong>Sensor Unit B (temperature sensor SN-3T at Station-03)</strong>. This sensor has generated repeated high-temperature alerts with readings significantly above baseline. Recommendation: replace Sensor Unit B immediately to restore accurate temperature monitoring and eliminate false-positive shutdowns. Expected impact: reduction in unplanned downtime by approximately 60%."</p>
+    <div class="ai-caution">This recommendation is based on alert frequency and deviation from baseline readings only.</div>
+  </div>
+
+  <div class="card amber">
+    <h3>But wait — is this actually right?</h3>
+    <p>Before accepting any AI recommendation, you need to cross-reference it against everything you know. Let's look at what the data actually shows.</p>
+  </div>
+
+  <span class="label">Evidence that contradicts or complicates the AI recommendation</span>
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>Arm-02's motor temperature has been climbing all week — independently of Station-03</strong><span>71°C Monday to 91°C Friday — this is a real escalation, not a sensor glitch</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>Arm-02 and Station-03 are physically close — Station-03 may be detecting Arm-02's heat</strong><span>Technician J. Park explicitly noted this uncertainty — AI has no spatial awareness of the floor layout</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>The Arm-02 motor shutdown events occurred before and independently of the sensor alerts</strong><span>The thermal shutdowns (E-217, E-219) were caused by Arm-02's own motor — not triggered by SN-3T</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>Arm-02 is 27 days overdue for maintenance — the motor hasn't been serviced in nearly two months</strong><span>AI spotted the overdue status but did not weight it heavily enough in its root cause analysis</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div class="chk-text"><strong>Replacing the sensor without fixing Arm-02 would likely not reduce downtime at all</strong><span>The 47–95 minute Arm-02 outages are the longest and most costly — sensor replacement doesn't address them</span></div></li>
+  </ul>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🧠</span><span class="rs-title">Critical Thinking Response</span></div>
+    <div class="rs-body">
+      <div><span class="label">Why is the AI's sensor replacement recommendation incomplete or potentially wrong?</span><textarea id="t6_why" class="field tall" placeholder="Explain in your own words why replacing Sensor Unit B may not solve the core problem. What did AI miss or misinterpret?…"></textarea></div>
+      <div><span class="label">What do you think the actual root cause is — and what evidence supports it?</span><textarea id="t6_root" class="field tall" placeholder="Based on all 5 data files and your Phase A investigation, what is most likely causing the failures? Cite specific evidence…"></textarea></div>
+      <div><span class="label">What would you tell the operations team before they act on this recommendation?</span><textarea id="t6_tell" class="field" placeholder="If you were presenting this to a maintenance supervisor, what would you say? What should they investigate before ordering the sensor replacement?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:8px;">
+    <h3>This is why human oversight matters</h3>
+    <p>AI produced a confident recommendation based on the data it could see. It was not entirely wrong — the sensor should probably be checked. But it missed the bigger picture. <strong>A senior technician acting on this recommendation alone would fix the wrong problem first, losing more time and money.</strong> That's what your analysis prevents.</p>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Validate Findings</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 7 — HUMAN VS AI VALIDATION
+══════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="eyebrow">Phase B · Screen 7 of 10</div>
+  <h1>Human vs. AI<br><em>Validation</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Here is the full picture of what AI found, what it missed, and where human judgment made the difference. Review the comparison table, then complete your own validation assessment below.</p>
+
+  <table class="cmp-table">
+    <thead><tr><th>Finding</th><th>Source</th><th>Assessment</th></tr></thead>
+    <tbody>
+      <tr><td>Arm-02 is the most frequently failing machine</td><td><span class="tag ai">AI ✓</span></td><td>AI correctly surfaced Arm-02 from error frequency data — this was its strongest finding</td></tr>
+      <tr><td>Motor temperature on Arm-02 exceeds safe threshold</td><td><span class="tag both">Both ✓</span></td><td>AI spotted the high-temp alerts; human investigator recognized the week-long escalation pattern as a progression</td></tr>
+      <tr><td>Sensor SN-3T is the primary failure cause</td><td><span class="tag wrong">AI ✗</span></td><td>AI misidentified the sensor as root cause — it missed Arm-02's proximity and independent thermal escalation</td></tr>
+      <tr><td>Arm-04 encoder faults cluster on night shifts only</td><td><span class="tag human">Human ✓</span></td><td>AI mentioned encoder faults but did not identify the shift-specific pattern — technician S. Huang's notes were key</td></tr>
+      <tr><td>Worn encoder cable on Arm-04 flagged February — never replaced</td><td><span class="tag human">Human ✓</span></td><td>This was only in technician notes — not in any structured data AI could directly analyze</td></tr>
+      <tr><td>Conveyor-01 and Station-05 may share a physical vibration source</td><td><span class="tag human">Human ✓</span></td><td>S. Huang's floor observation was the only source — AI has no spatial awareness of machine positioning</td></tr>
+      <tr><td>Maintenance backlog correlates with failure frequency</td><td><span class="tag both">Both ✓</span></td><td>AI flagged overdue status; human cross-referenced it against specific failure machines for stronger correlation</td></tr>
+      <tr><td>Maintenance requests were ignored for 3+ days</td><td><span class="tag human">Human ✓</span></td><td>Technician M. Reyes formally documented this — AI read the service dates but missed the systemic issue</td></tr>
+    </tbody>
+  </table>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">⚖️</span><span class="rs-title">Your Validation Assessment</span></div>
+    <div class="rs-body">
+      <div><span class="label">What did AI get right — and why was it useful?</span><textarea id="t7_right" class="field" placeholder="Which AI findings were accurate and valuable? How did AI speed up or improve your analysis?…"></textarea></div>
+      <div><span class="label">What did AI miss — and why does it matter?</span><textarea id="t7_missed" class="field tall" placeholder="What critical information was absent from AI's analysis? What would have happened if you had acted on AI alone?…"></textarea></div>
+      <div><span class="label">What did your human investigation catch that AI couldn't?</span><textarea id="t7_human" class="field" placeholder="What did Phase A give you — from technician notes, physical observations, or contextual knowledge — that changed the picture?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Build Report</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 8 — BUILD DIAGNOSTICS REPORT
+══════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="eyebrow">Phase B · Screen 8 of 10</div>
+  <h1>Build Your<br><em>Diagnostics Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Pull everything together into your Phase B deliverable. Your answers from Screens 3–7 will be compiled into a downloadable PDF report. Fill in each section below carefully.</p>
+
+  <div class="card accent" style="margin-bottom:20px;">
+    <h3>📄 NovaForge AI Troubleshooting Analysis Report</h3>
+    <p>This is a professional-grade deliverable — the kind of document a manufacturing diagnostics analyst would bring to a leadership briefing. Be clear, specific, and evidence-based in every section.</p>
+  </div>
+
+  <!-- Learner info -->
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">👤</span><span class="rs-title">Analyst Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="ifield" placeholder="Your full name"></div>
+        <div><span class="label">Date</span><input type="date" id="r_date" class="ifield"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">📂</span><span class="rs-title">Part 1 — Data Sources Used</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which files did you upload and analyze?</span><textarea id="b_files" class="field" placeholder="List the data files you used in your AI analysis — and which prompts produced the most useful output…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">🔍</span><span class="rs-title">Part 2 — AI Findings Summary</span></div>
+    <div class="rs-body">
+      <div><span class="label">What patterns and causes did AI identify across your analysis sessions?</span><textarea id="b_ai_findings" class="field tall" placeholder="Summarize the key things AI surfaced — across your first and second analysis. Include the sensor recommendation and any other outputs…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">✅</span><span class="rs-title">Part 3 — Validated Insights</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which AI findings did you confirm as accurate — and what evidence supports them?</span><textarea id="b_validated" class="field tall" placeholder="Which AI outputs do you agree with after cross-referencing with Phase A findings and the full dataset? What makes you confident?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">❌</span><span class="rs-title">Part 4 — Incorrect or Incomplete AI Assumptions</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which AI recommendations did you reject or modify — and why?</span><textarea id="b_rejected" class="field tall" placeholder="Specifically address the sensor replacement recommendation and any other AI outputs that missed important context or drew the wrong conclusion…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">👷</span><span class="rs-title">Part 5 — Human Corrections</span></div>
+    <div class="rs-body">
+      <div><span class="label">What did your human investigation add that AI could not provide?</span><textarea id="b_human" class="field tall" placeholder="What context, physical observations, or operational knowledge from Phase A changed your understanding of the failures? How did it correct the AI output?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="report-section">
+    <div class="rs-head"><span class="rs-icon">💡</span><span class="rs-title">Part 6 — Root Cause Hypothesis</span></div>
+    <div class="rs-body">
+      <div><span class="label">Based on all your analysis — what do you believe is the most likely root cause?</span><textarea id="b_root" class="field tall" placeholder="State your best hypothesis clearly. Reference specific machines, error codes, sensor readings, and technician observations that support it. Include secondary causes if relevant…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <button class="btn-next" onclick="goTo(9)">Review &amp; Download</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 9 — EXPORT / DOWNLOAD
+══════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="eyebrow">Phase B · Screen 9 of 10</div>
+  <h1>Your Report is<br><em>Ready to Download</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="comp-hero">
+    <span class="c-icon">📋</span>
+    <h2>AI Diagnostics Analysis Complete</h2>
+    <p>You've used real AI tools to analyze manufacturing failure data, identified where AI was right, and corrected where it was wrong. Your report is ready.</p>
+  </div>
+
+  <div class="port-badge">
+    <div class="pb-icon">🔬</div>
+    <div>
+      <div class="pb-title">NovaForge AI Troubleshooting Analysis Report</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 2 · Phase B</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:22px;">
+    <h3>What this report demonstrates</h3>
+    <ul>
+      <li>Ability to use AI tools to analyze real manufacturing operational data</li>
+      <li>Skill at evaluating and validating AI diagnostic outputs</li>
+      <li>Critical thinking — identifying where AI misses context or draws the wrong conclusion</li>
+      <li>Ability to combine AI analysis with human field investigation to reach a more accurate result</li>
+    </ul>
+    <p style="margin-top:10px;font-size:13px;"><strong>Add this to your professional portfolio alongside your Phase A Investigation Report.</strong> Together they show the full diagnostics cycle.</p>
+  </div>
+
+  <!-- SUBMIT ZONE -->
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Report</h3>
+      <p>Enter your name and date, then click Submit. Your PDF download will be ready immediately.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name</span><input type="text" id="r_name2" class="ifield" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date2" class="ifield"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-submit" id="btn_sub" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-dl" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="sub-note" id="sub_note">All typed responses will be included in your PDF.</span>
+      </div>
+      <div class="err-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Report submitted successfully.</strong> Your Phase B diagnostics analysis is complete. Download your PDF and keep it with your Phase A report — you will reference both in Phase C when you make final operational decisions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(8)">← Edit Report</button>
+    <button class="btn-next" onclick="goTo(10)">Proceed to Phase C</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 10 — TRANSITION TO PHASE C
+══════════════════════════════════ -->
+<div class="screen" id="screen-10">
+  <div class="eyebrow">Phase B · Screen 10 of 10</div>
+  <h1>Analysis Complete —<br><em>Decisions Ahead</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card accent" style="margin-bottom:20px;">
+    <h3>What you accomplished in Phase B</h3>
+    <div class="grid-2" style="margin-top:12px;">
+      <div style="padding:11px 14px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Uploaded real manufacturing data files into AI tools</div>
+      <div style="padding:11px 14px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Used structured prompts to extract diagnostic insights</div>
+      <div style="padding:11px 14px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Identified a flawed AI recommendation and corrected it</div>
+      <div style="padding:11px 14px;background:var(--off);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Built a professional-grade diagnostics analysis report</div>
+    </div>
+  </div>
+
+  <div class="trans-box">
+    <div class="trans-eyebrow">Coming Up · Phase C</div>
+    <h2>AI has surfaced the insights.<br><em>Now the decisions must be made.</em></h2>
+    <p>You have the data. You've validated the AI's findings. You've identified what it got wrong. In Phase C, you step into the role of operations decision specialist — and use everything you've learned to make the final calls for NovaForge Robotics.</p>
+    <ul class="trans-list">
+      <li>Evaluate maintenance response options for Arm-02</li>
+      <li>Decide whether to restore production speed</li>
+      <li>Make the overnight staffing call leadership is waiting for</li>
+      <li>Write the final diagnostic conclusion for the factory</li>
+    </ul>
+  </div>
+
+  <div class="card blue" style="margin-top:20px;">
+    <h3>The principle you've proven in Phase B</h3>
+    <p><strong>AI accelerates analysis. Humans direct the investigation.</strong> When AI had only the structured data, it pointed to the wrong fix. When you combined AI speed with human context — the technician notes, the floor observations, the physical proximity of Arm-02 to Station-03 — the real picture emerged. That combination is what manufacturing operations professionals do. That's exactly what you just did.</p>
+  </div>
+
+  <div style="text-align:center;padding:32px 0 0;">
+    <p style="font-size:15px;color:var(--muted);margin-bottom:6px;">Phase B is complete. Your diagnostics report has been saved.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.1em;text-transform:uppercase;">Module 2 · Phase C will open when your instructor is ready.</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 10;
+
+function buildDots() {
+  const wrap = document.getElementById('stepDots');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('screenCounter').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+
+function copyText(btnId, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const b = document.getElementById(btnId);
+    b.textContent = 'Copied!';
+    b.classList.add('copied');
+    setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('copied'); }, 2200);
+  });
+}
+
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+
+function syncName() {
+  const n1 = g('r_name'), n2 = g('r_name2');
+  return n2 || n1;
+}
+function syncDate() {
+  const d1 = g('r_date'), d2 = g('r_date2');
+  return d2 || d1;
+}
+
+function handleSubmit() {
+  const name = syncName().trim();
+  if (!name) { document.getElementById('err_msg').style.display = 'block'; document.getElementById('r_name2').focus(); return; }
+  document.getElementById('err_msg').style.display = 'none';
+  document.getElementById('success_box').style.display = 'block';
+  document.getElementById('btn_dl').style.display = 'inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent = '✓ Submitted'; b.style.background = '#1A6645'; b.style.cursor = 'default'; b.onclick = null;
+  document.getElementById('sub_note').style.display = 'none';
+  document.getElementById('success_box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const PURPLE = [123,47,190], PD = [74,24,128], PP = [243,237,251];
+  const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+  const BORDER = [220,210,230], OFF = [250,250,248];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 2 Phase B', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...PP); doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...PD);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+
+  const name = syncName() || 'Not provided';
+  const date = syncDate() || '—';
+
+  // COVER
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 0, PW, 68, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(196, 158, 232);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 2', ML, 20);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
+  doc.text('AI Troubleshooting Analysis Report', ML, 35);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(196, 158, 232);
+  doc.text('AI Diagnostics Lab  ·  Module 2 Phase B', ML, 47);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(ML, 58, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...PURPLE);
+  doc.text('ANALYST', ML + 6, 67); doc.text('DATE', ML + 100, 67); doc.text('ASSIGNMENT', ML + 152, 67);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(name, ML + 6, 77); doc.text(date, ML + 100, 77);
+  doc.setFontSize(10); doc.text('Module 2 · Phase B', ML + 152, 77);
+  y = 100;
+
+  // FIRST ANALYSIS
+  secHead('📋', 'First Analysis — Upload & Initial Findings (Screen 3)');
+  box('Files Uploaded', g('t3_files') || g('b_files'));
+  box('Patterns AI Identified', g('t3_patterns'));
+  box('Causes AI Suggested', g('t3_causes'));
+  y += 4;
+
+  // CRITICAL EVALUATION
+  secHead('💬', 'Critical Evaluation of AI Output (Screen 4)');
+  box('Incomplete or Questionable AI Findings', g('t4_questionable'));
+  box('What AI Missed From Phase A Investigation', g('t4_missed'));
+  y += 4;
+
+  // SECOND ANALYSIS
+  secHead('🔄', 'Deeper Pattern Analysis — Second Pass (Screen 5)');
+  box('New Patterns Found with All Five Files', g('t5_new'));
+  box('AI Analysis of Arm-02 Thermal Escalation', g('t5_arm2'));
+  box('Remaining Gaps in AI Analysis', g('t5_gaps'));
+  y += 4;
+
+  // AI WAS WRONG
+  secHead('⚠️', 'Critical Thinking — AI Was Wrong (Screen 6)');
+  box('Why the Sensor Replacement Recommendation Is Incomplete', g('t6_why'));
+  box('Actual Root Cause Hypothesis with Evidence', g('t6_root'));
+  box('What to Tell the Operations Team', g('t6_tell'));
+  y += 4;
+
+  // VALIDATION
+  secHead('⚖️', 'Human vs. AI Validation (Screen 7)');
+  box('What AI Got Right', g('t7_right'));
+  box('What AI Missed — and Why It Matters', g('t7_missed'));
+  box('What Human Investigation Added', g('t7_human'));
+  y += 4;
+
+  // FULL REPORT SECTIONS
+  secHead('📄', 'Full Diagnostics Report (Screen 8)');
+  box('Data Sources Used', g('b_files'));
+  box('AI Findings Summary', g('b_ai_findings'));
+  box('Validated Insights', g('b_validated'));
+  box('Incorrect or Incomplete AI Assumptions', g('b_rejected'));
+  box('Human Corrections and Context Added', g('b_human'));
+  box('Root Cause Hypothesis', g('b_root'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 2 Phase B  ·  AI Troubleshooting Analysis Report', ML, PH - 8);
+      doc.text('Page ' + i + ' of ' + total, PW / 2, PH - 8, { align: 'center' });
+      doc.text(name, PW - MR, PH - 8, { align: 'right' });
+    }
+  }
+
+  const safe = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  doc.save('novaforge_m2_phase_b_' + safe + '.pdf');
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+document.getElementById('r_date2').valueAsDate = new Date();
+</script>
+</body>
+</html>
