@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase B — AI Safety & Quality Intelligence Lab | NovaForge Module 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#F0EDF8;
+  --border:rgba(123,47,190,.13);--border-s:rgba(123,47,190,.28);
+  --txt:#1A1020;--muted:#6B5C7A;--light:#A090B0;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --teal:#0D6E6E;--teal-bg:#E6F5F5;--teal-border:rgba(13,110,110,.2);
+  --teal-dark:#095252;
+  --blue:#0F4F8A;--blue-bg:#EBF4FD;--blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--off);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-l{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-l .sep{color:var(--purple-mid);}.tb-l .cur{color:var(--teal);}
+.tb-r{display:flex;align-items:center;gap:12px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-bg);border:1px solid var(--teal-border);padding:5px 14px;border-radius:20px;}
+.sctr{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--white);border-bottom:1px solid var(--border);height:6px;}
+.prog-track{height:100%;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--purple));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.dots-row{padding:14px 40px 0;display:flex;align-items:center;gap:5px;max-width:900px;margin:0 auto;width:100%;}
+.dot{height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s;flex:1;}
+.dot.active{background:var(--teal);}
+.dot.done{background:var(--purple-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:900px;margin:0 auto;width:100%;padding:0 40px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:36px;animation:fadeUp .38s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:18px;height:2px;background:var(--teal);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:10px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.screen-rule{height:1px;background:var(--border);margin-bottom:26px;}
+.lead{font-size:15px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:26px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:12px;}
+.card.teal{border-left:4px solid var(--teal);background:var(--teal-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card.blue{border-left:4px solid #378ADD;background:var(--blue-bg);}
+.card h3{font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--txt);margin-bottom:7px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card p+p{margin-top:8px;}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:7px;display:block;}
+.label-p{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:7px;display:block;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* FILES LIST */
+.files-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.file-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);transition:background .2s;}
+.file-row:last-child{border-bottom:none;}
+.file-row:hover{background:var(--teal-bg);}
+.file-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.fi-safety{background:var(--red-bg);}
+.fi-comp{background:var(--amber-bg);}
+.fi-quality{background:var(--teal-bg);}
+.fi-notes{background:var(--off2);}
+.file-name{flex:1;font-size:14px;font-weight:600;color:var(--txt);}
+.file-desc{font-size:12px;color:var(--muted);}
+.file-badge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;flex-shrink:0;}
+.fb-safety{background:var(--red-bg);color:var(--red);}
+.fb-comp{background:var(--amber-bg);color:var(--amber);}
+.fb-quality{background:var(--teal-bg);color:var(--teal);}
+.fb-text{background:var(--purple-pale);color:var(--purple-dark);}
+
+/* STEPS */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:14px 0 18px;}
+.steps-list li{display:flex;align-items:flex-start;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6;}
+.steps-list li:last-child{border-bottom:none;}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* PROMPT BOX */
+.prompt-box{background:var(--off);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.pb-head{background:var(--teal-bg);padding:10px 17px;border-bottom:1px solid var(--teal-border);display:flex;align-items:center;justify-content:space-between;}
+.pb-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;}
+.copy-btn{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);background:var(--white);border:1px solid var(--teal-border);padding:4px 12px;border-radius:3px;cursor:pointer;transition:background .15s;}
+.copy-btn:hover{background:var(--teal-bg);}
+.copy-btn.copied{color:var(--green);border-color:var(--green-border);}
+.pb-text{padding:13px 17px;font-family:'Space Mono',monospace;font-size:11.5px;color:var(--txt);line-height:1.7;white-space:pre-wrap;}
+
+/* AI BUBBLE */
+.ai-bubble{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 22px;margin-bottom:16px;}
+.ai-bubble::before{content:'🤖  AI Output (Example)';font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700;display:block;margin-bottom:10px;}
+.ai-bubble p{font-size:14px;color:var(--txt);line-height:1.7;}
+.ai-bubble .ai-caution{margin-top:11px;padding:9px 13px;background:rgba(122,79,0,.07);border:1px solid var(--amber-border);border-radius:5px;font-size:12px;color:var(--amber);font-style:italic;}
+
+/* COMPARE TABLE */
+.cmp-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.cmp-table thead tr{background:var(--teal-bg);}
+.cmp-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);padding:11px 14px;text-align:left;border-bottom:1px solid var(--teal-border);font-weight:700;}
+.cmp-table td{padding:12px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.ai-right{background:var(--teal-bg);color:var(--teal);}
+.tag.ai-part{background:var(--amber-bg);color:var(--amber);}
+.tag.ai-wrong{background:var(--red-bg);color:var(--red);}
+.tag.human{background:var(--green-bg);color:var(--green);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.checklist li{display:flex;align-items:flex-start;gap:13px;padding:13px 17px;background:var(--white);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);cursor:pointer;user-select:none;transition:border-color .2s,background .2s;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.chk-s{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-d{font-size:12px;color:var(--muted);}
+
+/* IMPROVEMENT SECTION */
+.improve-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.is-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.is-head.safety{background:var(--red-bg);}
+.is-head.comp{background:var(--amber-bg);}
+.is-head.quality{background:var(--teal-bg);}
+.is-head.system{background:var(--purple-pale);}
+.is-icon{font-size:17px;}
+.is-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+.is-head.safety .is-title{color:var(--red);}
+.is-head.comp .is-title{color:var(--amber);}
+.is-head.quality .is-title{color:var(--teal);}
+.is-head.system .is-title{color:var(--purple-dark);}
+.is-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:11px;}
+
+/* REPORT SECTION */
+.rs{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rs-head{background:var(--teal-bg);padding:11px 18px;border-bottom:1px solid var(--teal-border);display:flex;align-items:center;gap:10px;}
+.rs-ico{font-size:15px;}.rs-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:700;}
+.rs-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:76px;border:1px dashed var(--border-s);border-radius:5px;background:var(--off);padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--teal);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.ifield{width:100%;padding:9px 13px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.ifield:focus{border-color:var(--teal);background:var(--white);}
+input.ifield::placeholder{color:var(--light);}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--teal-bg);padding:17px 22px;border-bottom:1px solid var(--teal-border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:4px;}
+.sz-head p{font-size:13px;color:var(--muted);margin:0;}
+.sz-body{padding:20px 22px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-sub{display:inline-flex;align-items:center;gap:9px;background:var(--teal);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-sub:hover{background:var(--teal-dark);transform:translateY(-1px);}
+.btn-dl{display:none;align-items:center;gap:8px;background:var(--white);color:var(--teal);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 24px;border-radius:4px;border:2px solid var(--teal);cursor:pointer;transition:background .2s;}
+.btn-dl:hover{background:var(--teal-bg);}
+.sub-note{font-size:12px;color:var(--light);font-style:italic;}
+.success-box{display:none;margin-top:14px;padding:13px 18px;background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 6px 6px 0;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.err-msg{display:none;margin-top:10px;padding:9px 15px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:34px;border-top:1px solid var(--border);margin-top:34px;}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s;}
+.btn-back:hover{background:var(--white);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:9px;background:var(--teal);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--teal-dark);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:15px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;font-family:'Space Mono',monospace;letter-spacing:.04em;}
+
+/* TRANS STRIP */
+.trans-strip{background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:8px;padding:18px 22px;display:flex;align-items:center;gap:18px;margin-top:26px;}
+.ts-icon{width:42px;height:42px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ts-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:4px;}
+.ts-title{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.ts-desc{font-size:12px;color:var(--muted);}
+
+/* COMPLETION */
+.comp-hero{text-align:center;padding:36px 0 22px;}
+.c-icon{font-size:54px;margin-bottom:14px;display:block;}
+.comp-hero h2{font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--txt);margin-bottom:9px;}
+.comp-hero p{font-size:14px;color:var(--muted);max-width:460px;margin:0 auto 18px;line-height:1.7;}
+.port-badge{display:flex;align-items:center;gap:12px;background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:7px;padding:14px 20px;margin:0 auto 22px;width:fit-content;}
+.pb-icon{font-size:22px;}.pb-title{font-weight:600;font-size:14px;color:var(--txt);}
+.pb-sub{font-size:11px;color:var(--muted);}
+
+/* PHASE C TRANSITION */
+.trans-box{background:var(--off);border:1px solid var(--border);border-radius:10px;padding:30px;text-align:center;margin-top:14px;}
+.trans-eyebrow{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:13px;}
+.trans-box h2{font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:var(--txt);margin-bottom:10px;letter-spacing:-.01em;}
+.trans-box h2 em{font-style:italic;color:var(--purple);}
+.trans-box p{font-size:14px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.7;}
+.trans-list{list-style:none;display:flex;flex-direction:column;gap:7px;max-width:300px;margin:14px auto 0;text-align:left;}
+.trans-list li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);}
+.trans-list li::before{content:'›';color:var(--teal);font-weight:700;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-l">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 3</span><span class="sep">›</span>
+    <span class="cur">Phase B</span>
+  </div>
+  <div class="tb-r">
+    <span class="sctr" id="sctr">Screen 1 of 10</span>
+    <div class="phase-pill">AI Intelligence Lab</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:10%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="dots-row" id="dotsRow"></div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — ENTER THE LAB
+══════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="eyebrow">Phase B · Screen 1 of 10 · Lab Entry</div>
+  <h1>AI Safety &amp; Quality<br><em>Intelligence Lab</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card teal">
+    <h3>🔬 You are entering the NovaForge AI Safety &amp; Quality Intelligence Lab</h3>
+    <p>In Phase A, you investigated operational data manually — building safety risk notes, compliance gap findings, quality observations, and initial hypotheses without any AI tools.</p>
+    <p>Now you bring that knowledge into the AI lab. Your job is not to hand the investigation over to AI — it's to use AI as a <strong>second opinion system</strong> that can process large datasets faster than any human, then validate its outputs against what you already know.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">What you built in Phase A</span>
+      <p>✅ Safety risk notes<br>✅ Compliance gap analysis<br>✅ Quality defect observations<br>✅ Human factors findings<br>✅ Four investigation hypotheses</p>
+    </div>
+    <div class="card">
+      <span class="label">What you will do in Phase B</span>
+      <p>🔍 Upload data into ChatGPT or Copilot<br>🔍 Validate AI findings against Phase A<br>🔍 Detect where AI is wrong or incomplete<br>🔍 Propose system-level improvements<br>🔍 Build your AI Intelligence Report</p>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>The core principle of this lab</h3>
+    <p>AI can process patterns at speed and scale that humans cannot match. But AI does not know the factory floor. It cannot read tone in a technician's note. It cannot tell you that a sensor is positioned too close to Arm-02. <strong>Your human knowledge from Phase A is the validation layer.</strong> Use both — together.</p>
+  </div>
+
+  <div class="card green">
+    <h3>Which AI tool should you use?</h3>
+    <div class="grid-2" style="margin-top:10px;">
+      <div style="padding:12px 15px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">ChatGPT</strong><br>chatgpt.com · free, supports .xlsx and .txt file uploads</div>
+      <div style="padding:12px 15px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">Microsoft Copilot</strong><br>copilot.microsoft.com · free, works well with structured data</div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🛡️</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 2</div>
+      <div class="ts-title">Safety &amp; Compliance Data Upload</div>
+      <div class="ts-desc">Upload safety alert logs, compliance records, and technician notes into your AI tool.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then enter the lab</span>
+    <button class="btn-next" onclick="goTo(2)">Enter the Lab</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — UPLOAD SAFETY & COMPLIANCE
+══════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="eyebrow">Phase B · Screen 2 of 10 · Safety &amp; Compliance</div>
+  <h1>Safety &amp; Compliance<br><em>Data Upload</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Start with the safety and compliance data. Upload the files below into your AI tool, then use one of the provided prompts. Read the AI response carefully before answering the reflection questions.</p>
+
+  <span class="label">Files to upload for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="file-icon fi-safety">🛡️</div>
+      <div style="flex:1;">
+        <div class="file-name">Safety Alert System Log</div>
+        <div class="file-desc">12 safety alerts across Week 21 — includes real incidents, suspect false positives, and recurring patterns</div>
+      </div>
+      <div class="file-badge fb-safety">Safety · Excel</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon fi-comp">📋</div>
+      <div style="flex:1;">
+        <div class="file-name">Maintenance &amp; Compliance Report</div>
+        <div class="file-desc">11 compliance items — overdue schedules, missing sign-offs, unresolved maintenance requests</div>
+      </div>
+      <div class="file-badge fb-comp">Compliance · Excel</div>
+    </div>
+    <div class="file-row">
+      <div class="file-icon fi-notes">📝</div>
+      <div style="flex:1;">
+        <div class="file-name">Technician Field Notes</div>
+        <div class="file-desc">8 technician and supervisor entries from Week 21 — includes human context not visible in structured data</div>
+      </div>
+      <div class="file-badge fb-text">Notes · Text</div>
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Open ChatGPT or Copilot in a new browser tab. Log in if needed.</div></li>
+    <li><div class="step-n">2</div><div>Upload all three files listed above into the AI tool.</div></li>
+    <li><div class="step-n">3</div><div>Copy one of the prompts below and paste it into the AI chat after uploading.</div></li>
+    <li><div class="step-n">4</div><div>Read the full AI response before answering the questions below.</div></li>
+  </ol>
+
+  <span class="label">Choose a prompt — copy and paste into your AI tool</span>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt A — Safety Focus</span><button class="copy-btn" id="cb1" onclick="copyText('cb1','Analyze this safety alert log and compliance report. Identify which safety alerts represent real hazards, which may be false positives, and where the compliance gaps create the most operational risk. Summarize your findings in plain language.')">Copy</button></div>
+    <div class="pb-text">Analyze this safety alert log and compliance report. Identify which safety alerts represent real hazards, which may be false positives, and where the compliance gaps create the most operational risk. Summarize your findings in plain language.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt B — Root Cause Focus</span><button class="copy-btn" id="cb2" onclick="copyText('cb2','Review these safety, compliance, and technician records together. Are the safety problems and compliance gaps connected? Look for patterns across all three files — especially around specific machines, time periods, or operational conditions.')">Copy</button></div>
+    <div class="pb-text">Review these safety, compliance, and technician records together. Are the safety problems and compliance gaps connected? Look for patterns across all three files — especially around specific machines, time periods, or operational conditions.</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🛡️</span><span class="rs-lbl">Safety &amp; Compliance — AI Analysis Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What safety risks did AI identify? Were they accurate?</span><textarea id="r2_safety" class="field tall" placeholder="Summarize the AI's safety findings. Compare them to your Phase A safety risk notes — where do they agree? Where do they differ?…"></textarea></div>
+      <div><span class="label">Did AI correctly identify the compliance gaps?</span><textarea id="r2_comp" class="field" placeholder="Did AI flag the same compliance gaps you found manually? What did it miss — and what context from your Phase A notes explains why?…"></textarea></div>
+      <div><span class="label">What did AI miss that was only visible in the technician notes?</span><textarea id="r2_miss" class="field" placeholder="The technician notes contain context that structured data can't show. Did AI pick up on the ignored maintenance requests, the shift handover gaps, or the technician frustration?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🔬</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 3</div>
+      <div class="ts-title">Quality Control Data Upload</div>
+      <div class="ts-desc">Upload quality inspection data and analyze defect patterns with AI.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Upload Quality Data</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — QUALITY CONTROL DATA
+══════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="eyebrow">Phase B · Screen 3 of 10 · Quality Analysis</div>
+  <h1>Quality Control<br><em>Data Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now focus on quality. Upload the quality inspection and batch production data. Your job is to see whether AI surfaces the same defect patterns you found in Phase A — and whether it finds anything new.</p>
+
+  <span class="label">Files for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="file-icon fi-quality">🔬</div>
+      <div style="flex:1;">
+        <div class="file-name">Quality Inspection Report — Weeks 18–21</div>
+        <div class="file-desc">8 batch records — defect rates, defect types, inspector notes, and trend data across four production weeks</div>
+      </div>
+      <div class="file-badge fb-quality">Quality · Excel</div>
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Start a <strong>new conversation</strong> in your AI tool (or continue if still open).</div></li>
+    <li><div class="step-n">2</div><div>Upload the Quality Inspection Report file.</div></li>
+    <li><div class="step-n">3</div><div>Use one of the prompts below — pick the one that matches what you most want to investigate.</div></li>
+    <li><div class="step-n">4</div><div>Read the AI response and answer the reflection questions below.</div></li>
+  </ol>
+
+  <span class="label">Quality analysis prompts — choose one</span>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt C — Defect Trend</span><button class="copy-btn" id="cb3" onclick="copyText('cb3','Analyze this quality inspection report and identify the defect trend across Weeks 18 to 21. At what point did the defect rate become a serious problem? What types of defects are increasing the fastest? Explain what might be causing this trend.')">Copy</button></div>
+    <div class="pb-text">Analyze this quality inspection report and identify the defect trend across Weeks 18 to 21. At what point did the defect rate become a serious problem? What types of defects are increasing the fastest? Explain what might be causing this trend.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt D — Root Cause</span><button class="copy-btn" id="cb4" onclick="copyText('cb4','Review this production quality data. The acceptable defect threshold is 3.5%. Identify all batches that exceeded this threshold. Based on defect types and inspector notes, what is the most likely operational root cause? Could a single machine issue explain multiple defect types?')">Copy</button></div>
+    <div class="pb-text">Review this production quality data. The acceptable defect threshold is 3.5%. Identify all batches that exceeded this threshold. Based on defect types and inspector notes, what is the most likely operational root cause? Could a single machine issue explain multiple defect types?</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔬</span><span class="rs-lbl">Quality Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What defect trend did AI identify — and does it match your Phase A quality notes?</span><textarea id="r3_trend" class="field tall" placeholder="Compare AI's description of the defect trend with what you noticed manually. Did AI see the Week 18→21 progression? Did it understand the threshold breach correctly?…"></textarea></div>
+      <div><span class="label">Did AI identify the link between Arm-02 and the defect increase?</span><textarea id="r3_arm2" class="field" placeholder="Inspector notes and your Phase A notes connect Arm-02's motor problems to quality defects starting in Week 20. Did AI make this connection — or did it stay surface-level?…"></textarea></div>
+      <div><span class="label">What quality findings did AI miss or get wrong?</span><textarea id="r3_miss" class="field" placeholder="What important quality context did AI overlook? Think about the QC camera calibration issue, the manual catch of unit #2418, and the Arm calibration drift…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🔗</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 4</div>
+      <div class="ts-title">Cross-System AI Analysis</div>
+      <div class="ts-desc">Combine all datasets and ask AI to find system-wide patterns and root causes.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Cross-System Analysis</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — CROSS-SYSTEM AI ANALYSIS
+══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="eyebrow">Phase B · Screen 4 of 10 · Cross-System</div>
+  <h1>Cross-System<br><em>AI Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now combine everything. Upload all available data files together and push AI to identify system-wide connections — not just individual file patterns. This is where the deepest insights usually emerge.</p>
+
+  <div class="card teal">
+    <h3>Why this step matters</h3>
+    <p>Safety alerts, compliance gaps, and quality defects may each look like separate problems when reviewed independently. When all three datasets are analyzed together, the connections — shared machines, common timeframes, deferred maintenance across all three systems — become visible. That's what this step is looking for.</p>
+  </div>
+
+  <span class="label">All files for cross-system analysis</span>
+  <div class="files-list">
+    <div class="file-row"><div class="file-icon fi-safety">🛡️</div><div style="flex:1;"><div class="file-name">Safety Alert Log</div><div class="file-desc">Safety alerts with severity, location, and outcome</div></div><div class="file-badge fb-safety">Safety</div></div>
+    <div class="file-row"><div class="file-icon fi-comp">📋</div><div style="flex:1;"><div class="file-name">Compliance Report</div><div class="file-desc">Maintenance schedules, overdue items, missed sign-offs</div></div><div class="file-badge fb-comp">Compliance</div></div>
+    <div class="file-row"><div class="file-icon fi-quality">🔬</div><div style="flex:1;"><div class="file-name">Quality Inspection Report</div><div class="file-desc">Batch defect rates and production quality data</div></div><div class="file-badge fb-quality">Quality</div></div>
+    <div class="file-row"><div class="file-icon fi-notes">📝</div><div style="flex:1;"><div class="file-name">Technician Field Notes</div><div class="file-desc">Real-world operational observations across all systems</div></div><div class="file-badge fb-text">Notes</div></div>
+  </div>
+
+  <span class="label">Cross-system prompts — try at least one</span>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt E — System-Wide Risk</span><button class="copy-btn" id="cb5" onclick="copyText('cb5','You have all four data files: safety alerts, compliance report, quality inspection data, and technician notes. Analyze them together and identify system-wide operational risks at NovaForge Robotics. Look for connections between safety incidents, compliance gaps, and quality defects. Is there a shared root cause?')">Copy</button></div>
+    <div class="pb-text">You have all four data files: safety alerts, compliance report, quality inspection data, and technician notes. Analyze them together and identify system-wide operational risks at NovaForge Robotics. Look for connections between safety incidents, compliance gaps, and quality defects. Is there a shared root cause?</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt F — Maintenance Connection</span><button class="copy-btn" id="cb6" onclick="copyText('cb6','Compare the compliance maintenance records with the safety alert log and quality defect data. Do the machines that are most overdue for maintenance also appear most in safety failures and quality defects? Is deferred maintenance a common thread across all three problem areas?')">Copy</button></div>
+    <div class="pb-text">Compare the compliance maintenance records with the safety alert log and quality defect data. Do the machines that are most overdue for maintenance also appear most in safety failures and quality defects? Is deferred maintenance a common thread across all three problem areas?</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔗</span><span class="rs-lbl">Cross-System Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What system-wide connections did AI identify?</span><textarea id="r4_cross" class="field tall" placeholder="What cross-system patterns did AI find when analyzing all four files together? Which connections were the most significant?…"></textarea></div>
+      <div><span class="label">Did AI connect deferred maintenance to both safety failures and quality defects?</span><textarea id="r4_maint" class="field" placeholder="This is the core cross-system pattern in this data. Did AI make this connection clearly — or did it treat each system as a separate problem?…"></textarea></div>
+      <div><span class="label">What system-level insight did you gain that individual file analysis didn't reveal?</span><textarea id="r4_insight" class="field" placeholder="What did the combined analysis show that wasn't visible when reviewing safety, compliance, and quality data separately?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚖️</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 5</div>
+      <div class="ts-title">AI vs Human Validation Check</div>
+      <div class="ts-desc">Compare AI findings directly against your Phase A human investigation results.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Validate Findings</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 5 — AI VS HUMAN VALIDATION
+══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="eyebrow">Phase B · Screen 5 of 10 · Validation</div>
+  <h1>AI vs. Human<br><em>Validation Check</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now you compare directly. Use the table below as a reference, then complete your own validation assessment. Be honest about where AI added value — and where it fell short.</p>
+
+  <table class="cmp-table">
+    <thead><tr><th>Finding</th><th>Assessment</th><th>Key Difference</th></tr></thead>
+    <tbody>
+      <tr><td>Assembly Line B (Arm-02) is the highest-risk area in the factory</td><td><span class="tag ai-right">AI ✓ Correct</span></td><td>AI identified Arm-02 from alert frequency — consistent with Phase A findings</td></tr>
+      <tr><td>Robotics Station 4 proximity alerts are likely false positives</td><td><span class="tag ai-part">AI ◑ Partial</span></td><td>AI flagged inconsistency but didn't fully commit — human shift log was the decisive evidence</td></tr>
+      <tr><td>Conveyor-01 failure was predictable from the Wednesday warning</td><td><span class="tag ai-part">AI ◑ Partial</span></td><td>AI noted the escalation but didn't explicitly call it preventable — technician notes showed the unresolved request</td></tr>
+      <tr><td>Defect rate increase directly linked to Arm-02 motor degradation</td><td><span class="tag ai-part">AI ◑ Partial</span></td><td>AI spotted both trends but required the prompt to connect them — the physical proximity link came from human investigation</td></tr>
+      <tr><td>Shift change compliance failures are a process issue — not individual negligence</td><td><span class="tag human">Human ✓ Only</span></td><td>Only visible in technician notes and supervisor safety logs — AI could not read the systemic workload context</td></tr>
+      <tr><td>Arm-04 encoder faults are exclusively night-shift — tied to cable wear from Feb</td><td><span class="tag human">Human ✓ Only</span></td><td>Technician S. Huang's notes were essential — the structured data shows faults but not the unresolved February flag</td></tr>
+      <tr><td>QC camera calibration overdue → AI inspection missed unit #2418</td><td><span class="tag human">Human ✓ Only</span></td><td>This connection required reading both the technician note (J. Park) and the compliance overdue table together</td></tr>
+      <tr><td>Deferred maintenance is the shared root cause across all three systems</td><td><span class="tag ai-right">AI ✓ Correct</span></td><td>AI surfaced this with the right prompt — but required all four files and an explicit cross-system prompt to produce it</td></tr>
+    </tbody>
+  </table>
+
+  <span class="label">Mark observations that match your experience across Screens 2–4</span>
+  <ul class="checklist" id="cl5">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI was most accurate when analyzing high-frequency structured data</span><span class="chk-d">Alert counts, defect rates, and overdue days gave AI clear signal to work with</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI needed explicit cross-system prompts to find connections</span><span class="chk-d">When each dataset was uploaded separately, AI treated each as isolated — the connections required the combined analysis prompt</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Technician notes contained context that changed the interpretation of several findings</span><span class="chk-d">Without field notes, AI couldn't know that maintenance requests were being ignored, not just delayed</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI produced more useful outputs when prompted specifically — not with open-ended questions</span><span class="chk-d">Targeted prompts that referenced specific machines or patterns got better results than broad requests</span></div></li>
+  </ul>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚖️</span><span class="rs-lbl">Your Validation Assessment</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where did AI add genuine value to your investigation?</span><textarea id="r5_value" class="field" placeholder="Which AI findings were accurate, useful, and saved you time or effort compared to manual analysis?…"></textarea></div>
+      <div><span class="label">Where did your Phase A human investigation outperform AI?</span><textarea id="r5_human" class="field tall" placeholder="What did you find in Phase A that AI consistently missed or misread — and why? What type of context or information is AI structurally unable to capture?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚠️</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 6</div>
+      <div class="ts-title">AI Misinterpretation Challenge</div>
+      <div class="ts-desc">Examine a flawed AI conclusion and explain what it missed — and why.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">AI Was Wrong</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 6 — AI MISINTERPRETATION
+══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="eyebrow">Phase B · Screen 6 of 10 · Critical Thinking</div>
+  <h1>When AI Gets<br><em>It Wrong</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">AI systems produce confident outputs — even when the underlying analysis is incomplete. This screen is about developing the professional judgment to recognize when that's happening and correct it.</p>
+
+  <div class="card red">
+    <h3>⚠ The AI System Conclusion</h3>
+    <p>After reviewing the safety and compliance datasets, the AI operations intelligence system issued the following audit-risk conclusion to NovaForge leadership:</p>
+  </div>
+
+  <div class="ai-bubble">
+    <p>"Primary audit risk identified: <strong>Sensor malfunction at Station-03 (SN-3T)</strong>. The temperature sensor has generated repeated high-deviation alerts. This is likely the root cause of the safety flag escalation observed this week. Recommended action: replace Sensor SN-3T and recalibrate proximity sensor at Station 4. Compliance gaps appear to be <strong>administrative delays</strong> rather than systemic failures. Quality defects appear to be <strong>within a manageable variance range</strong> requiring minor process adjustment."</p>
+    <div class="ai-caution">This conclusion is based on alert frequency and deviation data only. Cross-system patterns and technician context were not fully integrated.</div>
+  </div>
+
+  <span class="label">Identify what the AI got wrong or missed — check all that apply</span>
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">The SN-3T sensor alerts may be detecting real heat from Arm-02, not sensor malfunction</span><span class="chk-d">Technician J. Park explicitly noted uncertainty about whether the sensor is faulty or responding to Arm-02's proximity — AI treated it as a confirmed sensor fault</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Compliance gaps are NOT just administrative — they are systemic and documented by multiple technicians</span><span class="chk-d">Maintenance requests ignored for 4+ days, Arm-04 cable unresolved since February — these are systemic failures with documented accountability implications</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Quality defects are NOT in manageable variance — Week 21 Batch A at 8.3% is more than double the threshold</span><span class="chk-d">AI characterized the defect rate as 'minor variance' — the actual trend shows record-high defects and a deteriorating trajectory</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI did not identify shift change compliance failures as a workflow design problem</span><span class="chk-d">The shift handover sign-off pattern is a process issue driven by workload — replacing the sensor doesn't address it</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Replacing SN-3T and recalibrating Station 4 alone would not resolve the audit risk</span><span class="chk-d">The core risk is deferred maintenance on Arm-02 and Conveyor-01 — sensor replacement is a secondary action at best</span></div></li>
+  </ul>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🧠</span><span class="rs-lbl">Critical Thinking Response</span></div>
+    <div class="rs-body">
+      <div><span class="label">What is the actual operational situation that AI mischaracterized?</span><textarea id="r6_actual" class="field tall" placeholder="Restate what is really happening at NovaForge — correcting each element of the AI's flawed conclusion. Be specific about what evidence contradicts the AI's assessment…"></textarea></div>
+      <div><span class="label">What would happen if NovaForge acted on this AI recommendation alone?</span><textarea id="r6_consequence" class="field" placeholder="If leadership replaced the sensor and called the compliance gaps 'administrative' — what audit findings would remain? What failures would likely continue or worsen?…"></textarea></div>
+      <div><span class="label">What should the AI recommendation have said instead?</span><textarea id="r6_better" class="field" placeholder="Rewrite a more accurate AI recommendation based on everything your investigation has revealed…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:10px;">
+    <h3>Why this is a core professional skill</h3>
+    <p>In industrial settings, acting on a confident but incomplete AI recommendation can lead to real harm — failed audits, continued safety risks, and wasted resources. The skill you just practiced — <strong>reading AI output critically, identifying what it missed, and correcting its conclusion</strong> — is exactly what separates an informed operations professional from someone who just delegates to automation.</p>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚙️</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 7</div>
+      <div class="ts-title">System Improvement Insights</div>
+      <div class="ts-desc">Propose prevention-focused improvements to safety, compliance, and quality systems.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Build Improvements</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 7 — SYSTEM IMPROVEMENT INSIGHTS
+══════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="eyebrow">Phase B · Screen 7 of 10 · Improvements</div>
+  <h1>System Improvement<br><em>Insights</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Finding problems is only half the job. Based on your investigation and AI analysis, propose specific improvements for each operational system. Focus on <strong>prevention</strong> — not just fixing what's already broken.</p>
+
+  <div class="improve-section">
+    <div class="is-head safety"><span class="is-icon">🛡️</span><span class="is-title">Safety System Improvements</span></div>
+    <div class="is-body">
+      <div><span class="label">How should NovaForge reduce false safety alerts and improve hazard detection accuracy?</span><textarea id="imp_safety1" class="field" placeholder="Example: Implement a monthly sensor calibration schedule for all AI safety monitoring equipment — false alerts from Station 4 and SN-3T suggest calibration is overdue or insufficient…"></textarea></div>
+      <div><span class="label">What prevention measures would reduce the chance of a safety incident going undetected?</span><textarea id="imp_safety2" class="field" placeholder="Example: Create a human verification step for all Critical and High severity alerts before a 'no action' decision is logged — requiring a physical check before the alert is dismissed…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="improve-section">
+    <div class="is-head comp"><span class="is-icon">📋</span><span class="is-title">Compliance System Improvements</span></div>
+    <div class="is-body">
+      <div><span class="label">How should NovaForge prevent missed inspections and skipped maintenance workflows?</span><textarea id="imp_comp1" class="field" placeholder="Example: Require digital sign-off confirmation for all shift handover safety steps — if not completed within 15 minutes of shift change, an alert escalates to the supervisor automatically…"></textarea></div>
+      <div><span class="label">How should maintenance request fulfillment be tracked and enforced?</span><textarea id="imp_comp2" class="field" placeholder="Example: Set a 48-hour mandatory response SLA on all maintenance requests with daily escalation alerts — so unresolved requests like the Arm-02 motor service cannot sit open for 4+ days without leadership notification…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="improve-section">
+    <div class="is-head quality"><span class="is-icon">🔬</span><span class="is-title">Quality Control System Improvements</span></div>
+    <div class="is-body">
+      <div><span class="label">How should NovaForge reduce the defect rate and improve production consistency?</span><textarea id="imp_qual1" class="field" placeholder="Example: Link QC camera calibration to the same schedule as the machines it inspects — when Arm-02 is serviced, the QC cameras in that zone should also be recalibrated at the same time…"></textarea></div>
+      <div><span class="label">What early warning system would help prevent defect rates from escalating as they did in Weeks 20–21?</span><textarea id="imp_qual2" class="field" placeholder="Example: Set an automated defect rate alert at 3.0% (below the 3.5% threshold) that triggers a quality review meeting — so teams have warning before the threshold is breached, not after…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="improve-section">
+    <div class="is-head system"><span class="is-icon">🔗</span><span class="is-title">Systemic / Cross-System Improvements</span></div>
+    <div class="is-body">
+      <div><span class="label">What systemic change would address the deferred maintenance culture across all three systems?</span><textarea id="imp_sys" class="field" placeholder="Example: Create a weekly cross-system maintenance dashboard visible to operations leadership — showing overdue items across safety, compliance, and quality systems together, rather than in separate reports that can each be quietly delayed…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🤖</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 8</div>
+      <div class="ts-title">AI-Generated Recommendations Review</div>
+      <div class="ts-desc">Ask AI for improvement recommendations — then evaluate whether they are realistic and useful.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">AI Recommendations</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 8 — AI RECOMMENDATIONS REVIEW
+══════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="eyebrow">Phase B · Screen 8 of 10 · AI Recommendations</div>
+  <h1>AI-Generated<br><em>Recommendations Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now ask AI directly for improvement recommendations — then evaluate them. Not every AI recommendation will be realistic or operationally sound. Your job is to assess each one with professional judgment.</p>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Go back to your AI tool (with all four files still uploaded or re-uploaded).</div></li>
+    <li><div class="step-n">2</div><div>Copy and paste the prompt below into the chat.</div></li>
+    <li><div class="step-n">3</div><div>Read all recommendations carefully — then answer the evaluation questions below.</div></li>
+  </ol>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt G — Improvement Request</span><button class="copy-btn" id="cb7" onclick="copyText('cb7','Based on all the data you have reviewed — safety alerts, compliance gaps, quality defects, and technician notes — recommend specific improvements to the safety monitoring system, the maintenance compliance workflow, and the quality control process at NovaForge Robotics. Focus on prevention, not just fixing current problems.')">Copy</button></div>
+    <div class="pb-text">Based on all the data you have reviewed — safety alerts, compliance gaps, quality defects, and technician notes — recommend specific improvements to the safety monitoring system, the maintenance compliance workflow, and the quality control process at NovaForge Robotics. Focus on prevention, not just fixing current problems.</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📋</span><span class="rs-lbl">AI Recommendations Evaluation</span></div>
+    <div class="rs-body">
+      <div><span class="label">List the AI's top 3–5 recommendations here</span><textarea id="r8_recs" class="field tall" placeholder="Write out the main recommendations AI provided. Be specific — use AI's own words or close paraphrases…"></textarea></div>
+      <div><span class="label">Which recommendations are realistic and operationally useful?</span><textarea id="r8_good" class="field" placeholder="Which ones would actually work in a manufacturing setting? What makes them practical?…"></textarea></div>
+      <div><span class="label">Which recommendations are incomplete, risky, or missing important context?</span><textarea id="r8_weak" class="field" placeholder="Which AI recommendations seem wrong, oversimplified, or potentially harmful if implemented? What context did AI miss?…"></textarea></div>
+      <div><span class="label">What improvements did you propose in Screen 7 that the AI didn't mention?</span><textarea id="r8_yours" class="field" placeholder="Where did your human investigation produce better recommendations than AI? What context or reasoning made the difference?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📄</div>
+    <div>
+      <div class="ts-label">Next Up · Screen 9</div>
+      <div class="ts-title">Build Your Intelligence Report</div>
+      <div class="ts-desc">Compile your complete Phase B findings into a professional AI Safety &amp; Quality Intelligence Report.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <button class="btn-next" onclick="goTo(9)">Build Report</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 9 — FINAL REPORT
+══════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="eyebrow">Phase B · Screen 9 of 10 · Final Report</div>
+  <h1>Build Your<br><em>Intelligence Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Compile all Phase B findings into your professional report. Your responses from Screens 2–8 will feed directly into the PDF. Fill in each section carefully — this is an audit-ready document.</p>
+
+  <div class="card teal" style="margin-bottom:20px;">
+    <h3>📊 NovaForge AI Safety &amp; Quality Intelligence Report</h3>
+    <p>This document demonstrates your ability to use AI tools for industrial analysis, validate AI outputs, and generate system improvement recommendations. It is a professional-grade portfolio deliverable.</p>
+  </div>
+
+  <!-- Learner info -->
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👤</span><span class="rs-lbl">Analyst Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="ifield" placeholder="Your full name"></div>
+        <div><span class="label">Date</span><input type="date" id="r_date" class="ifield"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🛡️</span><span class="rs-lbl">Part 1 — Validated Safety Findings</span></div>
+    <div class="rs-body">
+      <div><span class="label">What safety risks were confirmed by both human investigation and AI analysis?</span><textarea id="b_safety" class="field tall" placeholder="Summarize the safety findings you are confident in — what real hazards exist, what false positives were identified, and what safety system improvements are needed…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📋</span><span class="rs-lbl">Part 2 — Compliance Review Results</span></div>
+    <div class="rs-body">
+      <div><span class="label">What compliance gaps were confirmed — and how serious are they for the upcoming audit?</span><textarea id="b_comp" class="field tall" placeholder="Summarize the compliance gaps, their severity, and the systemic patterns that explain why they are occurring. What changes are needed before the audit?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔬</span><span class="rs-lbl">Part 3 — Quality Control Analysis</span></div>
+    <div class="rs-body">
+      <div><span class="label">What did the combined AI and human analysis reveal about NovaForge's quality situation?</span><textarea id="b_qual" class="field tall" placeholder="Summarize the defect trend, the root cause connection to Arm-02, the QC camera calibration issue, and what needs to change to bring defect rates back below threshold…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚖️</span><span class="rs-lbl">Part 4 — AI vs. Human Comparison</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where did AI add real value — and where did human investigation outperform it?</span><textarea id="b_compare" class="field tall" placeholder="Be specific. Reference the AI misinterpretation from Screen 6, the human-only findings from the technician notes, and the prompting strategies that produced better AI outputs…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔗</span><span class="rs-lbl">Part 5 — System-Wide Insights</span></div>
+    <div class="rs-body">
+      <div><span class="label">What is the system-level diagnosis for NovaForge — the root cause connecting all three problem areas?</span><textarea id="b_system" class="field tall" placeholder="State your overall diagnosis: what shared root cause connects the safety failures, compliance gaps, and quality defects? What structural change at NovaForge would address all three?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">💡</span><span class="rs-lbl">Part 6 — Improvement Recommendations</span></div>
+    <div class="rs-body">
+      <div><span class="label">Top recommendation for safety system</span><textarea id="b_rec_safety" class="field" placeholder="Your single most impactful safety improvement recommendation…"></textarea></div>
+      <div><span class="label">Top recommendation for compliance system</span><textarea id="b_rec_comp" class="field" placeholder="Your single most impactful compliance improvement recommendation…"></textarea></div>
+      <div><span class="label">Top recommendation for quality control system</span><textarea id="b_rec_qual" class="field" placeholder="Your single most impactful quality improvement recommendation…"></textarea></div>
+      <div><span class="label">Overall conclusion for leadership</span><textarea id="b_conclusion" class="field tall" placeholder="Write a 3–5 sentence executive summary: what is the current state of NovaForge's safety, compliance, and quality systems — and what must happen before the audit?…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Report</h3>
+      <p>Enter your name and date, then click Submit. Your PDF downloads immediately after.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name (confirm)</span><input type="text" id="r_name2" class="ifield" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date2" class="ifield"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-sub" id="btn_sub" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-dl" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="sub-note" id="sub_note">All typed responses will compile into your PDF.</span>
+      </div>
+      <div class="err-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Report submitted successfully.</strong> Your Phase B AI Intelligence Report is complete. Download your PDF — together with your Phase A report, it forms the full investigation record for Phase C decision-making.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(8)">← Edit Report</button>
+    <button class="btn-next" onclick="goTo(10)">View Completion</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 10 — EXPORT & TRANSITION
+══════════════════════════════════ -->
+<div class="screen" id="screen-10">
+  <div class="eyebrow">Phase B · Screen 10 of 10 · Complete</div>
+  <h1>Analysis Complete —<br><em>Decisions Ahead</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="comp-hero">
+    <span class="c-icon">📊</span>
+    <h2>AI Safety &amp; Quality Intelligence Report Complete</h2>
+    <p>You have used real AI tools to validate safety, compliance, and quality findings — then corrected an incomplete AI recommendation and proposed prevention-focused system improvements.</p>
+  </div>
+
+  <div class="port-badge">
+    <div class="pb-icon">🔬</div>
+    <div>
+      <div class="pb-title">NovaForge AI Safety &amp; Quality Intelligence Report</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 3 · Phase B</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:16px;">
+    <h3>What this report demonstrates</h3>
+    <p>• Ability to use AI tools to validate safety, compliance, and quality data in an industrial context<br>
+    • Skill at identifying where AI analysis is accurate, partial, or incorrect<br>
+    • Critical thinking to correct a flawed AI recommendation using operational context<br>
+    • Capacity to generate prevention-focused system improvement recommendations<br>
+    • Professional-level synthesis across three interconnected operational systems</p>
+  </div>
+
+  <div class="card amber">
+    <h3>Add this to your portfolio</h3>
+    <p>Your Phase A and Phase B reports together demonstrate the complete Discover → Analyze arc of the Module 3 intelligence process. Keep both files — you will reference your findings and recommendations when making final operational decisions in Phase C.</p>
+  </div>
+
+  <div class="trans-box">
+    <div class="trans-eyebrow">Coming Up · Phase C</div>
+    <h2>AI has helped surface the risks.<br><em>Now the decisions must be made.</em></h2>
+    <p>You have identified what is wrong, analyzed why, and proposed improvements. In Phase C, you will step into the final decision-making role — determining what NovaForge will actually do to prepare for the audit.</p>
+    <ul class="trans-list">
+      <li>Prioritize which risks to address first</li>
+      <li>Evaluate improvement recommendations under operational constraints</li>
+      <li>Make final decisions on safety, compliance, and quality responses</li>
+      <li>Build the audit-ready Operations Response Brief for leadership</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;padding:28px 0 0;">
+    <p style="font-size:14px;color:var(--muted);margin-bottom:6px;">Phase B is complete. Your Intelligence Report has been saved.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.1em;text-transform:uppercase;">Module 3 · Phase C opens when your instructor is ready.</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 10;
+
+function buildDots() {
+  const wrap = document.getElementById('dotsRow');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('sctr').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+
+function copyText(btnId, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const b = document.getElementById(btnId);
+    b.textContent = 'Copied!';
+    b.classList.add('copied');
+    setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('copied'); }, 2200);
+  });
+}
+
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+function name() { return (g('r_name2') || g('r_name')).trim(); }
+function date() { return g('r_date2') || g('r_date') || '—'; }
+
+function handleSubmit() {
+  if (!name()) { document.getElementById('err_msg').style.display = 'block'; document.getElementById('r_name2').focus(); return; }
+  document.getElementById('err_msg').style.display = 'none';
+  document.getElementById('success_box').style.display = 'block';
+  document.getElementById('btn_dl').style.display = 'inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent = '✓ Submitted'; b.style.background = '#1A6645'; b.style.cursor = 'default'; b.onclick = null;
+  document.getElementById('sub_note').style.display = 'none';
+  document.getElementById('success_box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const TEAL = [13,110,110], TEAL_BG = [230,245,245], TEAL_D = [9,82,82];
+  const PURPLE = [123,47,190];
+  const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+  const BORDER = [220,210,230], OFF = [250,250,248];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 3 Phase B', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...TEAL_BG);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TEAL_D);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...TEAL);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+
+  // COVER
+  doc.setFillColor(...TEAL);
+  doc.rect(0, 0, PW, 62, 'F');
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 54, PW, 8, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(180, 230, 230);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 3', ML, 19);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(255, 255, 255);
+  doc.text('AI Safety & Quality Intelligence Report', ML, 34);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(180, 230, 230);
+  doc.text('AI Safety & Quality Intelligence Lab  ·  Phase B', ML, 46);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(ML, 56, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...TEAL);
+  doc.text('ANALYST', ML + 6, 66); doc.text('DATE', ML + 100, 66); doc.text('PHASE', ML + 152, 66);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(name() || 'Not provided', ML + 6, 75);
+  doc.text(date(), ML + 100, 75);
+  doc.setFontSize(10); doc.text('Module 3 · Phase B', ML + 152, 75);
+  y = 98;
+
+  // SCREEN 2 — Safety & Compliance
+  secHead('🛡️', 'Safety & Compliance — AI Analysis (Screen 2)');
+  box('Safety Risks Identified by AI', g('r2_safety'));
+  box('Compliance Gaps Confirmed by AI', g('r2_comp'));
+  box('What AI Missed From Technician Notes', g('r2_miss'));
+  y += 4;
+
+  // SCREEN 3 — Quality
+  secHead('🔬', 'Quality Control — AI Analysis (Screen 3)');
+  box('Defect Trend Identified by AI', g('r3_trend'));
+  box('AI Analysis of Arm-02 Quality Link', g('r3_arm2'));
+  box('Quality Findings AI Missed', g('r3_miss'));
+  y += 4;
+
+  // SCREEN 4 — Cross-System
+  secHead('🔗', 'Cross-System AI Analysis (Screen 4)');
+  box('System-Wide Connections AI Identified', g('r4_cross'));
+  box('Deferred Maintenance — Cross-System Link', g('r4_maint'));
+  box('Insight Only Visible in Combined Analysis', g('r4_insight'));
+  y += 4;
+
+  // SCREEN 5 — Validation
+  secHead('⚖️', 'AI vs. Human Validation (Screen 5)');
+  box('Where AI Added Genuine Value', g('r5_value'));
+  box('Where Human Investigation Outperformed AI', g('r5_human'));
+  y += 4;
+
+  // SCREEN 6 — Misinterpretation
+  secHead('⚠️', 'AI Misinterpretation Challenge (Screen 6)');
+  box('What the AI Got Wrong — Corrected Assessment', g('r6_actual'));
+  box('Consequences of Acting on the Flawed Recommendation', g('r6_consequence'));
+  box('What the AI Recommendation Should Have Said', g('r6_better'));
+  y += 4;
+
+  // SCREEN 7 — Improvements
+  secHead('⚙️', 'System Improvement Insights (Screen 7)');
+  box('Safety Improvement 1', g('imp_safety1'));
+  box('Safety Improvement 2', g('imp_safety2'));
+  box('Compliance Improvement 1', g('imp_comp1'));
+  box('Compliance Improvement 2', g('imp_comp2'));
+  box('Quality Improvement 1', g('imp_qual1'));
+  box('Quality Improvement 2', g('imp_qual2'));
+  box('Systemic / Cross-System Improvement', g('imp_sys'));
+  y += 4;
+
+  // SCREEN 8 — AI Recs
+  secHead('🤖', 'AI-Generated Recommendations Evaluation (Screen 8)');
+  box('AI Top Recommendations', g('r8_recs'));
+  box('Recommendations That Are Realistic & Useful', g('r8_good'));
+  box('Recommendations That Are Incomplete or Risky', g('r8_weak'));
+  box('Human-Generated Improvements AI Didn\'t Mention', g('r8_yours'));
+  y += 4;
+
+  // SCREEN 9 — Full Report
+  secHead('📊', 'Full Intelligence Report (Screen 9)');
+  box('Part 1 — Validated Safety Findings', g('b_safety'));
+  box('Part 2 — Compliance Review Results', g('b_comp'));
+  box('Part 3 — Quality Control Analysis', g('b_qual'));
+  box('Part 4 — AI vs. Human Comparison', g('b_compare'));
+  box('Part 5 — System-Wide Insights & Root Cause', g('b_system'));
+  box('Top Safety Recommendation', g('b_rec_safety'));
+  box('Top Compliance Recommendation', g('b_rec_comp'));
+  box('Top Quality Recommendation', g('b_rec_qual'));
+  box('Overall Conclusion for Leadership', g('b_conclusion'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 3 Phase B  ·  AI Safety & Quality Intelligence Report', ML, PH - 8);
+      doc.text('Page ' + i + ' of ' + total, PW / 2, PH - 8, { align: 'center' });
+      doc.text(name(), PW - MR, PH - 8, { align: 'right' });
+    }
+  }
+
+  const safe = name().replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'analyst';
+  doc.save('novaforge_m3_phase_b_' + safe + '.pdf');
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+document.getElementById('r_date2').valueAsDate = new Date();
+</script>
+</body>
+</html>
