@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase C — Operations Command | NovaForge Module 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#F0EDF8;
+  --border:rgba(123,47,190,.13);--border-s:rgba(123,47,190,.28);
+  --txt:#1A1020;--muted:#6B5C7A;--light:#A090B0;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --teal:#0D6E6E;--teal-bg:#E6F5F5;--teal-border:rgba(13,110,110,.2);--teal-dark:#095252;
+  --blue:#0F4F8A;--blue-bg:#EBF4FD;--blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--off);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-l{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-l .sep{color:var(--purple-mid);}.tb-l .cur{color:var(--teal);}
+.tb-r{display:flex;align-items:center;gap:12px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-bg);border:1px solid var(--teal-border);padding:5px 14px;border-radius:20px;}
+.sctr{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--white);border-bottom:1px solid var(--border);height:6px;}
+.prog-track{height:100%;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--purple));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.dots-row{padding:14px 40px 0;display:flex;align-items:center;gap:5px;max-width:900px;margin:0 auto;width:100%;}
+.dot{height:4px;border-radius:2px;background:var(--border-s);cursor:pointer;transition:background .25s;flex:1;}
+.dot.active{background:var(--teal);}.dot.done{background:var(--purple-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:900px;margin:0 auto;width:100%;padding:0 40px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:36px;animation:fadeUp .38s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:18px;height:2px;background:var(--teal);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:10px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.screen-rule{height:1px;background:var(--border);margin-bottom:26px;}
+.lead{font-size:15px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:26px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:12px;}
+.card.teal{border-left:4px solid var(--teal);background:var(--teal-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card h3{font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--txt);margin-bottom:7px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card p+p{margin-top:8px;}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:7px;display:block;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:12px;}
+
+/* SITUATION BLOCK */
+.sit-block{background:var(--off);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px;}
+.sit-head{padding:13px 20px;background:var(--teal-bg);border-bottom:1px solid var(--teal-border);display:flex;align-items:center;gap:10px;}
+.sit-head .sh-icon{font-size:16px;}.sit-head .sh-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;}
+.sit-body{padding:18px 20px;}
+.sit-body p{font-size:15px;color:var(--txt);line-height:1.7;margin-bottom:0;}
+.sit-body p+p{margin-top:10px;}
+
+/* CONTEXT LIST */
+.ctx-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:12px 0 18px;}
+.ctx-list li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--muted);line-height:1.55;}
+.ctx-list li::before{content:'›';color:var(--teal);font-weight:700;font-size:15px;flex-shrink:0;margin-top:1px;}
+
+/* AI REC */
+.ai-rec{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:18px 22px;margin-bottom:18px;}
+.ai-rec-lbl{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.ai-rec-lbl::before{content:'🤖';font-size:13px;}
+.ai-rec blockquote{font-size:14px;color:var(--txt);line-height:1.7;font-style:italic;padding-left:13px;border-left:3px solid var(--blue-border);}
+.ai-note{margin-top:10px;font-size:12px;color:var(--blue);}
+
+/* DECISION BUTTONS */
+.dec-row{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+.dec-btn{flex:1;min-width:140px;padding:18px 14px;border-radius:8px;border:2px solid var(--border-s);background:var(--white);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.dec-btn .db-icon{font-size:28px;}
+.dec-btn .db-label{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt);}
+.dec-btn .db-hint{font-size:11px;color:var(--light);text-align:center;line-height:1.35;}
+.dec-btn:hover{border-color:var(--teal);background:var(--teal-bg);}
+.dec-btn.sel-r{border-color:#D94040;background:var(--red-bg);}
+.dec-btn.sel-r .db-label{color:var(--red);}
+.dec-btn.sel-a{border-color:#E8A020;background:var(--amber-bg);}
+.dec-btn.sel-a .db-label{color:var(--amber);}
+.dec-btn.sel-g{border-color:var(--green);background:var(--green-bg);}
+.dec-btn.sel-g .db-label{color:var(--green);}
+
+/* FEEDBACK */
+.dec-fb{border-radius:8px;padding:15px 19px;margin-bottom:18px;display:none;font-size:14px;line-height:1.6;}
+.dec-fb.r{background:var(--red-bg);border:1px solid var(--red-border);border-left:4px solid #D94040;color:var(--red);}
+.dec-fb.a{background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #E8A020;color:var(--amber);}
+.dec-fb.g{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);color:var(--green);}
+.dec-fb strong{font-weight:600;}
+
+/* PRIORITY TABLE */
+.priority-table{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.pt-row{display:grid;grid-template-columns:auto 1fr auto;gap:0;border-bottom:1px solid var(--border);align-items:center;}
+.pt-row:last-child{border-bottom:none;}
+.pt-row.hdr{background:var(--teal-bg);}
+.pt-cell{padding:13px 16px;font-size:13px;color:var(--muted);border-right:1px solid var(--border);line-height:1.5;}
+.pt-cell:last-child{border-right:none;}
+.pt-row.hdr .pt-cell{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:700;}
+.pt-row:hover .pt-cell{background:var(--off);}
+.pt-num{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--white);background:var(--teal);padding:3px 9px;border-radius:3px;}
+.pt-strong{font-weight:600;color:var(--txt);}
+.impact-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;font-weight:700;}
+.impact-tag.crit{background:var(--red-bg);color:var(--red);}
+.impact-tag.high{background:var(--amber-bg);color:var(--amber);}
+.impact-tag.med{background:var(--teal-bg);color:var(--teal);}
+
+/* OVERSIGHT TABLE */
+.ov-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.ov-table thead tr{background:var(--teal-bg);}
+.ov-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);padding:11px 14px;text-align:left;border-bottom:1px solid var(--teal-border);font-weight:700;}
+.ov-table td{padding:12px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.ov-table tr:last-child td{border-bottom:none;}
+.ov-table tr:hover td{background:var(--off);}
+.ov-tag{display:inline-flex;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.ov-tag.ai{background:var(--teal-bg);color:var(--teal);}
+.ov-tag.human{background:var(--green-bg);color:var(--green);}
+.ov-tag.both{background:var(--amber-bg);color:var(--amber);}
+.ov-tag.wrong{background:var(--red-bg);color:var(--red);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.checklist li{display:flex;align-items:flex-start;gap:13px;padding:13px 17px;background:var(--white);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);cursor:pointer;user-select:none;transition:border-color .2s,background .2s;}
+.checklist li:hover{border-color:var(--border-s);background:var(--purple-pale);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-s);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.chk-s{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-d{font-size:12px;color:var(--muted);}
+
+/* AUDIT DECISION BUTTONS */
+.audit-row{display:flex;gap:14px;margin-bottom:22px;}
+.audit-btn{flex:1;padding:22px 16px;border-radius:10px;border:2px solid var(--border-s);background:var(--white);cursor:pointer;transition:all .2s;text-align:center;font-family:'DM Sans',sans-serif;}
+.audit-btn .ab-icon{font-size:34px;display:block;margin-bottom:10px;}
+.audit-btn .ab-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;}
+.audit-btn .ab-desc{font-size:12px;color:var(--light);line-height:1.45;}
+.audit-btn:hover{transform:translateY(-2px);}
+.audit-btn.sel-ready{border-color:var(--green);background:var(--green-bg);}
+.audit-btn.sel-ready .ab-label{color:var(--green);}
+.audit-btn.sel-cond{border-color:#E8A020;background:var(--amber-bg);}
+.audit-btn.sel-cond .ab-label{color:var(--amber);}
+.audit-btn.sel-not{border-color:#D94040;background:var(--red-bg);}
+.audit-btn.sel-not .ab-label{color:var(--red);}
+
+/* AUDIT FEEDBACK */
+.audit-fb{border-radius:8px;padding:16px 20px;margin-bottom:18px;display:none;font-size:14px;line-height:1.65;}
+.audit-fb.ready{background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);color:var(--green);}
+.audit-fb.cond{background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #E8A020;color:var(--amber);}
+.audit-fb.not{background:var(--red-bg);border:1px solid var(--red-border);border-left:4px solid #D94040;color:var(--red);}
+.audit-fb strong{font-weight:600;}
+
+/* REPORT SECTION */
+.rs{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rs-head{background:var(--teal-bg);padding:11px 18px;border-bottom:1px solid var(--teal-border);display:flex;align-items:center;gap:10px;}
+.rs-ico{font-size:15px;}.rs-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:700;}
+.rs-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:76px;border:1px dashed var(--border-s);border-radius:5px;background:var(--off);padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--teal);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.ifield{width:100%;padding:9px 13px;border:1px solid var(--border-s);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.ifield:focus{border-color:var(--teal);background:var(--white);}
+input.ifield::placeholder{color:var(--light);}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--teal-bg);padding:17px 22px;border-bottom:1px solid var(--teal-border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:4px;}
+.sz-head p{font-size:13px;color:var(--muted);margin:0;}
+.sz-body{padding:20px 22px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-sub{display:inline-flex;align-items:center;gap:9px;background:var(--teal);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-sub:hover{background:var(--teal-dark);transform:translateY(-1px);}
+.btn-dl{display:none;align-items:center;gap:8px;background:var(--white);color:var(--teal);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 24px;border-radius:4px;border:2px solid var(--teal);cursor:pointer;transition:background .2s;}
+.btn-dl:hover{background:var(--teal-bg);}
+.sub-note{font-size:12px;color:var(--light);font-style:italic;}
+.success-box{display:none;margin-top:14px;padding:13px 18px;background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 6px 6px 0;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.err-msg{display:none;margin-top:10px;padding:9px 15px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:34px;border-top:1px solid var(--border);margin-top:34px;}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s;}
+.btn-back:hover{background:var(--white);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:9px;background:var(--teal);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--teal-dark);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:15px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;font-family:'Space Mono',monospace;letter-spacing:.04em;}
+
+/* TRANS STRIP */
+.trans-strip{background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:8px;padding:18px 22px;display:flex;align-items:center;gap:18px;margin-top:26px;}
+.ts-icon{width:42px;height:42px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ts-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:4px;}
+.ts-title{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.ts-desc{font-size:12px;color:var(--muted);}
+
+/* COMPLETION */
+.comp-hero{text-align:center;padding:36px 0 24px;}
+.c-icon{font-size:54px;margin-bottom:14px;display:block;}
+.comp-hero h2{font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--txt);margin-bottom:9px;}
+.comp-hero p{font-size:14px;color:var(--muted);max-width:480px;margin:0 auto 18px;line-height:1.7;}
+.port-badge{display:flex;align-items:center;gap:12px;background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:7px;padding:14px 20px;margin:0 auto 22px;width:fit-content;}
+.pb-icon{font-size:22px;}.pb-title{font-weight:600;font-size:14px;color:var(--txt);}
+.pb-sub{font-size:11px;color:var(--muted);}
+
+/* MODULE COMPLETE */
+.mc-wrap{text-align:center;padding:44px 0 28px;}
+.mc-ring{display:inline-block;padding:5px;border-radius:50%;border:2px solid var(--teal);margin-bottom:18px;}
+.mc-badge{width:74px;height:74px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.mc-wrap h1{font-family:'Fraunces',serif;font-size:34px;font-weight:500;letter-spacing:-.02em;margin-bottom:12px;}
+.mc-wrap h1 em{font-style:italic;color:var(--teal);}
+.mc-sub{font-size:17px;color:var(--muted);font-weight:300;margin-bottom:26px;}
+.next-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left;margin-top:22px;}
+.nc{padding:17px 20px;background:var(--off);border:1px solid var(--border);border-radius:8px;transition:border-color .2s;}
+.nc:hover{border-color:var(--border-s);}
+.nc-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:7px;display:block;}
+.nc-icon{font-size:20px;margin-bottom:7px;display:block;}
+.nc-title{font-weight:600;font-size:14px;color:var(--txt);margin-bottom:3px;}
+.nc-desc{font-size:12px;color:var(--muted);line-height:1.55;}
+
+/* DECISION SUMMARY */
+.dec-summary{padding:10px 14px;background:var(--off);border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--muted);margin-bottom:10px;}
+.dec-summary.r{background:var(--red-bg);color:var(--red);font-weight:600;border-color:var(--red-border);}
+.dec-summary.a{background:var(--amber-bg);color:var(--amber);font-weight:600;border-color:var(--amber-border);}
+.dec-summary.g{background:var(--green-bg);color:var(--green);font-weight:600;border-color:var(--green-border);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-l">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 3</span><span class="sep">›</span>
+    <span class="cur">Phase C</span>
+  </div>
+  <div class="tb-r">
+    <span class="sctr" id="sctr">Screen 1 of 9</span>
+    <div class="phase-pill">Operations Command</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:11.1%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="dots-row" id="dotsRow"></div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — COMMAND BRIEFING
+══════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="eyebrow">Phase C · Screen 1 of 9 · Command Briefing</div>
+  <h1>Operations<br><em>Command Center</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card teal">
+    <h3>⚡ Your investigation is complete. The decisions start now.</h3>
+    <p>Phase A gave you the evidence. Phase B gave you the AI analysis and validation. NovaForge leadership now has a full picture of what is happening across its safety, compliance, and quality systems.</p>
+    <p>But knowing what's wrong is not enough. The audit is approaching. Production is running. And every decision you make from this point forward has real consequences for the factory, the workers, and the clients waiting for their orders.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <span class="label">Your roles in Phase C</span>
+      <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px;">
+        <li style="font-size:14px;color:var(--muted);">🛡️ Safety Supervisor</li>
+        <li style="font-size:14px;color:var(--muted);">📋 Compliance Approval Authority</li>
+        <li style="font-size:14px;color:var(--muted);">🔬 Quality Control Lead</li>
+        <li style="font-size:14px;color:var(--muted);">⚙️ Operations Decision Specialist</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="label">What you must decide</span>
+      <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px;">
+        <li style="font-size:14px;color:var(--muted);">🔴 Safety response for recurring AI alerts</li>
+        <li style="font-size:14px;color:var(--muted);">🟡 Compliance status for the upcoming audit</li>
+        <li style="font-size:14px;color:var(--muted);">🟢 Quality hold or ship decision on current batches</li>
+        <li style="font-size:14px;color:var(--muted);">📌 Which improvements to prioritize first</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Situation dashboard -->
+  <span class="label">Current operational status entering Phase C</span>
+  <div class="grid-3">
+    <div style="padding:15px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:5px;">🛡️</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:4px;">Safety</div>
+      <div style="font-size:13px;color:var(--muted);">Mix of real hazards and false positives — alert reliability in question</div>
+    </div>
+    <div style="padding:15px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:5px;">📋</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:4px;">Compliance</div>
+      <div style="font-size:13px;color:var(--muted);">6 items overdue, 2 delayed, sign-off gaps documented across shifts</div>
+    </div>
+    <div style="padding:15px;background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:7px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:5px;">🔬</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:4px;">Quality</div>
+      <div style="font-size:13px;color:var(--muted);">8.3% defect rate — record high, 10 of 13 batches above threshold</div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>There is no perfect answer</h3>
+    <p>Every decision in Phase C involves real operational tradeoffs. Production targets vs. safety risk. Audit readiness vs. operational continuity. Speed vs. quality. Real manufacturing leaders face these tensions every day — and so will you.</p>
+    <p>Your job is to <strong>think clearly, reason with evidence, and be able to defend every call you make.</strong></p>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🛡️</div>
+    <div><div class="ts-label">Next Up · Screen 2</div><div class="ts-title">Safety Decision Scenario</div><div class="ts-desc">Decide how NovaForge should respond to recurring AI safety alerts at Assembly Line B.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then proceed</span>
+    <button class="btn-next" onclick="goTo(2)">Enter Command Center</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — SAFETY DECISION
+══════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="eyebrow">Phase C · Screen 2 of 9 · Decision 1</div>
+  <h1>Safety Decision —<br><em>Recurring AI Alerts</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="sit-block">
+    <div class="sit-head"><span class="sh-icon">🛡️</span><span class="sh-label">Situation · Assembly Line B &amp; Robotics Station 4</span></div>
+    <div class="sit-body">
+      <p>The NovaForge AI safety monitoring system has generated <strong>12 alerts this week</strong> — a mix of critical motor temperature warnings on Arm-02, recurring encoder faults on Arm-04 every night, and three proximity alerts at Robotics Station 4 that fired when no workers were present.</p>
+      <p>Technicians have been manually resetting equipment after alerts and continuing operations. No injuries have occurred — but two critical thermal shutdowns happened this week and one encoder failure took Arm-04 fully offline.</p>
+    </div>
+  </div>
+
+  <span class="label">Operational context — what your investigation found</span>
+  <ul class="ctx-list">
+    <li>Arm-02 motor temperature escalated from 71°C to 91°C across the week — a predictable progression toward catastrophic failure</li>
+    <li>Arm-04 encoder faults follow a night-shift-only pattern — the encoder cable has been flagged as worn since February and never replaced</li>
+    <li>Station 4 proximity alerts show AI confidence of 29–38% — consistently the lowest in the log, suggesting sensor miscalibration</li>
+    <li>Maintenance requests for Arm-02 and Arm-04 were submitted and not actioned for 4+ days</li>
+    <li>Technician M. Reyes formally documented that a failure was preventable — creating a liability record if ignored</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-lbl">AI Safety System Recommendation</div>
+    <blockquote>"Alert pattern analysis suggests Sensor SN-3T miscalibration as the primary driver of elevated alert frequency. Recommend sensor replacement and recalibration of Station 4 proximity sensor. Arm-02 and Arm-04 thermal/encoder patterns are within recoverable variance — continue monitoring."</blockquote>
+    <div class="ai-note">⚠ AI recommendation based on alert frequency and deviation data. Does not account for escalating thermal progression, February cable flag, or documented maintenance failures.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="dec-row" id="dec1-row">
+    <button class="dec-btn" data-key="dec1" data-choice="r" onclick="selectDec('dec1','r',this)">
+      <span class="db-icon">🔴</span><span class="db-label">Full Safety Shutdown</span>
+      <span class="db-hint">Halt Assembly Line B operations until Arm-02 motor and Arm-04 cable are fully serviced</span>
+    </button>
+    <button class="dec-btn" data-key="dec1" data-choice="a" onclick="selectDec('dec1','a',this)">
+      <span class="db-icon">🟡</span><span class="db-label">Targeted Inspection</span>
+      <span class="db-hint">Immediate emergency maintenance on Arm-02 and Arm-04 — continue other operations with enhanced monitoring</span>
+    </button>
+    <button class="dec-btn" data-key="dec1" data-choice="g" onclick="selectDec('dec1','g',this)">
+      <span class="db-icon">🟢</span><span class="db-label">Continue Operations</span>
+      <span class="db-hint">Follow AI recommendation — replace SN-3T sensor, recalibrate Station 4, continue monitoring Arm-02</span>
+    </button>
+  </div>
+
+  <div class="dec-fb r" id="dec1-fb-r"><strong>Full Safety Shutdown.</strong> You've prioritized worker safety over production output. Justify what specific conditions would need to be met before production resumes — and how you'd communicate the shutdown to leadership and clients.</div>
+  <div class="dec-fb a" id="dec1-fb-a"><strong>Targeted Inspection.</strong> Balanced approach — addressing the documented mechanical risks without a full shutdown. Explain exactly what gets fixed, by when, and what monitoring thresholds would trigger escalation to a full shutdown.</div>
+  <div class="dec-fb g" id="dec1-fb-g"><strong>Continue Operations.</strong> You're following the AI recommendation. Justify how you would address the documented Arm-02 thermal escalation and the February cable issue — both of which the AI recommendation does not resolve.</div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">✍️</span><span class="rs-lbl">Safety Decision Justification</span></div>
+    <div class="rs-body">
+      <div><span class="label">What evidence — from Phase A or Phase B — drove your safety decision?</span><textarea id="d1_evidence" class="field tall" placeholder="Reference specific data: the temperature escalation pattern, the February cable flag, the false positive confidence scores, the technician liability documentation. Be precise…"></textarea></div>
+      <div><span class="label">What did the AI recommendation miss — and how did that affect your decision?</span><textarea id="d1_ai" class="field" placeholder="Why was the AI's sensor-focused recommendation incomplete? What operational context changed your assessment?…"></textarea></div>
+      <div><span class="label">What conditions or safeguards are part of your decision?</span><textarea id="d1_cond" class="field" placeholder="If you shut down — what gets fixed before restart? If you continue — what monitoring is required? Be specific about thresholds and timelines…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📋</div>
+    <div><div class="ts-label">Next Up · Screen 3</div><div class="ts-title">Compliance Decision</div><div class="ts-desc">Determine NovaForge's compliance status and whether it is audit-ready.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Compliance Decision</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — COMPLIANCE DECISION
+══════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="eyebrow">Phase C · Screen 3 of 9 · Decision 2</div>
+  <h1>Compliance Decision —<br><em>Audit Status Review</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="sit-block">
+    <div class="sit-head"><span class="sh-icon">📋</span><span class="sh-label">Situation · Compliance System Status</span></div>
+    <div class="sit-body">
+      <p>The NovaForge Compliance Tracking System is showing a <strong>"mostly compliant" overall status</strong> — 5 items green, the rest flagged. The system automated dashboard suggests the facility is within an acceptable compliance range for the upcoming audit.</p>
+      <p>However, your Phase A and Phase B investigation painted a different picture. The compliance gaps are not just administrative delays — they are documented, systemic, and in some cases directly contributing to safety and quality failures this week.</p>
+    </div>
+  </div>
+
+  <span class="label">What the compliance data actually shows</span>
+  <ul class="ctx-list">
+    <li>Arm-02 motor service is <strong>27 days overdue</strong> — a direct, documented contributor to this week's critical thermal shutdowns</li>
+    <li>Conveyor-01 belt replacement was requested <strong>3 weeks ago</strong> — parts never ordered, leading to the 155-minute line-down event Friday</li>
+    <li>Station 4 proximity sensor calibration is <strong>9 days overdue</strong> — directly explaining the three false positive safety alerts this week</li>
+    <li>QC inspection camera calibration is <strong>4 days delayed</strong> — contributing to the AI camera missing defects caught manually by J. Park</li>
+    <li>Supervisor safety sign-offs were <strong>missed on 3 shifts</strong> this week — a recurring pattern the Safety Officer formally documented</li>
+    <li>Technician S. Huang documented the Arm-04 cable issue <strong>four times since February</strong> — no action taken</li>
+  </ul>
+
+  <div class="ai-rec">
+    <div class="ai-rec-lbl">AI Compliance System Output</div>
+    <blockquote>"Compliance score: 72/100. Facility meets minimum operational compliance threshold. 5 of 14 tracked items show overdue status. Administrative delays account for most gaps. Recommend scheduling maintenance clearance within the next 30-day window before audit date."</blockquote>
+    <div class="ai-note">⚠ This score reflects completion rates only — it does not weight the operational consequences of specific gaps or account for the systemic nature of maintenance delays.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="dec-row" id="dec2-row">
+    <button class="dec-btn" data-key="dec2" data-choice="g" onclick="selectDec('dec2','g',this)">
+      <span class="db-icon">🟢</span><span class="db-label">Approve Readiness</span>
+      <span class="db-hint">Accept the system's 72/100 score — proceed toward audit with current status</span>
+    </button>
+    <button class="dec-btn" data-key="dec2" data-choice="a" onclick="selectDec('dec2','a',this)">
+      <span class="db-icon">🟡</span><span class="db-label">Flag for Correction</span>
+      <span class="db-hint">Identify specific gaps as pre-audit remediation items — set resolution deadlines before audit date</span>
+    </button>
+    <button class="dec-btn" data-key="dec2" data-choice="r" onclick="selectDec('dec2','r',this)">
+      <span class="db-icon">🔴</span><span class="db-label">Require Reset</span>
+      <span class="db-hint">Suspend audit preparation — require full compliance remediation before any audit activities proceed</span>
+    </button>
+  </div>
+
+  <div class="dec-fb g" id="dec2-fb-g"><strong>Readiness approved.</strong> You're accepting the system score. Justify why you believe a 72/100 score — with Arm-02, Conveyor-01, and Station 4 overdue — is sufficient for an external audit, given the documented consequences of those specific gaps.</div>
+  <div class="dec-fb a" id="dec2-fb-a"><strong>Flagged for correction.</strong> Targeted remediation approach. Name the specific items you are requiring to be resolved, the deadlines, and who is accountable — before the audit team arrives.</div>
+  <div class="dec-fb r" id="dec2-fb-r"><strong>Full reset required.</strong> You're stopping audit preparation until the systemic issues are resolved. Explain what 'full compliance reset' means in practice — and how long you believe it will take to get there.</div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">✍️</span><span class="rs-lbl">Compliance Decision Justification</span></div>
+    <div class="rs-body">
+      <div><span class="label">Why is the AI compliance score misleading — and what does the real picture look like?</span><textarea id="d2_real" class="field tall" placeholder="Explain why a 72/100 score does not reflect the operational severity of specific gaps. What consequences have already occurred because of these 'administrative' delays?…"></textarea></div>
+      <div><span class="label">Which compliance items are non-negotiable before the audit — and why?</span><textarea id="d2_noneg" class="field" placeholder="Name the specific items that, if not resolved, would likely generate an audit finding or safety incident. Prioritize and explain…"></textarea></div>
+      <div><span class="label">How would you address the shift sign-off process gap?</span><textarea id="d2_signoff" class="field" placeholder="The sign-off failures are a process design issue, not individual negligence. What change would prevent them from happening again?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🔬</div>
+    <div><div class="ts-label">Next Up · Screen 4</div><div class="ts-title">Quality Control Decision</div><div class="ts-desc">Decide whether to ship, hold, or reject the current production batch.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Quality Decision</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — QUALITY DECISION
+══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="eyebrow">Phase C · Screen 4 of 9 · Decision 3</div>
+  <h1>Quality Decision —<br><em>Batch Shipment Review</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="sit-block">
+    <div class="sit-head"><span class="sh-icon">🔬</span><span class="sh-label">Situation · Week 21 Batches — QC Lab</span></div>
+    <div class="sit-body">
+      <p>The QC AI inspection system has cleared <strong>Batch WK21-A and WK21-B</strong> for shipment based on its standard scan results. The combined batch contains approximately 430 NovaBot units destined for a major logistics client.</p>
+      <p>However, your investigation this week revealed that defect rates in Week 21 are at record highs, the QC camera calibration is overdue, and a human technician manually caught a defect the AI camera passed earlier in the week.</p>
+    </div>
+  </div>
+
+  <span class="label">The data picture — before you decide</span>
+  <div class="grid-2">
+    <div style="padding:14px 17px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:7px;">🔴 Defect Rate</div>
+      <div style="font-size:13px;color:var(--muted);">WK21-A: 8.3% · WK21-B: 6.9% · Both double the 3.5% threshold</div>
+    </div>
+    <div style="padding:14px 17px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:7px;">🔴 Camera Accuracy</div>
+      <div style="font-size:13px;color:var(--muted);">QC camera calibration 4 days overdue — missed unit #2418 this week (caught manually)</div>
+    </div>
+    <div style="padding:14px 17px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:7px;">⚡ Production Pressure</div>
+      <div style="font-size:13px;color:var(--muted);">Client is a major recurring account — delay triggers contract penalty</div>
+    </div>
+    <div style="padding:14px 17px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:7px;">⚡ Client Risk</div>
+      <div style="font-size:13px;color:var(--muted);">NovaBot units going to a hospital logistics partner — reliability is mission-critical</div>
+    </div>
+  </div>
+
+  <div class="ai-rec">
+    <div class="ai-rec-lbl">AI Quality System Output</div>
+    <blockquote>"Batch WK21-A and WK21-B inspection complete. 34 units flagged and removed. Remaining 430 units cleared. Defect rate within acceptable range for cleared units. Recommend release for shipment to meet client delivery window."</blockquote>
+    <div class="ai-note">⚠ AI camera calibration is overdue by 4 days. The 'acceptable range' referenced applies to cleared units only — overall batch defect rate of 8.3% significantly exceeds the 3.5% threshold.</div>
+  </div>
+
+  <span class="label">Your decision</span>
+  <div class="dec-row" id="dec3-row">
+    <button class="dec-btn" data-key="dec3" data-choice="g" onclick="selectDec('dec3','g',this)">
+      <span class="db-icon">🚢</span><span class="db-label">Ship Batch</span>
+      <span class="db-hint">Release cleared units on schedule — accept AI clearance with current camera status</span>
+    </button>
+    <button class="dec-btn" data-key="dec3" data-choice="a" onclick="selectDec('dec3','a',this)">
+      <span class="db-icon">🔍</span><span class="db-label">Hold for Re-Inspection</span>
+      <span class="db-hint">Calibrate QC camera first, then re-run the cleared units before releasing</span>
+    </button>
+    <button class="dec-btn" data-key="dec3" data-choice="r" onclick="selectDec('dec3','r',this)">
+      <span class="db-icon">⛔</span><span class="db-label">Reject Batch</span>
+      <span class="db-hint">Pull entire batch from shipping — full manual inspection before any units are cleared</span>
+    </button>
+  </div>
+
+  <div class="dec-fb g" id="dec3-fb-g"><strong>Batch approved for shipment.</strong> You're trusting the AI clearance despite the calibration gap. Justify specifically how you've addressed the risk that the overdue camera may have passed additional defective units — especially given the hospital logistics client.</div>
+  <div class="dec-fb a" id="dec3-fb-a"><strong>Hold for re-inspection.</strong> Targeted quality assurance before release. Explain what the re-inspection process looks like, who performs it, how long it takes, and what you tell the client about the delay.</div>
+  <div class="dec-fb r" id="dec3-fb-r"><strong>Full batch rejected.</strong> Zero-risk approach given the client and defect levels. Explain how you balance the contract penalty against the product liability risk — and what the path forward looks like for the client relationship.</div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">✍️</span><span class="rs-lbl">Quality Decision Justification</span></div>
+    <div class="rs-body">
+      <div><span class="label">How did you weigh production pressure against quality and client risk?</span><textarea id="d3_tradeoff" class="field tall" placeholder="Explain the tradeoff you made. What factor ultimately drove your decision — the contract penalty, the camera calibration gap, the hospital client risk, or the defect rate trend?…"></textarea></div>
+      <div><span class="label">Why is the AI quality clearance insufficient to authorize shipment on its own?</span><textarea id="d3_ai" class="field" placeholder="What context does the AI system not have that changes the risk picture? Reference the camera calibration issue, the missed unit #2418, and the client's use case…"></textarea></div>
+      <div><span class="label">What would you tell the client?</span><textarea id="d3_client" class="field" placeholder="How do you communicate this decision to the client — whether you ship, hold, or reject?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚙️</div>
+    <div><div class="ts-label">Next Up · Screen 5</div><div class="ts-title">Improvement Prioritization</div><div class="ts-desc">Decide which system improvements to fix first — not everything can happen at once.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Prioritize Improvements</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 5 — IMPROVEMENT PRIORITIZATION
+══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="eyebrow">Phase C · Screen 5 of 9 · Prioritization</div>
+  <h1>Improvement<br><em>Prioritization</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Not every improvement can happen at once. Resources are limited. The audit is approaching. Rank the improvements below based on your Phase A and Phase B findings — then explain your reasoning.</p>
+
+  <div class="card amber" style="margin-bottom:18px;">
+    <h3>The prioritization question</h3>
+    <p>You have safety improvements, compliance improvements, and quality improvements — all needed. Some are quick fixes. Some require weeks. Some prevent future failures. Some fix problems that are already happening. Your job is to decide what gets fixed <strong>first, second, and third</strong> — and make the case for that order.</p>
+  </div>
+
+  <span class="label">Proposed improvement items — ranked by impact assessment</span>
+  <div class="priority-table">
+    <div class="pt-row hdr">
+      <div class="pt-cell">Priority</div>
+      <div class="pt-cell">Improvement Item</div>
+      <div class="pt-cell">Impact Assessment</div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">1</span></div>
+      <div class="pt-cell"><span class="pt-strong">Emergency service — Arm-02 motor &amp; Arm-04 encoder cable</span><br><span style="font-size:12px;color:var(--muted);">Fix the documented mechanical failures driving safety shutdowns</span></div>
+      <div class="pt-cell"><span class="impact-tag crit">Critical</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">2</span></div>
+      <div class="pt-cell"><span class="pt-strong">QC camera recalibration — all inspection zones</span><br><span style="font-size:12px;color:var(--muted);">Restore AI inspection accuracy before more batches are cleared</span></div>
+      <div class="pt-cell"><span class="impact-tag crit">Critical</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">3</span></div>
+      <div class="pt-cell"><span class="pt-strong">Station 4 &amp; Station-03 sensor calibration</span><br><span style="font-size:12px;color:var(--muted);">Eliminate false positive alerts and restore safety alert reliability</span></div>
+      <div class="pt-cell"><span class="impact-tag high">High</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">4</span></div>
+      <div class="pt-cell"><span class="pt-strong">Shift handover compliance protocol redesign</span><br><span style="font-size:12px;color:var(--muted);">Fix the process gap causing missed sign-offs — supervisor workload issue</span></div>
+      <div class="pt-cell"><span class="impact-tag high">High</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">5</span></div>
+      <div class="pt-cell"><span class="pt-strong">Maintenance request fulfillment SLA enforcement</span><br><span style="font-size:12px;color:var(--muted);">Set 48-hr mandatory response with escalation alerts to prevent repeat backlog</span></div>
+      <div class="pt-cell"><span class="impact-tag high">High</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">6</span></div>
+      <div class="pt-cell"><span class="pt-strong">Conveyor-01 belt replacement &amp; drive motor service</span><br><span style="font-size:12px;color:var(--muted);">Parts on order — complete service as soon as parts arrive</span></div>
+      <div class="pt-cell"><span class="impact-tag high">High</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">7</span></div>
+      <div class="pt-cell"><span class="pt-strong">Quality defect early warning system at 3.0% threshold</span><br><span style="font-size:12px;color:var(--muted);">Alert quality team before the 3.5% threshold is breached — not after</span></div>
+      <div class="pt-cell"><span class="impact-tag med">Medium</span></div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-cell"><span class="pt-num">8</span></div>
+      <div class="pt-cell"><span class="pt-strong">Cross-system maintenance dashboard for leadership</span><br><span style="font-size:12px;color:var(--muted);">Single view of all overdue items across safety, compliance, and quality — prevent backlog buildup</span></div>
+      <div class="pt-cell"><span class="impact-tag med">Medium</span></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📌</span><span class="rs-lbl">Your Prioritization Reasoning</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which 3 items would you put at the absolute top of the list — and why those three specifically?</span><textarea id="d5_top3" class="field tall" placeholder="Explain why these three take precedence. Think about: what is actively causing harm right now vs. what prevents future harm, what can be done quickly vs. what takes weeks, and what creates the most audit risk if left unresolved…"></textarea></div>
+      <div><span class="label">What would you deprioritize — and what risk does that create?</span><textarea id="d5_lower" class="field" placeholder="Which improvements can wait — and what is the acceptable risk of delaying them? Be honest about the tradeoff…"></textarea></div>
+      <div><span class="label">Is there a single systemic change that would address multiple items on this list?</span><textarea id="d5_systemic" class="field" placeholder="The deferred maintenance culture is a root cause across several items. What one organizational or process change would have the highest overall impact?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚖️</div>
+    <div><div class="ts-label">Next Up · Screen 6</div><div class="ts-title">AI vs Human Oversight Reflection</div><div class="ts-desc">Evaluate when AI should be trusted — and when it should be overridden.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Oversight Reflection</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 6 — AI VS HUMAN OVERSIGHT
+══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="eyebrow">Phase C · Screen 6 of 9 · Oversight Reflection</div>
+  <h1>AI vs. Human<br><em>Oversight Reflection</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Before you write your final report, reflect on the full Module 3 mission. Across Phase A, Phase B, and the decisions you just made — what did AI handle well, where did it fall short, and when was human judgment essential?</p>
+
+  <table class="ov-table">
+    <thead><tr><th>Situation</th><th>Assessment</th><th>What Made the Difference</th></tr></thead>
+    <tbody>
+      <tr><td>Identifying high-frequency alert zones (Assembly Line B)</td><td><span class="ov-tag ai">AI ✓</span></td><td>Alert count and frequency analysis is exactly what AI does well at scale</td></tr>
+      <tr><td>Classifying Station 4 proximity alerts as likely false positives</td><td><span class="ov-tag both">Both</span></td><td>AI flagged low confidence scores — human shift log confirmed no workers were present</td></tr>
+      <tr><td>Recognizing the Arm-02 temperature escalation as a progression toward failure</td><td><span class="ov-tag human">Human ✓</span></td><td>AI noted high alerts — only the week-over-week temperature trend (71→91°C) made it a progression, which required reading all 5 days together</td></tr>
+      <tr><td>Recommending sensor replacement as the primary fix</td><td><span class="ov-tag wrong">AI ✗</span></td><td>AI misidentified the symptom (sensor alerts) as the root cause — missed Arm-02 physical proximity and the maintenance escalation context</td></tr>
+      <tr><td>Classifying compliance gaps as "administrative delays"</td><td><span class="ov-tag wrong">AI ✗</span></td><td>AI scored completion rates — it could not see that specific gaps had already caused production failures this week</td></tr>
+      <tr><td>Connecting QC camera calibration to the missed defect on unit #2418</td><td><span class="ov-tag human">Human ✓</span></td><td>This connection required reading the technician note (J. Park) alongside the compliance overdue table — not possible from structured data alone</td></tr>
+      <tr><td>Identifying that shift sign-off gaps are a process design issue</td><td><span class="ov-tag human">Human ✓</span></td><td>Only visible in supervisor notes and the Safety Officer's cross-week pattern observation — completely absent from structured records</td></tr>
+      <tr><td>Connecting deferred maintenance as a shared root cause across all 3 systems</td><td><span class="ov-tag both">Both</span></td><td>AI found the pattern with the right cross-file prompt — but required human context about the organizational culture to interpret its severity</td></tr>
+    </tbody>
+  </table>
+
+  <span class="label">Mark the statements you agree with after completing this full mission</span>
+  <ul class="checklist" id="cl6">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI performs best on high-volume, structured, numerical data — pattern counts, rates, frequencies</span><span class="chk-d">Alert logs, defect rates, and overdue day counts all played to AI's strengths</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI consistently missed context that only exists in unstructured human observations</span><span class="chk-d">Technician notes contained causal chains, accountability concerns, and physical context that changed the entire interpretation</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">AI confidence scores are useful signals — but they require human interpretation</span><span class="chk-d">A 38% confidence alert doesn't tell you the sensor is miscalibrated — that required checking the calibration record manually</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">The most dangerous AI failures were confident incorrect conclusions — not obvious errors</span><span class="chk-d">The sensor replacement recommendation sounded plausible — it took the full investigation to see why it was wrong</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Human accountability cannot be delegated to AI systems in safety and compliance contexts</span><span class="chk-d">The sign-off gaps, the ignored maintenance requests, and the formal liability documentation all required a person to be responsible</span></div></li>
+  </ul>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">💬</span><span class="rs-lbl">Your Oversight Conclusion</span></div>
+    <div class="rs-body">
+      <div><span class="label">When should AI be trusted in manufacturing safety and quality operations — and when should it be overridden?</span><textarea id="d6_trust" class="field tall" placeholder="Write your answer based on everything you experienced in this mission. Be specific — not a general statement, but a principle grounded in the actual situations you navigated…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🏛️</div>
+    <div><div class="ts-label">Next Up · Screen 7</div><div class="ts-title">Final Audit Readiness Decision</div><div class="ts-desc">Make the final call: Is NovaForge ready for external audit approval?</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Audit Readiness Decision</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 7 — AUDIT READINESS
+══════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="eyebrow">Phase C · Screen 7 of 9 · Final Decision</div>
+  <h1>Final Audit<br><em>Readiness Decision</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">This is the final operational decision of the mission. Based on everything your investigation found — safety, compliance, quality, AI analysis, and human judgment — you must determine NovaForge's audit readiness.</p>
+
+  <div class="card teal" style="margin-bottom:18px;">
+    <h3>What this decision means</h3>
+    <p>An external audit team will review NovaForge's safety records, maintenance logs, compliance documentation, and quality control results. A "Ready" verdict invites that review now. A "Not Ready" verdict delays the audit — with operational and contractual implications. A "Ready with Conditions" means the audit proceeds, but with specific items flagged as remediation requirements.</p>
+    <p>Whatever you decide, you must be able to defend it with evidence from your investigation.</p>
+  </div>
+
+  <!-- Decision summary from earlier screens -->
+  <span class="label">Your decisions so far</span>
+  <div id="decision-summary" style="display:flex;flex-direction:column;gap:9px;margin-bottom:20px;">
+    <div class="dec-summary" id="d1-summary">Safety Decision: Not yet recorded — return to Screen 2</div>
+    <div class="dec-summary" id="d2-summary">Compliance Decision: Not yet recorded — return to Screen 3</div>
+    <div class="dec-summary" id="d3-summary">Quality Decision: Not yet recorded — return to Screen 4</div>
+  </div>
+
+  <span class="label">Your final audit readiness decision</span>
+  <div class="audit-row" id="audit-row">
+    <button class="audit-btn" data-choice="ready" onclick="selectAudit('ready',this)">
+      <span class="ab-icon">🟢</span>
+      <span class="ab-label">Ready</span>
+      <span class="ab-desc">NovaForge is operationally ready for external audit. Current status meets audit standards.</span>
+    </button>
+    <button class="audit-btn" data-choice="cond" onclick="selectAudit('cond',this)">
+      <span class="ab-icon">🟡</span>
+      <span class="ab-label">Ready with Conditions</span>
+      <span class="ab-desc">Audit may proceed, but specific items must be remediated within a defined timeframe.</span>
+    </button>
+    <button class="audit-btn" data-choice="not" onclick="selectAudit('not',this)">
+      <span class="ab-icon">🔴</span>
+      <span class="ab-label">Not Ready</span>
+      <span class="ab-desc">NovaForge must resolve systemic issues before any audit activities are authorized.</span>
+    </button>
+  </div>
+
+  <div class="audit-fb ready" id="audit-fb-ready"><strong>Ready — Audit authorized.</strong> You've determined that current operations meet audit standards. Justify how safety alert reliability issues, the 8.3% defect rate, and the documented compliance gaps are compatible with a successful external audit.</div>
+  <div class="audit-fb cond" id="audit-fb-cond"><strong>Ready with Conditions.</strong> You're allowing the audit to proceed while requiring specific remediation. List the exact conditions — and the deadlines — that must be met. Be clear about who is accountable for each.</div>
+  <div class="audit-fb not" id="audit-fb-not"><strong>Not Ready — Audit postponed.</strong> You've prioritized operational integrity over audit timeline pressure. Explain what specific milestones must be reached before you would change this verdict to "Ready with Conditions."</div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🏛️</span><span class="rs-lbl">Audit Readiness Justification</span></div>
+    <div class="rs-body">
+      <div><span class="label">State your final verdict and the three strongest reasons for it</span><textarea id="d7_verdict" class="field tall" placeholder="Make your case. Reference specific findings from the safety alert log, compliance report, and quality data. This is the argument you would make to the NovaForge board of directors…"></textarea></div>
+      <div><span class="label">What conditions or milestones are attached to your verdict?</span><textarea id="d7_conditions" class="field" placeholder="If Ready: what would a failed audit finding look like and how have you guarded against it? If Conditional: name the specific items. If Not Ready: define the minimum threshold for reconsideration…"></textarea></div>
+      <div><span class="label">What is your strongest argument for why this is the responsible decision?</span><textarea id="d7_argument" class="field" placeholder="Write the one or two sentences you would use to defend this verdict in a leadership meeting — making the case for why safety, compliance, and quality evidence supports this outcome…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📄</div>
+    <div><div class="ts-label">Next Up · Screen 8</div><div class="ts-title">Final Report Submission</div><div class="ts-desc">Compile your complete Phase C decisions into a professional Operations Command Report.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Build Final Report</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 8 — FINAL REPORT
+══════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="eyebrow">Phase C · Screen 8 of 9 · Final Report</div>
+  <h1>Build Your<br><em>Command Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Compile all Phase C decisions into your final deliverable. All decision badges and justification fields from Screens 2–7 will pull into your PDF. Complete the additional synthesis sections below.</p>
+
+  <div class="card teal" style="margin-bottom:20px;">
+    <h3>📋 NovaForge Operational Safety &amp; Quality Command Report</h3>
+    <p>This is a professional operations document — the kind of briefing you would deliver to the NovaForge board before a major audit. Make it clear, structured, and evidence-based throughout.</p>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👤</span><span class="rs-lbl">Decision Lead Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="ifield" placeholder="Your full name"></div>
+        <div><span class="label">Decision Date</span><input type="date" id="r_date" class="ifield"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚖️</span><span class="rs-lbl">Part 1 — Decision Outcomes Summary</span></div>
+    <div class="rs-body">
+      <div id="r8-d1-badge" class="dec-summary">Safety decision not yet recorded — return to Screen 2</div>
+      <div><span class="label">Safety decision summary &amp; rationale</span><textarea id="b_safety_sum" class="field" placeholder="Summarize the safety decision and the key reasoning that drove it…"></textarea></div>
+      <div id="r8-d2-badge" class="dec-summary">Compliance decision not yet recorded — return to Screen 3</div>
+      <div><span class="label">Compliance decision summary &amp; rationale</span><textarea id="b_comp_sum" class="field" placeholder="Summarize the compliance decision and the key reasoning that drove it…"></textarea></div>
+      <div id="r8-d3-badge" class="dec-summary">Quality decision not yet recorded — return to Screen 4</div>
+      <div><span class="label">Quality decision summary &amp; rationale</span><textarea id="b_qual_sum" class="field" placeholder="Summarize the quality decision and the key reasoning that drove it…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📌</span><span class="rs-lbl">Part 2 — Improvement Priorities</span></div>
+    <div class="rs-body">
+      <div><span class="label">Top 3 immediate priority improvements (in order)</span><textarea id="b_priorities" class="field tall" placeholder="List and briefly explain your top three. Include why each takes precedence over the others and what outcome each will produce…"></textarea></div>
+      <div><span class="label">Systemic change recommended for NovaForge</span><textarea id="b_systemic" class="field" placeholder="What one organizational or process change would address the deferred maintenance culture and prevent this situation from recurring?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚖️</span><span class="rs-lbl">Part 3 — AI vs Human Oversight Summary</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where AI analysis supported your decisions</span><textarea id="b_ai_helped" class="field" placeholder="Specifically where did AI outputs add value to your decision-making process across this mission?…"></textarea></div>
+      <div><span class="label">Where human judgment was essential — and why</span><textarea id="b_human_ess" class="field" placeholder="What would have gone wrong if you had acted on AI recommendations alone across Phase B and Phase C decisions?…"></textarea></div>
+      <div><span class="label">Your principle for AI oversight in manufacturing environments</span><textarea id="b_principle" class="field" placeholder="Write one to three sentences that capture your approach to using AI responsibly in industrial safety and quality contexts…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🏛️</span><span class="rs-lbl">Part 4 — Final Audit Readiness &amp; Conclusion</span></div>
+    <div class="rs-body">
+      <div id="r8-audit-badge" class="dec-summary">Audit readiness verdict not yet recorded — return to Screen 7</div>
+      <div><span class="label">Full audit readiness justification</span><textarea id="b_audit_just" class="field tall" placeholder="State your verdict and make the full case — referencing safety status, compliance level, quality performance, and the AI vs human evaluation. Write as if presenting to NovaForge's board…"></textarea></div>
+      <div><span class="label">Overall operational conclusion for NovaForge</span><textarea id="b_conclusion" class="field tall" placeholder="Write a professional closing statement: what did this mission reveal about the current state of NovaForge's operations — and what must the company do to be genuinely operationally excellent, not just audit-compliant?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Report</h3>
+      <p>Enter your name and date, then click Submit. Your PDF downloads immediately.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name (confirm)</span><input type="text" id="r_name2" class="ifield" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date2" class="ifield"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-sub" id="btn_sub" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-dl" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="sub-note" id="sub_note">All decisions and justifications will compile into your PDF.</span>
+      </div>
+      <div class="err-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Report submitted successfully.</strong> Your Phase C Command Report is complete. Download your PDF to finalize your Module 3 portfolio — Phases A, B, and C together demonstrate the full Discover → Analyze → Improve cycle.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Edit Report</button>
+    <button class="btn-next" onclick="goTo(9)">View Completion</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 9 — COMPLETION
+══════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="eyebrow">Phase C · Screen 9 of 9 · Mission Complete</div>
+
+  <div class="mc-wrap">
+    <div class="mc-ring"><div class="mc-badge">🔬</div></div>
+    <h1>Module 3 <em>Complete</em></h1>
+    <p class="mc-sub">The NovaForge audit preparation is in your hands.</p>
+    <p style="font-size:15px;color:var(--muted);max-width:520px;margin:0 auto 28px;line-height:1.75;">NovaForge leadership has reviewed your Operational Safety &amp; Quality Command Report. Your investigation across Phase A, Phase B, and Phase C produced the most complete internal risk assessment the factory has ever had — and your decisions will shape how it prepares for the audit ahead.</p>
+  </div>
+
+  <div class="card green" style="margin-bottom:16px;">
+    <h3>What you demonstrated in Module 3</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Investigated safety, compliance, and quality data across 4 sources</div>
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Applied the Discover → Analyze → Improve framework</div>
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Validated AI findings — corrected a flawed recommendation</div>
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Made 3 high-stakes operational decisions with evidence</div>
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Determined NovaForge's final audit readiness verdict</div>
+      <div style="padding:11px 14px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);">✅ Built 3 professional-grade portfolio deliverables</div>
+    </div>
+  </div>
+
+  <div class="card teal" style="margin-bottom:22px;">
+    <h3>The Module 3 Lesson — Proven in Practice</h3>
+    <p style="font-size:15px;margin-top:4px;"><strong>Detection is only the beginning. Analysis is necessary. Improvement is the goal.</strong></p>
+    <p>Every AI alert, compliance gap, and defect rate in this mission was a detection. Understanding why they were happening required analysis. Deciding what to do about them — and building systems to prevent recurrence — is the work that actually makes a factory safer, more compliant, and more reliable. That's the Discover → Analyze → Improve cycle. That's what you just completed.</p>
+  </div>
+
+  <span class="label" style="font-size:10px;">Coming up in Module 4 and beyond</span>
+  <div class="next-grid">
+    <div class="nc">
+      <span class="nc-tag">Module 4</span><span class="nc-icon">📡</span>
+      <div class="nc-title">Predictive Maintenance &amp; AI Forecasting</div>
+      <div class="nc-desc">Move from reactive investigation to predictive intelligence — use AI sensor analytics to prevent failures before they occur across the NovaForge facility.</div>
+    </div>
+    <div class="nc">
+      <span class="nc-tag">Module 5</span><span class="nc-icon">⚡</span>
+      <div class="nc-title">Production Optimization &amp; AI Scheduling</div>
+      <div class="nc-desc">Balance output targets, quality thresholds, and worker safety using AI-assisted production planning and real-time operational adjustment tools.</div>
+    </div>
+    <div class="nc">
+      <span class="nc-tag">Module 6</span><span class="nc-icon">🔗</span>
+      <div class="nc-title">Supply Chain Intelligence &amp; Risk Management</div>
+      <div class="nc-desc">Apply AI-driven supply analysis to keep the NovaBot line supplied — managing inventory risk, supplier performance, and delivery forecasting.</div>
+    </div>
+    <div class="nc">
+      <span class="nc-tag">Capstone</span><span class="nc-icon">🏆</span>
+      <div class="nc-title">Advanced Manufacturing Leadership Simulation</div>
+      <div class="nc-desc">Lead a full-scale AI-assisted operations response in the NovaForge certification capstone — integrating all five modules into a single high-stakes scenario.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:44px;padding:28px 0;border-top:1px solid var(--border);">
+    <p style="font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--txt);margin-bottom:8px;">NovaForge Robotics awaits your final operational decision.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--light);">Advanced AI for Manufacturing Certification · Module 3 Complete</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 9;
+const decisions = { dec1: null, dec2: null, dec3: null, audit: null };
+
+const decLabels = {
+  dec1: { r:'Full Safety Shutdown — Assembly Line B halted until Arm-02 &amp; Arm-04 serviced', a:'Targeted Inspection — Emergency maintenance on Arm-02 &amp; Arm-04, other ops continue', g:'Continue Operations — Follow AI recommendation, replace sensor, monitor Arm units' },
+  dec2: { g:'Approve Audit Readiness — Accept 72/100 compliance score, proceed to audit', a:'Flag for Correction — Identify gaps as pre-audit remediation items with deadlines', r:'Require Immediate Reset — Suspend audit preparation until systemic issues resolved' },
+  dec3: { g:'Ship Batch — Release cleared units on schedule, accept AI clearance', a:'Hold for Re-Inspection — Recalibrate QC camera, re-inspect cleared units first', r:'Reject Batch — Full manual inspection required before any units are released' },
+};
+
+const auditLabels = {
+  ready: 'VERDICT: Ready — Audit Authorized',
+  cond:  'VERDICT: Ready with Conditions — Audit proceeds with remediation requirements',
+  not:   'VERDICT: Not Ready — Audit postponed pending systemic remediation'
+};
+
+function buildDots() {
+  const wrap = document.getElementById('dotsRow');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  if (n === 7) updateDecSummary7();
+  if (n === 8) updateDecSummary8();
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('sctr').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function selectDec(key, choice, btn) {
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(b => b.classList.remove('sel-r','sel-a','sel-g'));
+  btn.classList.add('sel-' + choice);
+  decisions[key] = choice;
+  ['r','a','g'].forEach(c => {
+    const fb = document.getElementById(key + '-fb-' + c);
+    if (fb) fb.style.display = 'none';
+  });
+  const fb = document.getElementById(key + '-fb-' + choice);
+  if (fb) fb.style.display = 'block';
+}
+
+function selectAudit(choice, btn) {
+  document.querySelectorAll('.audit-btn').forEach(b => b.classList.remove('sel-ready','sel-cond','sel-not'));
+  btn.classList.add('sel-' + choice);
+  decisions.audit = choice;
+  ['ready','cond','not'].forEach(c => {
+    const fb = document.getElementById('audit-fb-' + c);
+    if (fb) fb.style.display = 'none';
+  });
+  const fb = document.getElementById('audit-fb-' + choice);
+  if (fb) fb.style.display = 'block';
+}
+
+function updateDecSummary7() {
+  const map = { dec1:'d1-summary', dec2:'d2-summary', dec3:'d3-summary' };
+  const colors = { r:'r', a:'a', g:'g' };
+  Object.entries(map).forEach(([key, elId]) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (decisions[key]) {
+      el.className = 'dec-summary ' + colors[decisions[key]];
+      el.innerHTML = '→ ' + decLabels[key][decisions[key]];
+    }
+  });
+}
+
+function updateDecSummary8() {
+  updateDecSummary7();
+  ['dec1','dec2','dec3'].forEach((key, i) => {
+    const badgeId = ['r8-d1-badge','r8-d2-badge','r8-d3-badge'][i];
+    const el = document.getElementById(badgeId);
+    if (el && decisions[key]) {
+      el.className = 'dec-summary ' + decisions[key];
+      el.innerHTML = '→ ' + decLabels[key][decisions[key]];
+    }
+  });
+  const ab = document.getElementById('r8-audit-badge');
+  if (ab && decisions.audit) {
+    ab.className = 'dec-summary ' + decisions.audit;
+    ab.innerHTML = '→ ' + auditLabels[decisions.audit];
+  }
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+function g(id) { return (document.getElementById(id)||{}).value || ''; }
+function analyst() { return (g('r_name2') || g('r_name')).trim(); }
+function dateVal() { return g('r_date2') || g('r_date') || '—'; }
+
+function handleSubmit() {
+  if (!analyst()) { document.getElementById('err_msg').style.display = 'block'; document.getElementById('r_name2').focus(); return; }
+  document.getElementById('err_msg').style.display = 'none';
+  document.getElementById('success_box').style.display = 'block';
+  document.getElementById('btn_dl').style.display = 'inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent = '✓ Submitted'; b.style.background = '#1A6645'; b.style.cursor = 'default'; b.onclick = null;
+  document.getElementById('sub_note').style.display = 'none';
+  document.getElementById('success_box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const TEAL = [13,110,110], TEAL_BG = [230,245,245], TEAL_D = [9,82,82];
+  const PURPLE = [123,47,190];
+  const TXT = [26,16,32], MUTED = [107,92,122], LIGHT = [160,144,176];
+  const BORDER = [220,210,230], OFF = [250,250,248];
+  const GREEN = [26,102,69], GREEN_BG = [234,247,240];
+  const AMBER = [122,79,0], AMBER_BG = [253,245,230];
+  const RED = [138,32,32], RED_BG = [253,240,239];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 3 Phase C', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...TEAL_BG);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...TEAL_D);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...TEAL);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+  function decBadge(key, fallback) {
+    const choice = decisions[key];
+    const label = choice ? decLabels[key][choice] : fallback;
+    const colors = { r: RED, a: AMBER, g: GREEN };
+    const bgs = { r: RED_BG, a: AMBER_BG, g: GREEN_BG };
+    const k = choice || null;
+    checkY(14);
+    doc.setFillColor(...(k ? bgs[k] : OFF));
+    doc.setDrawColor(...(k ? colors[k] : BORDER));
+    doc.setLineWidth(.4);
+    doc.roundedRect(ML, y, CW, 9, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...(k ? colors[k] : MUTED));
+    doc.text('DECISION: ' + (label.replace(/<[^>]+>/g,'')), ML + 4, y + 6.2); y += 12;
+  }
+  function auditBadge() {
+    const choice = decisions.audit;
+    const label = choice ? auditLabels[choice] : 'No audit verdict recorded';
+    const colors = { ready: GREEN, cond: AMBER, not: RED };
+    const bgs = { ready: GREEN_BG, cond: AMBER_BG, not: RED_BG };
+    checkY(14);
+    doc.setFillColor(...(choice ? bgs[choice] : OFF));
+    doc.setDrawColor(...(choice ? colors[choice] : BORDER));
+    doc.setLineWidth(.5);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...(choice ? colors[choice] : MUTED));
+    doc.text(label, ML + 5, y + 7); y += 14;
+  }
+
+  // COVER
+  doc.setFillColor(...TEAL);
+  doc.rect(0, 0, PW, 62, 'F');
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 54, PW, 8, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(180, 230, 230);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 3', ML, 19);
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255, 255, 255);
+  doc.text('Operational Safety & Quality Command Report', ML, 34);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(180, 230, 230);
+  doc.text('Operations Command: Safety, Compliance & Quality Decisions  ·  Phase C', ML, 46);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(ML, 56, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...TEAL);
+  doc.text('DECISION LEAD', ML + 6, 66); doc.text('DATE', ML + 100, 66); doc.text('MISSION', ML + 152, 66);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(analyst() || 'Not provided', ML + 6, 76);
+  doc.text(dateVal(), ML + 100, 76);
+  doc.setFontSize(10); doc.text('Module 3 · Phase C', ML + 152, 76);
+  y = 100;
+
+  // PART 1 — DECISIONS
+  secHead('⚖️', 'Part 1 — Operational Decision Outcomes');
+
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TEAL_D);
+  doc.text('Safety Decision — Screen 2', ML, y); y += 6;
+  decBadge('dec1','Not recorded');
+  box('Evidence That Drove the Safety Decision', g('d1_evidence'));
+  box('AI Gaps Identified', g('d1_ai'));
+  box('Conditions & Safeguards', g('d1_cond'));
+  box('Safety Decision Summary', g('b_safety_sum'));
+  y += 4;
+
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TEAL_D);
+  doc.text('Compliance Decision — Screen 3', ML, y); y += 6;
+  decBadge('dec2','Not recorded');
+  box('Why the AI Score Was Misleading', g('d2_real'));
+  box('Non-Negotiable Pre-Audit Items', g('d2_noneg'));
+  box('Shift Sign-Off Process Solution', g('d2_signoff'));
+  box('Compliance Decision Summary', g('b_comp_sum'));
+  y += 4;
+
+  checkY(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TEAL_D);
+  doc.text('Quality Control Decision — Screen 4', ML, y); y += 6;
+  decBadge('dec3','Not recorded');
+  box('Production Pressure vs Quality Risk', g('d3_tradeoff'));
+  box('Why AI Clearance Was Insufficient', g('d3_ai'));
+  box('Client Communication Plan', g('d3_client'));
+  box('Quality Decision Summary', g('b_qual_sum'));
+  y += 4;
+
+  // PART 2 — PRIORITIES
+  secHead('📌', 'Part 2 — Improvement Prioritization');
+  box('Top 3 Immediate Priority Improvements', g('d5_top3') || g('b_priorities'));
+  box('Items Deprioritized & Acceptable Risk', g('d5_lower'));
+  box('Single Systemic Change Recommended', g('d5_systemic') || g('b_systemic'));
+  y += 4;
+
+  // PART 3 — AI VS HUMAN
+  secHead('⚖️', 'Part 3 — AI vs. Human Oversight Summary');
+  box('Where AI Supported Decision-Making', g('b_ai_helped'));
+  box('Where Human Judgment Was Essential', g('b_human_ess'));
+  box('Principle for AI Oversight in Manufacturing', g('d6_trust') || g('b_principle'));
+  y += 4;
+
+  // PART 4 — AUDIT READINESS
+  secHead('🏛️', 'Part 4 — Final Audit Readiness Verdict');
+  auditBadge();
+  box('Three Strongest Reasons for This Verdict', g('d7_verdict'));
+  box('Conditions or Milestones Attached', g('d7_conditions'));
+  box('Defence Argument for Leadership', g('d7_argument'));
+  box('Full Audit Readiness Justification', g('b_audit_just'));
+  box('Overall Operational Conclusion for NovaForge', g('b_conclusion'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 3 Phase C  ·  Operational Safety & Quality Command Report', ML, PH - 8);
+      doc.text('Page ' + i + ' of ' + total, PW / 2, PH - 8, { align: 'center' });
+      doc.text(analyst() || '', PW - MR, PH - 8, { align: 'right' });
+    }
+  }
+
+  const safe = analyst().replace(/[^a-z0-9]/gi,'_').toLowerCase() || 'analyst';
+  doc.save('novaforge_m3_phase_c_' + safe + '.pdf');
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+document.getElementById('r_date2').valueAsDate = new Date();
+</script>
+</body>
+</html>
