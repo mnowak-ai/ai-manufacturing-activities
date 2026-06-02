@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase A — Operations Planning & Workflow Mapping | NovaForge Module 4</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#EEF2F8;
+  --border:rgba(26,74,138,.12);--border-s:rgba(26,74,138,.28);
+  --txt:#0D1A2E;--muted:#4A5A72;--light:#8A9BB4;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --slate:#1A4A8A;--slate-bg:#EBF2FC;--slate-border:rgba(26,74,138,.2);
+  --slate-light:#2B68C4;--slate-mid:#7AAAE0;--slate-dark:#0D2A52;
+  --orange:#8A3A00;--orange-bg:#FEF3E8;--orange-border:rgba(138,58,0,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--off);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-l{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-l .sep{color:var(--slate-mid);}.tb-l .cur{color:var(--slate);}
+.tb-r{display:flex;align-items:center;gap:12px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);background:var(--slate-bg);border:1px solid var(--slate-border);padding:5px 14px;border-radius:20px;}
+.sctr{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--white);border-bottom:1px solid var(--border);height:6px;}
+.prog-track{height:100%;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--slate),var(--purple));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.dots-row{padding:14px 40px 0;display:flex;align-items:center;gap:5px;max-width:920px;margin:0 auto;width:100%;}
+.dot{height:4px;border-radius:2px;background:rgba(26,74,138,.18);cursor:pointer;transition:background .25s;flex:1;}
+.dot.active{background:var(--slate);}.dot.done{background:var(--slate-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:920px;margin:0 auto;width:100%;padding:0 40px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:36px;animation:fadeUp .38s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--slate);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:18px;height:2px;background:var(--slate-light);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:10px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.screen-rule{height:1px;background:var(--border);margin-bottom:26px;}
+.lead{font-size:15px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:26px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:12px;}
+.card.slate{border-left:4px solid var(--slate);background:var(--slate-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card h3{font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--txt);margin-bottom:7px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card p+p{margin-top:8px;}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:7px;display:block;}
+
+/* DASHBOARD TABLE */
+.dash-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.dash-table thead tr{background:var(--slate-bg);}
+.dash-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);padding:11px 14px;text-align:left;border-bottom:1px solid var(--slate-border);font-weight:700;}
+.dash-table td{padding:12px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.dash-table tr:last-child td{border-bottom:none;}
+.dash-table tr:hover td{background:var(--off);}
+.bold-cell{font-weight:600;color:var(--txt);font-size:13px;}
+.status-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px;font-weight:700;}
+.st-critical{background:var(--red-bg);color:var(--red);}
+.st-high{background:var(--orange-bg);color:var(--orange);}
+.st-medium{background:var(--amber-bg);color:var(--amber);}
+.st-ok{background:var(--green-bg);color:var(--green);}
+.st-pending{background:var(--slate-bg);color:var(--slate);}
+.priority-badge{display:inline-block;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;font-weight:700;}
+.p1{background:#FDF0EF;color:#8A2020;}
+.p2{background:#FEF3E8;color:#8A3A00;}
+.p3{background:#FDF5E6;color:#7A4F00;}
+.p4{background:var(--slate-bg);color:var(--slate);}
+
+/* STAFFING GRID */
+.shift-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.shift-card{background:var(--white);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.shift-head{padding:10px 15px;border-bottom:1px solid var(--border);}
+.shift-head.day{background:#EBF2FC;}
+.shift-head.eve{background:#FEF3E8;}
+.shift-head.ngt{background:var(--purple-pale);}
+.sh-name{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+.shift-head.day .sh-name{color:var(--slate);}
+.shift-head.eve .sh-name{color:var(--orange);}
+.shift-head.ngt .sh-name{color:var(--purple-dark);}
+.sh-time{font-size:11px;color:var(--light);margin-top:2px;}
+.shift-body{padding:12px 15px;}
+.staff-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.staff-row:last-child{margin-bottom:0;}
+.staff-role{font-size:12px;color:var(--muted);}
+.staff-count{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;}
+.staff-count.ok{color:var(--green);}
+.staff-count.warn{color:var(--amber);}
+.staff-count.crit{color:var(--red);}
+.staff-count.short{color:var(--red);}
+.vacancy-badge{background:var(--red-bg);color:var(--red);font-family:'Space Mono',monospace;font-size:8px;padding:2px 6px;border-radius:3px;letter-spacing:.04em;font-weight:700;}
+
+/* EQUIPMENT GAUGE */
+.equip-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.equip-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);transition:background .2s;}
+.equip-row:last-child{border-bottom:none;}
+.equip-row:hover{background:var(--off);}
+.equip-icon{font-size:18px;flex-shrink:0;}
+.equip-name{font-size:14px;font-weight:600;color:var(--txt);flex:1;}
+.equip-detail{font-size:12px;color:var(--muted);flex:2;}
+.cap-bar-wrap{width:90px;flex-shrink:0;}
+.cap-bar-bg{height:6px;background:rgba(26,74,138,.12);border-radius:3px;overflow:hidden;}
+.cap-bar{height:100%;border-radius:3px;transition:width .3s;}
+.cap-bar.full{background:var(--green);}
+.cap-bar.partial{background:#E8A020;}
+.cap-bar.low{background:#D94040;}
+.cap-pct{font-family:'Space Mono',monospace;font-size:9px;color:var(--light);text-align:right;margin-top:2px;}
+
+/* MATERIALS TABLE */
+.mat-banner{background:var(--red-bg);border:1px solid var(--red-border);border-radius:6px;padding:12px 17px;display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;}
+.mat-banner .mb-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.mat-banner p{font-size:13px;color:var(--red);line-height:1.6;margin:0;}
+
+/* BOTTLENECK MAP */
+.bn-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.bn-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:0;align-items:center;border-bottom:1px solid var(--border);}
+.bn-row:last-child{border-bottom:none;}
+.bn-row.hdr{background:var(--slate-bg);}
+.bn-cell{padding:12px 15px;font-size:13px;color:var(--muted);border-right:1px solid var(--border);line-height:1.45;}
+.bn-cell:last-child{border-right:none;}
+.bn-row.hdr .bn-cell{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:700;}
+.bn-row:hover .bn-cell{background:var(--off);}
+.bn-strong{font-weight:600;color:var(--txt);}
+.severity-bar{display:flex;align-items:center;gap:6px;}
+.sb-dots{display:flex;gap:3px;}
+.sb-dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+.sb-dot.filled-r{background:#D94040;}
+.sb-dot.filled-a{background:#E8A020;}
+.sb-dot.filled-g{background:var(--green);}
+.impact-tag{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.imp-h{background:var(--red-bg);color:var(--red);}
+.imp-m{background:var(--amber-bg);color:var(--amber);}
+.imp-l{background:var(--green-bg);color:var(--green);}
+
+/* PRIORITY DECISION */
+.priority-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+.prio-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.prio-head{padding:12px 17px;border-bottom:1px solid var(--border);}
+.prio-head.p1c{background:var(--red-bg);}
+.prio-head.p2c{background:var(--orange-bg);}
+.prio-head.p3c{background:var(--amber-bg);}
+.prio-head.p4c{background:var(--slate-bg);}
+.prio-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+.prio-head.p1c .prio-label{color:var(--red);}
+.prio-head.p2c .prio-label{color:var(--orange);}
+.prio-head.p3c .prio-label{color:var(--amber);}
+.prio-head.p4c .prio-label{color:var(--slate);}
+.prio-body{padding:14px 17px;background:var(--white);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.checklist li{display:flex;align-items:flex-start;gap:13px;padding:13px 17px;background:var(--white);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);cursor:pointer;user-select:none;transition:border-color .2s,background .2s;}
+.checklist li:hover{border-color:var(--slate-border);background:var(--slate-bg);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid rgba(26,74,138,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.chk-s{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-d{font-size:12px;color:var(--muted);}
+
+/* REPORT SECTION */
+.rs{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rs-head{background:var(--slate-bg);padding:11px 18px;border-bottom:1px solid var(--slate-border);display:flex;align-items:center;gap:10px;}
+.rs-ico{font-size:15px;}.rs-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:700;}
+.rs-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:76px;border:1px dashed rgba(26,74,138,.25);border-radius:5px;background:var(--off);padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--slate-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.ifield{width:100%;padding:9px 13px;border:1px solid rgba(26,74,138,.22);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.ifield:focus{border-color:var(--slate-light);background:var(--white);}
+input.ifield::placeholder{color:var(--light);}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--slate-bg);padding:17px 22px;border-bottom:1px solid var(--slate-border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:4px;}
+.sz-head p{font-size:13px;color:var(--muted);margin:0;}
+.sz-body{padding:20px 22px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-sub{display:inline-flex;align-items:center;gap:9px;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-sub:hover{background:var(--slate-dark);transform:translateY(-1px);}
+.btn-dl{display:none;align-items:center;gap:8px;background:var(--white);color:var(--slate);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 24px;border-radius:4px;border:2px solid var(--slate);cursor:pointer;transition:background .2s;}
+.btn-dl:hover{background:var(--slate-bg);}
+.sub-note{font-size:12px;color:var(--light);font-style:italic;}
+.success-box{display:none;margin-top:14px;padding:13px 18px;background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 6px 6px 0;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.err-msg{display:none;margin-top:10px;padding:9px 15px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:34px;border-top:1px solid var(--border);margin-top:34px;}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s;}
+.btn-back:hover{background:var(--white);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:9px;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--slate-dark);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:15px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;font-family:'Space Mono',monospace;letter-spacing:.04em;}
+
+/* TRANS STRIP */
+.trans-strip{background:var(--slate-bg);border:1px solid var(--slate-border);border-radius:8px;padding:18px 22px;display:flex;align-items:center;gap:18px;margin-top:26px;}
+.ts-icon{width:42px;height:42px;border-radius:50%;background:var(--slate);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ts-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin-bottom:4px;}
+.ts-title{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.ts-desc{font-size:12px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-l">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 4</span><span class="sep">›</span>
+    <span class="cur">Phase A</span>
+  </div>
+  <div class="tb-r">
+    <span class="sctr" id="sctr">Screen 1 of 8</span>
+    <div class="phase-pill">Phase A of 3</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:12.5%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="dots-row" id="dotsRow"></div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════
+     SCREEN 1 — OPERATIONS BRIEFING
+════════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="eyebrow">Phase A · Screen 1 of 8 · Operations Briefing</div>
+  <h1>Operations Briefing —<br><em>Recovery Protocol Active</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card slate">
+    <h3>📋 NovaForge has activated its Production Recovery Protocol</h3>
+    <p>Production targets have been missed for three consecutive weeks. Client delivery timelines are slipping. Leadership needs a recovery plan — and they need it fast.</p>
+    <p>You have been assigned to the <strong>Operations Planning Team</strong>. Your first job is to conduct a full operational review: understand what is causing the slowdowns, map where resources are constrained, and build the foundation for a recovery strategy.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin:18px 0;">
+    <div style="padding:15px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:5px;">📦</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:4px;">Delayed Orders</div>
+      <div style="font-size:12px;color:var(--muted);">3 client shipments missed — 2 accounts escalated to leadership</div>
+    </div>
+    <div style="padding:15px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:5px;">⚙️</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:4px;">Downtime &amp; Gaps</div>
+      <div style="font-size:12px;color:var(--muted);">Equipment downtime at 18%, 4 open staffing vacancies across shifts</div>
+    </div>
+    <div style="padding:15px;background:var(--slate-bg);border:1px solid var(--slate-border);border-radius:7px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:5px;">📉</div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:4px;">Output Gap</div>
+      <div style="font-size:12px;color:var(--muted);">Production output 26% below weekly target — 5 active bottlenecks unresolved</div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>Your goal is not just speed — it is balance</h3>
+    <p>Every fix in this recovery plan has a tradeoff. Pushing production speed raises quality and safety risk. Covering shifts with overtime increases worker fatigue. Rushing supplier orders risks material quality. Your job is to find the best <em>balanced</em> path forward — not the fastest one.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
+    <div class="card"><span class="label">What you are NOT doing yet</span><p>❌ Using AI tools<br>❌ Optimizing schedules automatically<br>❌ Making final decisions<br><br>Phase A is about understanding the situation as a human planner first.</p></div>
+    <div class="card"><span class="label">What you ARE doing</span><p>✅ Reviewing 4 operational data sources<br>✅ Identifying constraints and bottlenecks<br>✅ Building an operational baseline<br>✅ Preparing your initial recovery thinking</p></div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📅</div>
+    <div><div class="ts-label">Next Up · Screen 2</div><div class="ts-title">Production Schedule Review</div><div class="ts-desc">Review the current production schedule — find conflicts, delays, and priority mismatches.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read your briefing, then begin the review</span>
+    <button class="btn-next" onclick="goTo(2)">Begin Operations Review</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 2 — PRODUCTION SCHEDULE
+════════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="eyebrow">Phase A · Screen 2 of 8 · Production Schedule</div>
+  <h1>Production Schedule<br><em>Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Review the current NovaForge production schedule. Look for conflicts, overdue orders, unrealistic timelines, and gaps between what's planned and what's actually achievable with current capacity.</p>
+
+  <span class="label">NovaForge Production Schedule Dashboard — Week 24</span>
+  <table class="dash-table">
+    <thead><tr><th>Order / Job</th><th>Line</th><th>Start</th><th>Due Date</th><th>Units</th><th>Status</th><th>Priority</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2201</span></td><td>Line A</td><td>Mon</td><td>This Fri</td><td>320</td>
+        <td><span class="status-tag st-critical">5 Days Behind</span></td>
+        <td><span class="priority-badge p1">P1</span></td>
+        <td>Hospital logistics client — contract penalty after Fri. Line A partially offline Mon–Tue.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2198</span></td><td>Line B</td><td>Mon</td><td>Next Wed</td><td>210</td>
+        <td><span class="status-tag st-high">2 Days Behind</span></td>
+        <td><span class="priority-badge p2">P2</span></td>
+        <td>Distribution partner — second delay this month. Escalated to account manager.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2205</span></td><td>Line C</td><td>Tue</td><td>Next Thu</td><td>180</td>
+        <td><span class="status-tag st-medium">On Track</span></td>
+        <td><span class="priority-badge p3">P3</span></td>
+        <td>New client — first order. On schedule but relies on materials arriving by Wed.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2199</span></td><td>Line A</td><td>Thu</td><td>Wk+2</td><td>400</td>
+        <td><span class="status-tag st-pending">Not Started</span></td>
+        <td><span class="priority-badge p3">P3</span></td>
+        <td>Largest order this period — cannot start until Line A clears ORD-2201. Risk if ORD-2201 slips further.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2202</span></td><td>Line B</td><td>Wed</td><td>Wk+2</td><td>150</td>
+        <td><span class="status-tag st-pending">Not Started</span></td>
+        <td><span class="priority-badge p4">P4</span></td>
+        <td>Awaiting Line B completion of ORD-2198. Dependent order — delay cascades.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-INTERNAL-11</span></td><td>Line C</td><td>Fri</td><td>Wk+1</td><td>60</td>
+        <td><span class="status-tag st-medium">On Track</span></td>
+        <td><span class="priority-badge p4">P4</span></td>
+        <td>Internal quality test batch — required for new product certification. Cannot be skipped.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">NB-ORD-2207</span></td><td>Line A</td><td>Wk+2</td><td>Wk+3</td><td>275</td>
+        <td><span class="status-tag st-pending">Scheduled</span></td>
+        <td><span class="priority-badge p2">P2</span></td>
+        <td>Existing high-value account — scheduled but may conflict with ORD-2199 if Line A recovery is slow.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <span class="label">Mark what you notice — check all that apply</span>
+  <ul class="checklist" id="cl2">
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">ORD-2201 is the highest risk item — contract penalty due Friday with Line A partially offline</span><span class="chk-d">The P1 order is behind schedule AND the line it needs is not fully available this week</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">Lines A and B both have active delays — recovery on one affects the other</span><span class="chk-d">ORD-2199 and ORD-2202 cannot start until ORD-2201 and ORD-2198 clear — cascade risk is real</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">ORD-2205 on Line C depends on materials arriving by Wednesday</span><span class="chk-d">The only on-track order has a supply dependency that could derail it — material delays are a separate concern</span></div></li>
+    <li onclick="toggleCheck(this)"><div class="chk">✓</div><div><span class="chk-s">The internal quality test batch cannot be skipped — it adds schedule pressure on Line C</span><span class="chk-d">NB-INTERNAL-11 is a fixed obligation that limits Line C flexibility even if other orders need it</span></div></li>
+  </ul>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📅</span><span class="rs-lbl">Production Schedule Notes</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which production orders are most at risk — and why?</span><textarea id="s2_risk" class="field tall" placeholder="Identify the orders you're most concerned about. Reference due dates, line availability, and dependency chains…"></textarea></div>
+      <div><span class="label">What scheduling conflicts or constraints did you identify?</span><textarea id="s2_conflict" class="field" placeholder="Where do jobs compete for the same line, same equipment, or same time window? What cascade risks exist?…"></textarea></div>
+      <div><span class="label">What would you prioritize first — and what would you push back?</span><textarea id="s2_priority" class="field" placeholder="Based on what you see, which order needs the most urgent attention? Which could realistically be delayed without major consequence?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">👷</div>
+    <div><div class="ts-label">Next Up · Screen 3</div><div class="ts-title">Staffing &amp; Shift Coordination Review</div><div class="ts-desc">Review technician availability, shift gaps, and overtime exposure across all production zones.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Review Staffing Data</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 3 — STAFFING & SHIFTS
+════════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="eyebrow">Phase A · Screen 3 of 8 · Staffing Review</div>
+  <h1>Staffing &amp; Shift<br><em>Coordination Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Review the current staffing matrix. Your job is to identify shift gaps, overtime risks, and areas where limited personnel are creating production vulnerability.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+    <div style="padding:14px 18px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:5px;">🔴 Open Vacancies</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--red);">4 positions</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;">Unfilled for 30+ days — impacting Lines A &amp; B primarily</div>
+    </div>
+    <div style="padding:14px 18px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:5px;">⚡ Overtime Exposure</div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;color:var(--amber);">7 technicians</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;">Already at or above weekly overtime limit — fatigue risk increasing</div>
+    </div>
+  </div>
+
+  <span class="label">Operations Staffing &amp; Shift Matrix — Current Week</span>
+  <div class="shift-grid">
+    <div class="shift-card">
+      <div class="shift-head day"><div class="sh-name">Day Shift</div><div class="sh-time">06:00 – 14:00</div></div>
+      <div class="shift-body">
+        <div class="staff-row"><span class="staff-role">Line Operators (needed: 6)</span><span class="staff-count ok">6 / 6</span></div>
+        <div class="staff-row"><span class="staff-role">QC Technicians (needed: 2)</span><span class="staff-count ok">2 / 2</span></div>
+        <div class="staff-row"><span class="staff-role">Maintenance Tech (needed: 2)</span><span class="staff-count warn">1 / 2 <span class="vacancy-badge">1 VACANT</span></span></div>
+        <div class="staff-row"><span class="staff-role">Shift Supervisor</span><span class="staff-count ok">1 / 1</span></div>
+      </div>
+    </div>
+    <div class="shift-card">
+      <div class="shift-head eve"><div class="sh-name">Evening Shift</div><div class="sh-time">14:00 – 22:00</div></div>
+      <div class="shift-body">
+        <div class="staff-row"><span class="staff-role">Line Operators (needed: 6)</span><span class="staff-count warn">5 / 6 <span class="vacancy-badge">1 VACANT</span></span></div>
+        <div class="staff-row"><span class="staff-role">QC Technicians (needed: 2)</span><span class="staff-count ok">2 / 2</span></div>
+        <div class="staff-row"><span class="staff-role">Maintenance Tech (needed: 2)</span><span class="staff-count warn">1 / 2 <span class="vacancy-badge">1 VACANT</span></span></div>
+        <div class="staff-row"><span class="staff-role">Shift Supervisor</span><span class="staff-count ok">1 / 1</span></div>
+      </div>
+    </div>
+    <div class="shift-card">
+      <div class="shift-head ngt"><div class="sh-name">Night Shift</div><div class="sh-time">22:00 – 06:00</div></div>
+      <div class="shift-body">
+        <div class="staff-row"><span class="staff-role">Line Operators (needed: 5)</span><span class="staff-count crit">3 / 5 <span class="vacancy-badge">2 VACANT</span></span></div>
+        <div class="staff-row"><span class="staff-role">QC Technicians (needed: 2)</span><span class="staff-count warn">1 / 2</span></div>
+        <div class="staff-row"><span class="staff-role">Maintenance Tech (needed: 1)</span><span class="staff-count ok">1 / 1</span></div>
+        <div class="staff-row"><span class="staff-role">Shift Supervisor</span><span class="staff-count warn">0.5 / 1</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card amber" style="margin-bottom:14px;">
+    <h3>Specialist availability constraints</h3>
+    <p><strong>Only 2 certified robotic arm calibration technicians</strong> are currently active — both assigned to day shift. Any calibration work on Lines A or B during evening or night shifts requires scheduling these technicians outside their normal hours (overtime) or delaying the work until the next day shift.</p>
+    <p><strong>1 QC inspection lead</strong> is on planned medical leave this week — the remaining QC technicians can handle routine inspection but cannot approve final batch releases on their own. A QC lead sign-off is required for every shipment.</p>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👷</span><span class="rs-lbl">Staffing &amp; Workforce Notes</span></div>
+    <div class="rs-body">
+      <div><span class="label">Where are the most critical staffing shortages?</span><textarea id="s3_shorts" class="field tall" placeholder="Which shift and which role creates the most production risk? Night shift operators and maintenance gaps are particularly worth examining…"></textarea></div>
+      <div><span class="label">Which workflows will be most impacted by current staffing levels?</span><textarea id="s3_impact" class="field" placeholder="Which production lines or tasks are most dependent on the roles that are currently understaffed or at overtime limits?…"></textarea></div>
+      <div><span class="label">What staffing risk could cause a safety or quality issue?</span><textarea id="s3_safety" class="field" placeholder="Consider: the QC lead absence, the calibration tech concentration on day shift, and the night shift operator shortfall. What could go wrong?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚙️</div>
+    <div><div class="ts-label">Next Up · Screen 4</div><div class="ts-title">Equipment &amp; Downtime Analysis</div><div class="ts-desc">Review machine availability, scheduled maintenance, and capacity constraints across all production lines.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Review Equipment Data</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 4 — EQUIPMENT & DOWNTIME
+════════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="eyebrow">Phase A · Screen 4 of 8 · Equipment Analysis</div>
+  <h1>Equipment &amp; Downtime<br><em>Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Review current machine capacity, scheduled maintenance windows, and downtime risk. Identify where equipment constraints are limiting production — and where upcoming maintenance will create additional pressure.</p>
+
+  <span class="label">Machine Capacity &amp; Maintenance Dashboard — Week 24</span>
+  <div class="equip-list">
+    <div class="equip-row">
+      <div class="equip-icon">🦾</div>
+      <div class="equip-name">Arm-02 (Line A)</div>
+      <div class="equip-detail">Recovered from thermal failure — operating at 70% after motor service. Full capacity clearance expected Wk+1. Calibration needed before P1 order ramp-up.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar partial" style="width:70%"></div></div><div class="cap-pct">70% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">🦾</div>
+      <div class="equip-name">Arm-04 (Line B)</div>
+      <div class="equip-detail">Encoder cable replaced — restored to full capacity this week. Stable on day and evening shifts. Night shift monitoring still recommended.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar full" style="width:95%"></div></div><div class="cap-pct">95% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">📦</div>
+      <div class="equip-name">Conveyor-01</div>
+      <div class="equip-detail">Belt replaced — drive motor service complete. Back to full operation. Scheduled monthly service due in 12 days — should not conflict with current orders.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar full" style="width:100%"></div></div><div class="cap-pct">100% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">🔧</div>
+      <div class="equip-name">Arm-03 (Line A)</div>
+      <div class="equip-detail">Weld calibration recurring drift — patch applied but issue not fully resolved. Operating at reduced speed to maintain quality. Calibration tech appointment: Thursday AM.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar partial" style="width:60%"></div></div><div class="cap-pct">60% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">🔬</div>
+      <div class="equip-name">QC Inspection Camera (Lab)</div>
+      <div class="equip-detail">Camera recalibrated after last week's miss. Back to full accuracy. Weekly calibration locked into schedule. No current issues.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar full" style="width:100%"></div></div><div class="cap-pct">100% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">⚙️</div>
+      <div class="equip-name">Welding Unit (Line C)</div>
+      <div class="equip-detail">Operating normally. Scheduled full maintenance window: Wednesday 06:00–10:00 (4 hours). Line C output will be reduced during this window — affects ORD-2205 timeline.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar full" style="width:90%"></div></div><div class="cap-pct">90% capacity</div></div>
+    </div>
+    <div class="equip-row">
+      <div class="equip-icon">🤖</div>
+      <div class="equip-name">Robotic Assembly Station 4</div>
+      <div class="equip-detail">Proximity sensor recalibrated — no more false positive alerts. Operating at full speed. No maintenance scheduled this period.</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-bg"><div class="cap-bar full" style="width:100%"></div></div><div class="cap-pct">100% capacity</div></div>
+    </div>
+  </div>
+
+  <div class="card red" style="margin-bottom:14px;">
+    <h3>⚠ Combined Line A capacity concern</h3>
+    <p>Arm-02 is at 70% and Arm-03 is at 60% — both on Line A. The P1 order (ORD-2201) is scheduled on Line A and is already 5 days behind. Running a below-capacity line on the highest-priority order creates serious risk of further delay. Arm-02 calibration is needed before full ramp-up but the only certified calibration techs are on day shift.</p>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚙️</span><span class="rs-lbl">Equipment &amp; Downtime Notes</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which equipment constraints create the most production risk this week?</span><textarea id="s4_risk" class="field tall" placeholder="Focus on Line A — the Arm-02 and Arm-03 capacity situation in combination with the P1 order deadline creates a specific and urgent risk…"></textarea></div>
+      <div><span class="label">How does the Wednesday welding unit maintenance window affect scheduling?</span><textarea id="s4_maint" class="field" placeholder="ORD-2205 on Line C relies on materials arriving by Wednesday — and the welding unit is offline 4 hours that same morning. What's the risk?…"></textarea></div>
+      <div><span class="label">Where should calibration or maintenance be prioritized to unblock production?</span><textarea id="s4_priority" class="field" placeholder="If you could prioritize one maintenance or calibration action this week to have the highest impact on production recovery, what would it be and why?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📦</div>
+    <div><div class="ts-label">Next Up · Screen 5</div><div class="ts-title">Materials &amp; Inventory Review</div><div class="ts-desc">Evaluate supply chain status — which materials are delayed, low, or at risk of disrupting production?</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Review Materials Data</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 5 — MATERIALS & INVENTORY
+════════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="eyebrow">Phase A · Screen 5 of 8 · Materials Review</div>
+  <h1>Materials &amp; Inventory<br><em>Review</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Review the current inventory status and incoming supply chain data. Identify which material shortages or delivery delays are most likely to disrupt production — and which orders they put at risk.</p>
+
+  <div class="mat-banner">
+    <div class="mb-icon">⚠️</div>
+    <p><strong>Supply chain alert:</strong> Average incoming delivery delay is currently 7 days. Three critical components are running below minimum stock levels. Two supplier deliveries confirmed late this week.</p>
+  </div>
+
+  <span class="label">Materials &amp; Inventory Status Report</span>
+  <table class="dash-table">
+    <thead><tr><th>Component</th><th>Current Stock</th><th>Min Required</th><th>Next Delivery</th><th>Delay</th><th>Status</th><th>Production Risk</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="bold-cell">Arm Motor Assembly Kit</span></td><td>14 units</td><td>30 units</td><td>Thursday</td>
+        <td style="color:var(--red);font-weight:600;">+6 days late</td>
+        <td><span class="status-tag st-critical">Critical</span></td>
+        <td>ORD-2201 (Line A) will stall by Wednesday without restock. P1 order at direct risk.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">Sensor Calibration Units</span></td><td>8 units</td><td>15 units</td><td>Friday</td>
+        <td style="color:var(--red);font-weight:600;">+4 days late</td>
+        <td><span class="status-tag st-critical">Critical</span></td>
+        <td>Required for QC inspection on Line B batches. ORD-2198 may fail final QC without additional units.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">Frame Structural Components</span></td><td>45 units</td><td>40 units</td><td>Wk+1</td>
+        <td style="color:var(--amber);font-weight:600;">+2 days late</td>
+        <td><span class="status-tag st-high">Low Stock</span></td>
+        <td>Enough for ORD-2205 (Line C) but insufficient for ORD-2199 (Line A) starting Thursday.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">Wiring Harness Bundles</span></td><td>120 units</td><td>80 units</td><td>Wk+1</td>
+        <td style="color:var(--green);font-weight:600;">On time</td>
+        <td><span class="status-tag st-ok">Sufficient</span></td>
+        <td>Adequate through end of week. Monitor for Wk+2 volume requirements.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">Encoder Cable Sets</span></td><td>22 units</td><td>20 units</td><td>Wk+1</td>
+        <td style="color:var(--green);font-weight:600;">On time</td>
+        <td><span class="status-tag st-ok">Sufficient</span></td>
+        <td>Adequate. Restocked following last week's Arm-04 repair. Monitor ongoing.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">QC Test Fixtures</span></td><td>3 units</td><td>6 units</td><td>Wk+2</td>
+        <td style="color:var(--red);font-weight:600;">+9 days late</td>
+        <td><span class="status-tag st-critical">Critical</span></td>
+        <td>Required for internal quality certification batch (NB-INTERNAL-11). Cannot run certification without them.</td>
+      </tr>
+      <tr>
+        <td><span class="bold-cell">Gripper Actuator Modules</span></td><td>28 units</td><td>25 units</td><td>Wk+1</td>
+        <td style="color:var(--amber);font-weight:600;">+3 days late</td>
+        <td><span class="status-tag st-medium">Borderline</span></td>
+        <td>Sufficient for current orders but no buffer. Any increase in usage (repairs, defects) creates risk.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📦</span><span class="rs-lbl">Materials &amp; Inventory Notes</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which material shortages are most likely to stop production this week?</span><textarea id="s5_critical" class="field tall" placeholder="The Arm Motor Assembly Kit shortage is the most urgent — it directly threatens the P1 order. But the QC test fixture delay could also block the certification batch. Which concerns you most?…"></textarea></div>
+      <div><span class="label">Which production orders are most exposed to supply chain risk?</span><textarea id="s5_orders" class="field" placeholder="Map the material shortages to the production orders. Which specific orders could stall — and when — if deliveries stay delayed?…"></textarea></div>
+      <div><span class="label">What supply chain actions should the planning team take immediately?</span><textarea id="s5_action" class="field" placeholder="Should the team contact suppliers directly? Order emergency stock? Adjust which orders run first based on available materials? Think about what a planner would actually do…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🔗</div>
+    <div><div class="ts-label">Next Up · Screen 6</div><div class="ts-title">Workflow Bottleneck Mapping</div><div class="ts-desc">Connect all four data sources to identify the bottlenecks creating the most production pressure.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Map Bottlenecks</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 6 — BOTTLENECK MAPPING
+════════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="eyebrow">Phase A · Screen 6 of 8 · Bottleneck Mapping</div>
+  <h1>Workflow Bottleneck<br><em>Mapping</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now connect all four data sources. The most serious bottlenecks are not single-system problems — they are places where staffing, equipment, materials, and scheduling all converge to slow production. Find them.</p>
+
+  <div class="card amber" style="margin-bottom:18px;">
+    <h3>The cross-system question</h3>
+    <p>A bottleneck is any point where work slows down because something essential is missing or constrained. The worst bottlenecks combine multiple constraints at once — a machine running at reduced capacity that also needs materials that haven't arrived, on a shift where the specialist who could fix it isn't scheduled. Those are the ones that compound into lost days.</p>
+  </div>
+
+  <span class="label">Workflow Bottleneck Reference Map — Cross-System Analysis</span>
+  <div class="bn-list">
+    <div class="bn-row hdr">
+      <div class="bn-cell">Bottleneck</div>
+      <div class="bn-cell">Systems Involved</div>
+      <div class="bn-cell">Severity</div>
+      <div class="bn-cell">Production Impact</div>
+    </div>
+    <div class="bn-row">
+      <div class="bn-cell"><span class="bn-strong">Line A reduced capacity + P1 deadline</span><br><span style="font-size:11px;color:var(--light);">Arm-02 at 70%, Arm-03 at 60%</span></div>
+      <div class="bn-cell">Equipment + Scheduling + Staffing<br><span style="font-size:11px;color:var(--light);">Calibration techs only on day shift</span></div>
+      <div class="bn-cell"><div class="severity-bar"><div class="sb-dots"><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div></div></div></div>
+      <div class="bn-cell"><span class="impact-tag imp-h">High</span></div>
+    </div>
+    <div class="bn-row">
+      <div class="bn-cell"><span class="bn-strong">Arm Motor Kit shortage + P1 stall risk</span><br><span style="font-size:11px;color:var(--light);">14 units in stock, need 30 by Wed</span></div>
+      <div class="bn-cell">Materials + Scheduling<br><span style="font-size:11px;color:var(--light);">ORD-2201 directly exposed</span></div>
+      <div class="bn-cell"><div class="severity-bar"><div class="sb-dots"><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div></div></div></div>
+      <div class="bn-cell"><span class="impact-tag imp-h">High</span></div>
+    </div>
+    <div class="bn-row">
+      <div class="bn-cell"><span class="bn-strong">Night shift operator shortage + safety risk</span><br><span style="font-size:11px;color:var(--light);">3 of 5 operator positions filled</span></div>
+      <div class="bn-cell">Staffing + Safety<br><span style="font-size:11px;color:var(--light);">Reduced response capacity on night events</span></div>
+      <div class="bn-cell"><div class="severity-bar"><div class="sb-dots"><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div><div class="sb-dot filled-a"></div></div></div></div>
+      <div class="bn-cell"><span class="impact-tag imp-h">High</span></div>
+    </div>
+    <div class="bn-row">
+      <div class="bn-cell"><span class="bn-strong">QC lead absence + shipment approval hold</span><br><span style="font-size:11px;color:var(--light);">No one can sign off final batch release</span></div>
+      <div class="bn-cell">Staffing + Quality + Scheduling<br><span style="font-size:11px;color:var(--light);">Every batch shipment requires QC lead sign-off</span></div>
+      <div class="bn-cell"><div class="severity-bar"><div class="sb-dots"><div class="sb-dot filled-r"></div><div class="sb-dot filled-r"></div><div class="sb-dot filled-a"></div></div></div></div>
+      <div class="bn-cell"><span class="impact-tag imp-h">High</span></div>
+    </div>
+    <div class="bn-row">
+      <div class="bn-cell"><span class="bn-strong">Wed welding maintenance + ORD-2205 timing</span><br><span style="font-size:11px;color:var(--light);">4-hr window same day materials arrive</span></div>
+      <div class="bn-cell">Equipment + Materials + Scheduling<br><span style="font-size:11px;color:var(--light);">ORD-2205 on track but vulnerable to timing</span></div>
+      <div class="bn-cell"><div class="severity-bar"><div class="sb-dots"><div class="sb-dot filled-a"></div><div class="sb-dot filled-a"></div><div class="sb-dot"></div></div></div></div>
+      <div class="bn-cell"><span class="impact-tag imp-m">Medium</span></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔗</span><span class="rs-lbl">Workflow Bottleneck Map — Your Analysis</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which bottleneck concerns you most — and why does it combine multiple constraints?</span><textarea id="s6_top" class="field tall" placeholder="The highest-impact bottlenecks involve multiple systems failing at the same point. Which combination of constraints creates the most urgent risk for production recovery?…"></textarea></div>
+      <div><span class="label">Are any bottlenecks connected to each other — where fixing one would help another?</span><textarea id="s6_linked" class="field" placeholder="For example: prioritizing Arm-02 calibration on day shift could unlock Line A capacity — which helps both the P1 order and the materials timing problem. Are there other connections like this?…"></textarea></div>
+      <div><span class="label">What is the single action that would have the most positive cascading effect on production?</span><textarea id="s6_single" class="field" placeholder="If the team could take one action that unblocks multiple bottlenecks at once — what would it be? Think about which constraint is at the root of the most other problems…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📌</div>
+    <div><div class="ts-label">Next Up · Screen 7</div><div class="ts-title">Production Prioritization Decisions</div><div class="ts-desc">Decide which production lines, orders, and actions should receive top priority in the recovery plan.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Make Prioritization Decisions</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 7 — PRIORITIZATION
+════════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="eyebrow">Phase A · Screen 7 of 8 · Prioritization</div>
+  <h1>Production Prioritization<br><em>Decisions</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Not everything can happen at once. You have limited people, limited equipment capacity, and a constrained supply chain. Now you must decide what gets priority — knowing that everything you move up means something else gets pushed back.</p>
+
+  <div class="card red" style="margin-bottom:18px;">
+    <h3>The hard reality of recovery planning</h3>
+    <p>If the team tries to run all orders at full speed simultaneously — without addressing the bottlenecks — everything will fall further behind. A focused recovery plan means choosing what to accelerate, what to protect, and what to temporarily deprioritize. That requires human judgment. No algorithm makes this call for you.</p>
+  </div>
+
+  <span class="label">Initial production priority framework — assign your reasoning</span>
+  <div class="priority-grid">
+    <div class="prio-card">
+      <div class="prio-head p1c"><span class="prio-label">🔴 Priority 1 — Immediate Action Required</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--red);">What should be addressed first — within 24 hours</span>
+        <textarea id="p7_p1" class="field" placeholder="Example: ORD-2201 (P1 hospital client) — contact supplier for emergency motor kit delivery, schedule Arm-02 calibration for today's day shift, authorize limited overtime on Line A to close the 5-day gap…"></textarea>
+      </div>
+    </div>
+    <div class="prio-card">
+      <div class="prio-head p2c"><span class="prio-label">🟠 Priority 2 — This Week Critical</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--orange);">What must be resolved by Friday to stay on track</span>
+        <textarea id="p7_p2" class="field" placeholder="Example: Address QC lead absence — identify who can provide temporary sign-off authority; confirm materials for ORD-2205 will arrive before the Wednesday maintenance window…"></textarea>
+      </div>
+    </div>
+    <div class="prio-card">
+      <div class="prio-head p3c"><span class="prio-label">🟡 Priority 3 — Monitor Closely</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--amber);">What needs watching but is not yet a crisis</span>
+        <textarea id="p7_p3" class="field" placeholder="Example: Night shift staffing — continue with current coverage but set a threshold: if any further vacancies open, escalate immediately. Monitor ORD-2199 scheduling to ensure Line A will be clear by Thursday…"></textarea>
+      </div>
+    </div>
+    <div class="prio-card">
+      <div class="prio-head p4c"><span class="prio-label">🔵 Priority 4 — Planned but Flexible</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--slate);">What can wait without major consequence</span>
+        <textarea id="p7_p4" class="field" placeholder="Example: ORD-2202 (dependent order) — this cannot start until ORD-2198 clears Line B anyway; NB-INTERNAL-11 certification batch is important but can flex one or two days if needed…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📌</span><span class="rs-lbl">Your Prioritization Reasoning</span></div>
+    <div class="rs-body">
+      <div><span class="label">What is the most difficult tradeoff in your prioritization?</span><textarea id="p7_tradeoff" class="field tall" placeholder="What did you have to push back that felt uncomfortable? Where did you feel the tension between client needs, safety, and staffing limits? Explain the tradeoff you made…"></textarea></div>
+      <div><span class="label">What could go wrong with your prioritization — and what would you watch for?</span><textarea id="p7_risk" class="field" placeholder="Every prioritization creates a new risk. What's the most likely thing to go wrong with the plan you've outlined above?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📄</div>
+    <div><div class="ts-label">Next Up · Screen 8</div><div class="ts-title">Initial Recovery Plan Submission</div><div class="ts-desc">Compile all your findings into a professional Production Recovery Plan and download your PDF.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Submit Recovery Plan</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 8 — SUBMISSION
+════════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="eyebrow">Phase A · Screen 8 of 8 · Recovery Plan Submission</div>
+  <h1>Initial Recovery<br><em>Plan Submission</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Compile your findings from all seven screens into your Phase A deliverable. Your typed responses will be compiled directly into your downloadable PDF. Make sure all fields are complete before submitting.</p>
+
+  <div class="card slate" style="margin-bottom:20px;">
+    <h3>📋 NovaForge Initial Production Recovery Plan</h3>
+    <p>This document represents your complete Phase A operational investigation. It is the planning baseline you will hand to AI tools in Phase B — and the foundation for your final operational decisions in Phase C. Write it as if you are handing it to the operations director.</p>
+  </div>
+
+  <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px;">
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Production Schedule Concerns</strong> — conflicts, at-risk orders, cascade risks from Screens 2</div></li>
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Staffing Coordination Notes</strong> — vacancies, overtime risk, specialist constraints from Screen 3</div></li>
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Equipment &amp; Downtime Risks</strong> — capacity limitations, maintenance conflicts from Screen 4</div></li>
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Inventory &amp; Materials Concerns</strong> — shortages, delivery delays, exposed orders from Screen 5</div></li>
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Workflow Bottleneck Map</strong> — cross-system constraints and cascading risks from Screen 6</div></li>
+    <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:6px;"><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--slate-mid);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--slate);flex-shrink:0;">✓</div><div><strong>Initial Production Priorities</strong> — your P1–P4 framework and tradeoff reasoning from Screen 7</div></li>
+  </ul>
+
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Recovery Plan</h3>
+      <p>Enter your name and today's date, then click Submit. Your PDF downloads immediately.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name</span><input type="text" id="r_name" class="ifield" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date" class="ifield"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-sub" id="btn_sub" onclick="handleSubmit()">Submit Recovery Plan →</button>
+        <button class="btn-dl" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="sub-note" id="sub_note">All typed answers from Screens 2–7 will compile into your PDF.</span>
+      </div>
+      <div class="err-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Recovery plan submitted.</strong> Your Phase A operational investigation is complete. Download your PDF and keep it ready — you will upload this planning baseline into AI tools in Phase B for schedule optimization and workflow analysis.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="trans-strip" style="margin-top:28px;">
+    <div class="ts-icon">🤖</div>
+    <div>
+      <div class="ts-label">Coming Up · Phase B</div>
+      <div class="ts-title">AI Workflow Optimization Lab</div>
+      <div class="ts-desc">In Phase B, you will use AI tools to optimize production schedules, reduce bottlenecks, and evaluate AI-generated recovery recommendations — then validate them against your Phase A planning baseline.</div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <span class="nav-hint">Phase B opens when your instructor is ready</span>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 8;
+
+function buildDots() {
+  const wrap = document.getElementById('dotsRow');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('sctr').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+
+function handleSubmit() {
+  const name = g('r_name').trim();
+  if (!name) { document.getElementById('err_msg').style.display = 'block'; document.getElementById('r_name').focus(); return; }
+  document.getElementById('err_msg').style.display = 'none';
+  document.getElementById('success_box').style.display = 'block';
+  document.getElementById('btn_dl').style.display = 'inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent = '✓ Submitted'; b.style.background = '#1A6645'; b.style.cursor = 'default'; b.onclick = null;
+  document.getElementById('sub_note').style.display = 'none';
+  document.getElementById('success_box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const SLATE = [26,74,138], SLATE_D = [13,42,82], SLATE_BG = [235,242,252];
+  const PURPLE = [123,47,190];
+  const TXT = [13,26,46], MUTED = [74,90,114], LIGHT = [138,155,180];
+  const BORDER = [210,220,235], OFF = [248,250,252];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 4 Phase A', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...SLATE_BG);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...SLATE_D);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...SLATE);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+
+  // COVER
+  doc.setFillColor(...SLATE);
+  doc.rect(0, 0, PW, 62, 'F');
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 54, PW, 8, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(170, 200, 240);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 4', ML, 19);
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
+  doc.text('Initial Production Recovery Plan', ML, 34);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(170,200,240);
+  doc.text('Operations Planning & Workflow Mapping  ·  Phase A', ML, 46);
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(ML, 56, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...SLATE);
+  doc.text('OPERATIONS PLANNER', ML+6, 66); doc.text('DATE', ML+100, 66); doc.text('ASSIGNMENT', ML+152, 66);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(g('r_name')||'Not provided', ML+6, 76);
+  doc.text(g('r_date')||'—', ML+100, 76);
+  doc.setFontSize(10); doc.text('Module 4 · Phase A', ML+152, 76);
+  y = 100;
+
+  secHead('📅', 'Section 1 — Production Schedule Notes (Screen 2)');
+  box('Orders Most at Risk', g('s2_risk'));
+  box('Scheduling Conflicts & Cascade Risks', g('s2_conflict'));
+  box('Initial Priority Assessment', g('s2_priority'));
+  y += 4;
+
+  secHead('👷', 'Section 2 — Staffing & Workforce Notes (Screen 3)');
+  box('Critical Staffing Shortages', g('s3_shorts'));
+  box('Workflows Most Impacted by Staffing Gaps', g('s3_impact'));
+  box('Safety & Quality Risks from Staffing Limitations', g('s3_safety'));
+  y += 4;
+
+  secHead('⚙️', 'Section 3 — Equipment & Downtime Notes (Screen 4)');
+  box('Equipment Constraints Creating Most Risk', g('s4_risk'));
+  box('Impact of Wednesday Maintenance Window', g('s4_maint'));
+  box('Priority Maintenance/Calibration Action', g('s4_priority'));
+  y += 4;
+
+  secHead('📦', 'Section 4 — Materials & Inventory Notes (Screen 5)');
+  box('Critical Material Shortages', g('s5_critical'));
+  box('Production Orders Most Exposed to Supply Risk', g('s5_orders'));
+  box('Immediate Supply Chain Actions Needed', g('s5_action'));
+  y += 4;
+
+  secHead('🔗', 'Section 5 — Workflow Bottleneck Map (Screen 6)');
+  box('Most Serious Cross-System Bottleneck', g('s6_top'));
+  box('Connected Bottlenecks — Fixing One Helps Another', g('s6_linked'));
+  box('Single Action with Highest Cascading Impact', g('s6_single'));
+  y += 4;
+
+  secHead('📌', 'Section 6 — Initial Production Priorities (Screen 7)');
+  box('Priority 1 — Immediate Action (24 hours)', g('p7_p1'));
+  box('Priority 2 — This Week Critical (by Friday)', g('p7_p2'));
+  box('Priority 3 — Monitor Closely', g('p7_p3'));
+  box('Priority 4 — Planned but Flexible', g('p7_p4'));
+  box('Most Difficult Tradeoff', g('p7_tradeoff'));
+  box('What Could Go Wrong — Risks to Watch', g('p7_risk'));
+
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 4 Phase A  ·  Initial Production Recovery Plan', ML, PH-8);
+      doc.text('Page '+i+' of '+total, PW/2, PH-8, {align:'center'});
+      doc.text(g('r_name')||'', PW-MR, PH-8, {align:'right'});
+    }
+  }
+
+  const safe = (g('r_name')||'planner').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  doc.save('novaforge_m4_phase_a_'+safe+'.pdf');
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+</script>
+</body>
+</html>
