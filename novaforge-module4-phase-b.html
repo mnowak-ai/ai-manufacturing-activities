@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase B — AI Workflow Optimization Lab | NovaForge Module 4</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --purple:#7B2FBE;--purple-light:#9B59D9;--purple-pale:#F3EDFB;
+  --purple-mid:#C49EE8;--purple-dark:#4A1880;
+  --white:#FFFFFF;--off:#FAFAF8;--off2:#EEF2F8;
+  --border:rgba(26,74,138,.12);--border-s:rgba(26,74,138,.28);
+  --txt:#0D1A2E;--muted:#4A5A72;--light:#8A9BB4;
+  --green:#1A6645;--green-bg:#EAF7F0;--green-border:rgba(26,102,69,.22);
+  --amber:#7A4F00;--amber-bg:#FDF5E6;--amber-border:rgba(122,79,0,.22);
+  --red:#8A2020;--red-bg:#FDF0EF;--red-border:rgba(138,32,32,.22);
+  --slate:#1A4A8A;--slate-bg:#EBF2FC;--slate-border:rgba(26,74,138,.2);
+  --slate-light:#2B68C4;--slate-mid:#7AAAE0;--slate-dark:#0D2A52;
+  --orange:#8A3A00;--orange-bg:#FEF3E8;--orange-border:rgba(138,58,0,.2);
+  --blue:#0F4F8A;--blue-bg:#EBF4FD;--blue-border:rgba(15,79,138,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--off);color:var(--txt);font-size:16px;line-height:1.75;overflow-x:hidden;}
+.shell{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-l{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.12em;text-transform:uppercase;}
+.tb-l .sep{color:var(--slate-mid);}.tb-l .cur{color:var(--slate);}
+.tb-r{display:flex;align-items:center;gap:12px;}
+.phase-pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);background:var(--slate-bg);border:1px solid var(--slate-border);padding:5px 14px;border-radius:20px;}
+.sctr{font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.08em;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--white);border-bottom:1px solid var(--border);height:6px;}
+.prog-track{height:100%;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--slate),var(--purple));border-radius:0 3px 3px 0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* DOTS */
+.dots-row{padding:14px 40px 0;display:flex;align-items:center;gap:5px;max-width:920px;margin:0 auto;width:100%;}
+.dot{height:4px;border-radius:2px;background:rgba(26,74,138,.18);cursor:pointer;transition:background .25s;flex:1;}
+.dot.active{background:var(--slate);}.dot.done{background:var(--slate-mid);}
+
+/* MAIN */
+.main{flex:1;max-width:920px;margin:0 auto;width:100%;padding:0 40px 80px;}
+
+/* SCREEN */
+.screen{display:none;padding-top:36px;animation:fadeUp .38s ease forwards;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADERS */
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--slate);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:18px;height:2px;background:var(--slate-light);border-radius:2px;}
+.screen h1{font-family:'Fraunces',serif;font-size:32px;font-weight:500;color:var(--txt);line-height:1.2;letter-spacing:-.02em;margin-bottom:10px;}
+.screen h1 em{font-style:italic;color:var(--purple);}
+.screen-rule{height:1px;background:var(--border);margin-bottom:26px;}
+.lead{font-size:15px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:26px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:12px;}
+.card.slate{border-left:4px solid var(--slate);background:var(--slate-bg);}
+.card.amber{border-left:4px solid #E8A020;background:var(--amber-bg);}
+.card.green{border-left:4px solid var(--green);background:var(--green-bg);}
+.card.red{border-left:4px solid #D94040;background:var(--red-bg);}
+.card.purple{border-left:4px solid var(--purple);background:var(--purple-pale);}
+.card h3{font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--txt);margin-bottom:7px;}
+.card p,.card li{font-size:14px;color:var(--muted);line-height:1.7;}
+.card p+p{margin-top:8px;}
+
+/* LABEL */
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:7px;display:block;}
+
+/* FILES LIST */
+.files-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.file-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);transition:background .2s;}
+.file-row:last-child{border-bottom:none;}
+.file-row:hover{background:var(--slate-bg);}
+.fi{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.fi-sched{background:var(--slate-bg);}
+.fi-staff{background:var(--amber-bg);}
+.fi-equip{background:var(--orange-bg);}
+.fi-mat{background:var(--green-bg);}
+.file-name{flex:1;font-size:14px;font-weight:600;color:var(--txt);}
+.file-desc{font-size:12px;color:var(--muted);}
+.file-badge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;flex-shrink:0;}
+.fb-sched{background:var(--slate-bg);color:var(--slate);}
+.fb-staff{background:var(--amber-bg);color:var(--amber);}
+.fb-equip{background:var(--orange-bg);color:var(--orange);}
+.fb-mat{background:var(--green-bg);color:var(--green);}
+
+/* STEPS */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:14px 0 18px;}
+.steps-list li{display:flex;align-items:flex-start;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6;}
+.steps-list li:last-child{border-bottom:none;}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--slate);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* PROMPT BOX */
+.prompt-box{background:var(--off);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.pb-head{background:var(--slate-bg);padding:10px 17px;border-bottom:1px solid var(--slate-border);display:flex;align-items:center;justify-content:space-between;}
+.pb-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);font-weight:700;}
+.copy-btn{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);background:var(--white);border:1px solid var(--slate-border);padding:4px 12px;border-radius:3px;cursor:pointer;transition:background .15s;}
+.copy-btn:hover{background:var(--slate-bg);}
+.copy-btn.copied{color:var(--green);border-color:var(--green-border);}
+.pb-text{padding:13px 17px;font-family:'Space Mono',monospace;font-size:11.5px;color:var(--txt);line-height:1.7;white-space:pre-wrap;}
+
+/* AI BUBBLE */
+.ai-bubble{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 22px;margin-bottom:16px;}
+.ai-bubble::before{content:'🤖  AI Output (Example)';font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700;display:block;margin-bottom:10px;}
+.ai-bubble p{font-size:14px;color:var(--txt);line-height:1.7;}
+.ai-bubble .ai-warn{margin-top:11px;padding:9px 13px;background:rgba(122,79,0,.07);border:1px solid var(--amber-border);border-radius:5px;font-size:12px;color:var(--amber);font-style:italic;}
+
+/* VALIDATION CARDS */
+.val-cards{display:flex;flex-direction:column;gap:14px;margin-bottom:16px;}
+.val-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.val-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.val-head.risky{background:var(--red-bg);}
+.val-head.caution{background:var(--amber-bg);}
+.val-head.ok{background:var(--green-bg);}
+.val-title{font-size:14px;font-weight:600;color:var(--txt);}
+.val-badge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;}
+.vb-risky{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.vb-caution{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);}
+.vb-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.val-body{padding:14px 18px;background:var(--white);}
+.val-ai{font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px;padding-left:12px;border-left:3px solid var(--blue-border);}
+.val-issue{font-size:13px;color:var(--red);margin-bottom:8px;}
+.val-issue.a{color:var(--amber);}
+
+/* PRIORITY GRID */
+.priority-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;}
+.prio-section{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.prio-head{padding:12px 17px;border-bottom:1px solid var(--border);}
+.prio-head.sched{background:var(--slate-bg);}
+.prio-head.staff{background:var(--amber-bg);}
+.prio-head.equip{background:var(--orange-bg);}
+.prio-head.invent{background:var(--green-bg);}
+.prio-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+.prio-head.sched .prio-title{color:var(--slate);}
+.prio-head.staff .prio-title{color:var(--amber);}
+.prio-head.equip .prio-title{color:var(--orange);}
+.prio-head.invent .prio-title{color:var(--green);}
+.prio-body{padding:14px 17px;background:var(--white);}
+
+/* COMPARE TABLE */
+.cmp-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.cmp-table thead tr{background:var(--slate-bg);}
+.cmp-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);padding:11px 14px;text-align:left;border-bottom:1px solid var(--slate-border);font-weight:700;}
+.cmp-table td{padding:12px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:hover td{background:var(--off);}
+.tag{display:inline-flex;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;}
+.tag.accept{background:var(--green-bg);color:var(--green);}
+.tag.modify{background:var(--amber-bg);color:var(--amber);}
+.tag.reject{background:var(--red-bg);color:var(--red);}
+.tag.review{background:var(--slate-bg);color:var(--slate);}
+
+/* CHECKLIST */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.checklist li{display:flex;align-items:flex-start;gap:13px;padding:13px 17px;background:var(--white);border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--txt);cursor:pointer;user-select:none;transition:border-color .2s,background .2s;}
+.checklist li:hover{border-color:var(--slate-border);background:var(--slate-bg);}
+.checklist li.checked{background:var(--green-bg);border-color:var(--green-border);}
+.checklist li.checked .chk{background:var(--green);border-color:var(--green);color:white;}
+.chk{width:20px;height:20px;border-radius:4px;border:1.5px solid rgba(26,74,138,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;margin-top:2px;}
+.chk-s{display:block;font-weight:600;font-size:14px;margin-bottom:2px;}
+.chk-d{font-size:12px;color:var(--muted);}
+
+/* REPORT SECTION */
+.rs{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.rs-head{background:var(--slate-bg);padding:11px 18px;border-bottom:1px solid var(--slate-border);display:flex;align-items:center;gap:10px;}
+.rs-ico{font-size:15px;}.rs-lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);font-weight:700;}
+.rs-body{padding:14px 18px;background:var(--white);display:flex;flex-direction:column;gap:12px;}
+
+/* TEXTAREA + INPUT */
+textarea.field{width:100%;min-height:76px;border:1px dashed rgba(26,74,138,.25);border-radius:5px;background:var(--off);padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);resize:vertical;outline:none;transition:border-color .2s,background .2s;line-height:1.55;}
+textarea.field:focus{border-color:var(--slate-light);background:var(--white);color:var(--txt);}
+textarea.field::placeholder{color:var(--light);font-style:italic;font-size:13px;}
+textarea.field.tall{min-height:100px;}
+input.ifield{width:100%;padding:9px 13px;border:1px solid rgba(26,74,138,.22);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--txt);background:var(--off);outline:none;transition:border-color .2s,background .2s;}
+input.ifield:focus{border-color:var(--slate-light);background:var(--white);}
+input.ifield::placeholder{color:var(--light);}
+
+/* SUBMIT ZONE */
+.submit-zone{margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sz-head{background:var(--slate-bg);padding:17px 22px;border-bottom:1px solid var(--slate-border);}
+.sz-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--txt);margin-bottom:4px;}
+.sz-head p{font-size:13px;color:var(--muted);margin:0;}
+.sz-body{padding:20px 22px;background:var(--white);}
+.learner-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.submit-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.btn-sub{display:inline-flex;align-items:center;gap:9px;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:4px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-sub:hover{background:var(--slate-dark);transform:translateY(-1px);}
+.btn-dl{display:none;align-items:center;gap:8px;background:var(--white);color:var(--slate);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 24px;border-radius:4px;border:2px solid var(--slate);cursor:pointer;transition:background .2s;}
+.btn-dl:hover{background:var(--slate-bg);}
+.sub-note{font-size:12px;color:var(--light);font-style:italic;}
+.success-box{display:none;margin-top:14px;padding:13px 18px;background:var(--green-bg);border:1px solid var(--green-border);border-left:4px solid var(--green);border-radius:0 6px 6px 0;}
+.success-box p{font-size:14px;color:var(--green);margin:0;line-height:1.6;}
+.err-msg{display:none;margin-top:10px;padding:9px 15px;background:var(--red-bg);border-left:4px solid #D94040;border-radius:0 5px 5px 0;font-size:13px;color:var(--red);}
+
+/* NAV */
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:34px;border-top:1px solid var(--border);margin-top:34px;}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;border-radius:5px;border:1px solid var(--border-s);cursor:pointer;transition:background .15s;}
+.btn-back:hover{background:var(--white);color:var(--txt);}
+.btn-next{display:inline-flex;align-items:center;gap:9px;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 26px;border-radius:5px;border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s,transform .15s;}
+.btn-next:hover{background:var(--slate-dark);transform:translateY(-1px);}
+.btn-next:active{transform:none;}
+.btn-next::after{content:'→';font-size:15px;}
+.nav-hint{font-size:12px;color:var(--light);font-style:italic;font-family:'Space Mono',monospace;letter-spacing:.04em;}
+
+/* TRANS STRIP */
+.trans-strip{background:var(--slate-bg);border:1px solid var(--slate-border);border-radius:8px;padding:18px 22px;display:flex;align-items:center;gap:18px;margin-top:26px;}
+.ts-icon{width:42px;height:42px;border-radius:50%;background:var(--slate);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ts-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin-bottom:4px;}
+.ts-title{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.ts-desc{font-size:12px;color:var(--muted);}
+
+/* COMPLETION */
+.comp-hero{text-align:center;padding:36px 0 22px;}
+.c-icon{font-size:52px;margin-bottom:14px;display:block;}
+.comp-hero h2{font-family:'Fraunces',serif;font-size:28px;font-weight:500;color:var(--txt);margin-bottom:9px;}
+.comp-hero p{font-size:14px;color:var(--muted);max-width:460px;margin:0 auto 18px;line-height:1.7;}
+.port-badge{display:flex;align-items:center;gap:12px;background:var(--slate-bg);border:1px solid var(--slate-border);border-radius:7px;padding:14px 20px;margin:0 auto 22px;width:fit-content;}
+.pb-icon{font-size:22px;}.pb-title{font-weight:600;font-size:14px;color:var(--txt);}
+.pb-sub{font-size:11px;color:var(--muted);}
+
+/* PHASE C TRANSITION */
+.trans-box{background:var(--off);border:1px solid var(--border);border-radius:10px;padding:30px;text-align:center;margin-top:14px;}
+.trans-eyebrow{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--slate);margin-bottom:13px;}
+.trans-box h2{font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:var(--txt);margin-bottom:10px;letter-spacing:-.01em;}
+.trans-box h2 em{font-style:italic;color:var(--purple);}
+.trans-box p{font-size:14px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.7;}
+.trans-list{list-style:none;display:flex;flex-direction:column;gap:7px;max-width:320px;margin:14px auto 0;text-align:left;}
+.trans-list li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);}
+.trans-list li::before{content:'›';color:var(--slate);font-weight:700;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-l">
+    <span>NovaForge Robotics</span><span class="sep">›</span>
+    <span>Module 4</span><span class="sep">›</span>
+    <span class="cur">Phase B</span>
+  </div>
+  <div class="tb-r">
+    <span class="sctr" id="sctr">Screen 1 of 10</span>
+    <div class="phase-pill">AI Optimization Lab</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:10%"></div></div>
+</div>
+
+<!-- DOTS -->
+<div class="dots-row" id="dotsRow"></div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — ENTER THE LAB
+══════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="eyebrow">Phase B · Screen 1 of 10 · Lab Entry</div>
+  <h1>AI Workflow<br><em>Optimization Lab</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="card slate">
+    <h3>⚡ You are entering the NovaForge AI Workflow Optimization Lab</h3>
+    <p>In Phase A, you manually reviewed production schedules, staffing data, equipment availability, and materials status — and built your initial recovery plan by hand.</p>
+    <p>Now you bring that planning foundation into the AI lab. Your job is to use AI tools to optimize the workflows you mapped — then validate every recommendation against the operational reality you understand from Phase A.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
+    <div class="card">
+      <span class="label">What you built in Phase A</span>
+      <p>✅ Production schedule analysis<br>✅ Staffing gap identification<br>✅ Equipment capacity assessment<br>✅ Material shortage mapping<br>✅ Bottleneck map &amp; priority framework</p>
+    </div>
+    <div class="card">
+      <span class="label">What you will do in Phase B</span>
+      <p>🔍 Upload data into ChatGPT or Copilot<br>🔍 Run AI schedule optimization<br>🔍 Evaluate AI workflow recommendations<br>🔍 Identify unrealistic AI suggestions<br>🔍 Build your optimization report</p>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <h3>The critical principle of this lab</h3>
+    <p>AI will find the most <em>efficient</em> solution — but efficient is not always safe, realistic, or responsible. An AI scheduling tool does not know that your night shift is two operators short, that your calibration tech only works days, or that the client on ORD-2201 cannot accept a delay under any circumstances.</p>
+    <p><strong>Your Phase A knowledge is the validation layer. Use it on every AI output.</strong></p>
+  </div>
+
+  <div class="card green">
+    <h3>Which AI tool to use</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+      <div style="padding:12px 15px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">ChatGPT</strong><br>chatgpt.com · free, supports .xlsx and .txt uploads</div>
+      <div style="padding:12px 15px;background:white;border:1px solid var(--green-border);border-radius:6px;font-size:13px;color:var(--muted);"><strong style="color:var(--txt);">Microsoft Copilot</strong><br>copilot.microsoft.com · free, works well with structured data</div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📅</div>
+    <div><div class="ts-label">Next Up · Screen 2</div><div class="ts-title">Upload Production Scheduling Data</div><div class="ts-desc">Upload your production schedule files and run your first AI analysis.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <span class="nav-hint">Read the briefing, then enter the lab</span>
+    <button class="btn-next" onclick="goTo(2)">Enter the Lab</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — PRODUCTION SCHEDULING
+══════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="eyebrow">Phase B · Screen 2 of 10 · Task 1</div>
+  <h1>Production Scheduling<br><em>AI Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Start with the production schedule data. Upload your scheduling files and run the first optimization analysis. This gives AI the clearest picture of the delivery pressure and line conflicts.</p>
+
+  <span class="label">Files for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="fi fi-sched">📅</div>
+      <div style="flex:1;">
+        <div class="file-name">Production Schedule Dashboard — Week 24</div>
+        <div class="file-desc">7 active orders across Lines A, B, and C — with due dates, status, priorities, and dependency chains</div>
+      </div>
+      <div class="file-badge fb-sched">Schedule · Excel</div>
+    </div>
+    <div class="file-row">
+      <div class="fi fi-sched">📋</div>
+      <div style="flex:1;">
+        <div class="file-name">Phase A Production Schedule Notes</div>
+        <div class="file-desc">Your notes on conflicts, cascade risks, and initial priority observations from Phase A Screen 2</div>
+      </div>
+      <div class="file-badge fb-sched">Notes · Text</div>
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Open ChatGPT or Copilot in a new browser tab and log in.</div></li>
+    <li><div class="step-n">2</div><div>Upload both files listed above.</div></li>
+    <li><div class="step-n">3</div><div>Copy one of the prompts below and paste it after uploading.</div></li>
+    <li><div class="step-n">4</div><div>Read the full AI response, then answer the reflection questions below.</div></li>
+  </ol>
+
+  <span class="label">Choose a prompt — copy and paste into your AI tool</span>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt A — Schedule Conflicts</span><button class="copy-btn" id="cb1" onclick="copyText('cb1','Analyze this production schedule and identify all workflow conflicts, scheduling overlaps, and bottlenecks. Which orders are most at risk of missing their deadlines? What changes to the production sequence would reduce delay risk? Keep your explanation simple and practical.')">Copy</button></div>
+    <div class="pb-text">Analyze this production schedule and identify all workflow conflicts, scheduling overlaps, and bottlenecks. Which orders are most at risk of missing their deadlines? What changes to the production sequence would reduce delay risk? Keep your explanation simple and practical.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt B — Efficiency Focus</span><button class="copy-btn" id="cb2" onclick="copyText('cb2','Review this production schedule and recommend specific changes to improve workflow efficiency and reduce production delays. Focus on the highest-priority orders first. Identify any scheduling dependencies that could cause cascade delays if not addressed.')">Copy</button></div>
+    <div class="pb-text">Review this production schedule and recommend specific changes to improve workflow efficiency and reduce production delays. Focus on the highest-priority orders first. Identify any scheduling dependencies that could cause cascade delays if not addressed.</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📅</span><span class="rs-lbl">Production Scheduling — AI Analysis Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What scheduling conflicts or risks did AI identify?</span><textarea id="r2_conflicts" class="field tall" placeholder="Summarize the conflicts and risks AI surfaced. Did it identify the ORD-2201 cascade risk and the Line A reduced-capacity problem?…"></textarea></div>
+      <div><span class="label">What scheduling changes did AI recommend — and are they realistic?</span><textarea id="r2_recs" class="field" placeholder="List the main recommendations. For each one: could NovaForge actually implement this given what you know about staffing, equipment, and materials?…"></textarea></div>
+      <div><span class="label">What did AI miss from your Phase A scheduling analysis?</span><textarea id="r2_miss" class="field" placeholder="What important context — specialist availability, material dependencies, client penalty clauses — did AI not account for in its recommendations?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">👷</div>
+    <div><div class="ts-label">Next Up · Screen 3</div><div class="ts-title">Staffing &amp; Workforce Data</div><div class="ts-desc">Upload staffing data and ask AI to optimize workforce allocation and shift coverage.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Upload Staffing Data</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — STAFFING DATA
+══════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="eyebrow">Phase B · Screen 3 of 10 · Task 2</div>
+  <h1>Staffing &amp; Workforce<br><em>AI Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now focus on the staffing picture. Upload your workforce data and ask AI to recommend allocation improvements. Pay attention to whether AI accounts for overtime limits, specialist availability, and safety requirements.</p>
+
+  <span class="label">Files for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="fi fi-staff">👷</div>
+      <div style="flex:1;">
+        <div class="file-name">Staffing &amp; Shift Matrix — Week 24</div>
+        <div class="file-desc">Three-shift coverage data — role-by-role headcount, vacancy status, overtime tracking, specialist assignments</div>
+      </div>
+      <div class="file-badge fb-staff">Staffing · Excel</div>
+    </div>
+    <div class="file-row">
+      <div class="fi fi-staff">📝</div>
+      <div style="flex:1;">
+        <div class="file-name">Phase A Staffing Notes</div>
+        <div class="file-desc">Your notes on critical shortages, workflow impact, and safety/quality risks from Phase A Screen 3</div>
+      </div>
+      <div class="file-badge fb-staff">Notes · Text</div>
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Upload both staffing files into your AI tool (continue the same conversation or start a new one).</div></li>
+    <li><div class="step-n">2</div><div>Copy one of the prompts below and run the analysis.</div></li>
+    <li><div class="step-n">3</div><div>Pay particular attention to whether AI recommends actions that would push workers past overtime limits or put safety-critical roles at risk.</div></li>
+  </ol>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt C — Workforce Optimization</span><button class="copy-btn" id="cb3" onclick="copyText('cb3','Analyze this staffing schedule and recommend ways to improve workforce allocation for maximum production efficiency. Identify shift gaps, coverage risks, and opportunities to better distribute specialist technicians. Note any roles where current staffing creates production vulnerability.')">Copy</button></div>
+    <div class="pb-text">Analyze this staffing schedule and recommend ways to improve workforce allocation for maximum production efficiency. Identify shift gaps, coverage risks, and opportunities to better distribute specialist technicians. Note any roles where current staffing creates production vulnerability.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt D — Shortage Solutions</span><button class="copy-btn" id="cb4" onclick="copyText('cb4','This staffing report shows 4 open vacancies and 7 technicians near overtime limits. What are the most practical ways to cover production shifts with current staff? What are the risks of each approach? Which coverage gaps create the highest operational or safety risk?')">Copy</button></div>
+    <div class="pb-text">This staffing report shows 4 open vacancies and 7 technicians near overtime limits. What are the most practical ways to cover production shifts with current staff? What are the risks of each approach? Which coverage gaps create the highest operational or safety risk?</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👷</span><span class="rs-lbl">Staffing Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What workforce gaps or risks did AI identify?</span><textarea id="r3_gaps" class="field tall" placeholder="Summarize what AI found about the shift gaps, vacancy impacts, and specialist availability constraints…"></textarea></div>
+      <div><span class="label">What staffing recommendations did AI make — and what are the risks?</span><textarea id="r3_recs" class="field" placeholder="Did AI suggest moving calibration techs to evening shifts? Mandatory overtime? Cross-training? Evaluate each recommendation against the Phase A staffing reality…"></textarea></div>
+      <div><span class="label">Did AI account for the QC lead absence and its impact on batch release approval?</span><textarea id="r3_qc" class="field" placeholder="This is a specific constraint from Phase A — the QC lead is on medical leave and no one else can authorize final batch releases. Did AI recognize this as a critical constraint?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚙️</div>
+    <div><div class="ts-label">Next Up · Screen 4</div><div class="ts-title">Equipment &amp; Downtime Data</div><div class="ts-desc">Upload equipment capacity data and analyze where maintenance and downtime are bottlenecking production.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Upload Equipment Data</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — EQUIPMENT & DOWNTIME
+══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="eyebrow">Phase B · Screen 4 of 10 · Task 3</div>
+  <h1>Equipment &amp; Downtime<br><em>AI Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Upload your equipment and maintenance data. Ask AI to find opportunities to reduce downtime and improve production flow — then check whether its recommendations respect the maintenance schedules that exist for safety reasons.</p>
+
+  <span class="label">Files for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="fi fi-equip">⚙️</div>
+      <div style="flex:1;">
+        <div class="file-name">Machine Capacity &amp; Maintenance Dashboard</div>
+        <div class="file-desc">7-machine capacity report — utilization percentages, scheduled maintenance windows, repair status, and known constraints</div>
+      </div>
+      <div class="file-badge fb-equip">Equipment · Excel</div>
+    </div>
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-n">1</div><div>Upload the equipment dashboard file.</div></li>
+    <li><div class="step-n">2</div><div>Use one of the prompts below — try the one that matches the most pressing concern from your Phase A analysis.</div></li>
+    <li><div class="step-n">3</div><div>Watch carefully: AI may suggest eliminating or compressing maintenance windows. That is a red flag — maintenance schedules exist for safety reasons.</div></li>
+  </ol>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt E — Downtime Reduction</span><button class="copy-btn" id="cb5" onclick="copyText('cb5','Analyze this machine capacity report and identify opportunities to reduce unplanned downtime and improve production flow. Which machines are creating the biggest bottlenecks? What scheduling or maintenance changes would have the highest impact on throughput?')">Copy</button></div>
+    <div class="pb-text">Analyze this machine capacity report and identify opportunities to reduce unplanned downtime and improve production flow. Which machines are creating the biggest bottlenecks? What scheduling or maintenance changes would have the highest impact on throughput?</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt F — Line A Recovery</span><button class="copy-btn" id="cb6" onclick="copyText('cb6','Line A has two machines operating at reduced capacity (Arm-02 at 70%, Arm-03 at 60%). The highest-priority order is scheduled on Line A. What actions would most quickly restore Line A to full capacity? What are the risks of each option? What should happen first?')">Copy</button></div>
+    <div class="pb-text">Line A has two machines operating at reduced capacity (Arm-02 at 70%, Arm-03 at 60%). The highest-priority order is scheduled on Line A. What actions would most quickly restore Line A to full capacity? What are the risks of each option? What should happen first?</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚙️</span><span class="rs-lbl">Equipment Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What equipment bottlenecks or opportunities did AI identify?</span><textarea id="r4_bottlenecks" class="field tall" placeholder="What did AI say about Line A's combined capacity problem? Did it recognize the compounding effect of Arm-02 and Arm-03 both being below capacity on the same line?…"></textarea></div>
+      <div><span class="label">Did AI recommend any changes to maintenance windows — and is that appropriate?</span><textarea id="r4_maint" class="field" placeholder="If AI suggested compressing or skipping scheduled maintenance to improve speed — explain why that recommendation is potentially dangerous even if it looks efficient on paper…"></textarea></div>
+      <div><span class="label">What equipment recommendation would you accept, and what would you reject?</span><textarea id="r4_accept" class="field" placeholder="Be specific. Which AI suggestions for equipment optimization are realistic and safe — and which ones cross a line that your human judgment should override?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📦</div>
+    <div><div class="ts-label">Next Up · Screen 5</div><div class="ts-title">Inventory &amp; Materials Data</div><div class="ts-desc">Upload supply chain data and identify which material delays are most likely to disrupt the recovery plan.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Upload Materials Data</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 5 — INVENTORY & MATERIALS
+══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="eyebrow">Phase B · Screen 5 of 10 · Task 4</div>
+  <h1>Inventory &amp; Materials<br><em>AI Analysis</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Upload the materials and inventory data. Ask AI to identify which supply chain risks are most likely to disrupt production — and whether its recommendations for handling shortages are actually feasible.</p>
+
+  <span class="label">Files for this task</span>
+  <div class="files-list">
+    <div class="file-row">
+      <div class="fi fi-mat">📦</div>
+      <div style="flex:1;">
+        <div class="file-name">Materials &amp; Inventory Status Report</div>
+        <div class="file-desc">7-component inventory status — stock levels, minimums, delivery dates, delay status, and production risk assessments</div>
+      </div>
+      <div class="file-badge fb-mat">Materials · Excel</div>
+    </div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt G — Supply Chain Risk</span><button class="copy-btn" id="cb7" onclick="copyText('cb7','Analyze this materials inventory report. Which component shortages create the most immediate production risk? Which orders will be affected and when? What actions would most effectively reduce supply chain disruption to the production schedule?')">Copy</button></div>
+    <div class="pb-text">Analyze this materials inventory report. Which component shortages create the most immediate production risk? Which orders will be affected and when? What actions would most effectively reduce supply chain disruption to the production schedule?</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt H — Prioritization Under Constraints</span><button class="copy-btn" id="cb8" onclick="copyText('cb8','Given the material shortages identified in this report, how should production orders be resequenced to make the best use of available inventory? Which orders can run now with current stock and which ones should wait for incoming deliveries? Prioritize by business impact.')">Copy</button></div>
+    <div class="pb-text">Given the material shortages identified in this report, how should production orders be resequenced to make the best use of available inventory? Which orders can run now with current stock and which ones should wait for incoming deliveries? Prioritize by business impact.</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📦</span><span class="rs-lbl">Materials Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">Which material shortages did AI flag as most critical — and was it right?</span><textarea id="r5_critical" class="field tall" placeholder="Did AI identify the Arm Motor Assembly Kit as the most urgent threat to ORD-2201? Did it recognize that the QC test fixture delay blocks the entire certification batch? Compare to your Phase A analysis…"></textarea></div>
+      <div><span class="label">Did AI suggest any supply chain shortcuts that could create quality or reliability risks?</span><textarea id="r5_risks" class="field" placeholder="For example: did AI suggest using a different supplier to speed up delivery? Or running orders with below-minimum stock levels? Evaluate the risk of each suggestion…"></textarea></div>
+      <div><span class="label">What inventory coordination change would have the highest impact on recovery?</span><textarea id="r5_highest" class="field" placeholder="Based on the AI analysis combined with your Phase A knowledge — what single materials action would unblock the most production this week?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">🔗</div>
+    <div><div class="ts-label">Next Up · Screen 6</div><div class="ts-title">Cross-System Workflow Optimization</div><div class="ts-desc">Combine all four datasets and ask AI for a unified workflow recovery recommendation.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(4)">← Back</button>
+    <button class="btn-next" onclick="goTo(6)">Run Cross-System Analysis</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 6 — CROSS-SYSTEM ANALYSIS
+══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="eyebrow">Phase B · Screen 6 of 10 · Full System</div>
+  <h1>Cross-System Workflow<br><em>Optimization</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Now combine everything. Upload all four datasets together and ask AI for a unified recovery recommendation. This is the enterprise-level view — where the real cross-system insights emerge.</p>
+
+  <div class="card slate" style="margin-bottom:16px;">
+    <h3>Why combined analysis matters</h3>
+    <p>When you analyze each system separately, AI finds individual problems. When all four are combined, AI can see the interdependencies — a materials delay that compounds a staffing gap that compounds a maintenance window, all hitting the same production line on the same day. That's the kind of compound risk that's hardest to see without AI help.</p>
+  </div>
+
+  <div class="files-list" style="margin-bottom:16px;">
+    <div class="file-row"><div class="fi fi-sched">📅</div><div style="flex:1;"><div class="file-name">Production Schedule + Notes</div></div><div class="file-badge fb-sched">Schedule</div></div>
+    <div class="file-row"><div class="fi fi-staff">👷</div><div style="flex:1;"><div class="file-name">Staffing Matrix + Notes</div></div><div class="file-badge fb-staff">Staffing</div></div>
+    <div class="file-row"><div class="fi fi-equip">⚙️</div><div style="flex:1;"><div class="file-name">Machine Capacity Dashboard</div></div><div class="file-badge fb-equip">Equipment</div></div>
+    <div class="file-row"><div class="fi fi-mat">📦</div><div style="flex:1;"><div class="file-name">Materials &amp; Inventory Report</div></div><div class="file-badge fb-mat">Materials</div></div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt I — Full Recovery Plan</span><button class="copy-btn" id="cb9" onclick="copyText('cb9','You have four operational datasets: production schedule, staffing availability, machine capacity, and materials inventory. Analyze them together and recommend a comprehensive production recovery plan. Prioritize the actions that would have the highest combined impact on reducing delays and improving workflow efficiency across all systems.')">Copy</button></div>
+    <div class="pb-text">You have four operational datasets: production schedule, staffing availability, machine capacity, and materials inventory. Analyze them together and recommend a comprehensive production recovery plan. Prioritize the actions that would have the highest combined impact on reducing delays and improving workflow efficiency across all systems.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="pb-head"><span class="pb-label">Prompt J — Bottleneck Chain</span><button class="copy-btn" id="cb10" onclick="copyText('cb10','Looking across all four datasets, identify the top three bottlenecks that are most interconnected — where fixing one would also help the others. For each bottleneck, explain what system it originates in, what other systems it affects, and what the single most effective action would be to address it.')">Copy</button></div>
+    <div class="pb-text">Looking across all four datasets, identify the top three bottlenecks that are most interconnected — where fixing one would also help the others. For each bottleneck, explain what system it originates in, what other systems it affects, and what the single most effective action would be to address it.</div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔗</span><span class="rs-lbl">Cross-System Analysis — AI Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What new cross-system connections did AI find that single-file analysis missed?</span><textarea id="r6_new" class="field tall" placeholder="What became visible only when all four datasets were combined? Which interdependencies surprised you — or confirmed what you suspected from Phase A?…"></textarea></div>
+      <div><span class="label">What was AI's top recovery recommendation across all systems?</span><textarea id="r6_top" class="field" placeholder="Summarize the single most important recommendation AI made when analyzing all four files together. Is it realistic given everything you know?…"></textarea></div>
+      <div><span class="label">What did the combined analysis confirm from your Phase A bottleneck map?</span><textarea id="r6_confirm" class="field" placeholder="Where did AI's cross-system analysis agree with your manual bottleneck mapping? Where did it differ — and who was right?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">⚠️</div>
+    <div><div class="ts-label">Next Up · Screen 7</div><div class="ts-title">AI Recommendation Validation Challenge</div><div class="ts-desc">Examine a set of AI recommendations — some realistic, some problematic. Your job is to tell them apart.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(5)">← Back</button>
+    <button class="btn-next" onclick="goTo(7)">Validate Recommendations</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 7 — VALIDATION CHALLENGE
+══════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="eyebrow">Phase B · Screen 7 of 10 · Critical Thinking</div>
+  <h1>AI Recommendation<br><em>Validation Challenge</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">The NovaForge AI Workflow Optimization system has generated six recommendations for the production recovery plan. Some are solid. Some are risky. Some are outright wrong for this situation. Your job is to evaluate each one.</p>
+
+  <div class="card red" style="margin-bottom:16px;">
+    <h3>⚠ The core lesson of this screen</h3>
+    <p>AI optimization systems always find the most <em>efficient</em> path. But efficient does not mean safe, realistic, or operationally responsible. Eliminating a maintenance window gains 4 hours of production — and risks a catastrophic equipment failure that loses 4 days. That tradeoff requires a human to evaluate it.</p>
+  </div>
+
+  <span class="label">Evaluate each AI recommendation below</span>
+  <div class="val-cards">
+
+    <div class="val-card">
+      <div class="val-head risky"><span class="val-title">Recommendation 1 — Compress maintenance windows</span><span class="val-badge vb-risky">High Risk</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Eliminate the 4-hour Wednesday welding unit maintenance window and reschedule for next week. This recovers 4 hours of Line C production time, improving on-time delivery probability for ORD-2205 from 78% to 94%."</div>
+        <div class="val-issue">⚠ Issue: Scheduled maintenance windows exist for safety and reliability reasons. Skipping planned maintenance on a unit that had calibration drift last month increases failure risk dramatically. A major failure on Line C could lose far more than 4 hours.</div>
+        <textarea id="v1" class="field" placeholder="Do you accept, modify, or reject this recommendation — and why? What would you do instead?…"></textarea>
+      </div>
+    </div>
+
+    <div class="val-card">
+      <div class="val-head caution"><span class="val-title">Recommendation 2 — Mandatory overtime on night shift</span><span class="val-badge vb-caution">Needs Review</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Require night shift operators to work 2 additional hours per shift (24:00–02:00) for the next 5 nights to close the production gap on ORD-2201. This adds approximately 40 production hours without requiring new hires."</div>
+        <div class="val-ai-warn">Note: Night shift is already running with only 3 of 5 operators.</div>
+        <div class="val-issue a">⚡ Concern: Night shift is already understaffed — asking the 3 remaining operators to extend their shifts increases fatigue and injury risk. Mandatory overtime on an already short-staffed shift may also violate labor agreements.</div>
+        <textarea id="v2" class="field" placeholder="Accept, modify, or reject? What specific conditions would make this safer or more acceptable?…"></textarea>
+      </div>
+    </div>
+
+    <div class="val-card">
+      <div class="val-head ok"><span class="val-title">Recommendation 3 — Prioritize Arm-02 calibration</span><span class="val-badge vb-ok">Realistic</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Schedule Arm-02 calibration for the first available day shift slot this week. Completing calibration now would increase Arm-02 capacity from 70% to full, directly improving Line A throughput for the P1 order."</div>
+        <div class="val-issue" style="color:var(--green);">✓ Assessment: This is aligned with your Phase A analysis. Certified calibration techs are on day shift. This is achievable, high-impact, and has no safety downside.</div>
+        <textarea id="v3" class="field" placeholder="Accept, modify, or reject? If accepting, what specific scheduling step makes this happen?…"></textarea>
+      </div>
+    </div>
+
+    <div class="val-card">
+      <div class="val-head risky"><span class="val-title">Recommendation 4 — Reduce inspection time per unit</span><span class="val-badge vb-risky">High Risk</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Reduce QC inspection time per unit from 8 minutes to 5 minutes by limiting manual checks to flagged units only. This increases throughput by approximately 37% and would enable ORD-2201 to meet its Friday deadline."</div>
+        <div class="val-issue">⚠ Issue: This directly increases the risk of defective units reaching clients — especially the hospital logistics client on ORD-2201. Rushing inspection on a high-value, safety-sensitive shipment creates product liability exposure far greater than a late delivery penalty.</div>
+        <textarea id="v4" class="field" placeholder="Do you accept, modify, or reject? How do you communicate this to leadership who wants to meet the Friday deadline?…"></textarea>
+      </div>
+    </div>
+
+    <div class="val-card">
+      <div class="val-head ok"><span class="val-title">Recommendation 5 — Emergency supplier contact for motor kits</span><span class="val-badge vb-ok">Realistic</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Contact the Arm Motor Assembly Kit supplier immediately to request expedited delivery. Current stock (14 units) will run out by Wednesday. An expedited order arriving Tuesday or Wednesday prevents ORD-2201 from stalling."</div>
+        <div class="val-issue" style="color:var(--green);">✓ Assessment: This is exactly the right action for the critical material shortage. It's operationally straightforward and directly addresses the P1 order risk identified in Phase A.</div>
+        <textarea id="v5" class="field" placeholder="Accept, modify, or reject? What additional steps would you take alongside this action?…"></textarea>
+      </div>
+    </div>
+
+    <div class="val-card">
+      <div class="val-head caution"><span class="val-title">Recommendation 6 — Reassign calibration techs to night shift</span><span class="val-badge vb-caution">Needs Review</span></div>
+      <div class="val-body">
+        <div class="val-ai">"Move one of the two certified calibration technicians to evening shift rotation to expand calibration coverage across more production hours. This would allow Line A calibration work to proceed without waiting for day shift each morning."</div>
+        <div class="val-issue a">⚡ Concern: Operationally sound in theory — but this requires the technician's agreement, may increase their total working hours, and reduces day shift calibration capacity. Needs to be implemented as a voluntary arrangement, not a reassignment order.</div>
+        <textarea id="v6" class="field" placeholder="Accept, modify, or reject? What process would you use to implement this responsibly?…"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🧠</span><span class="rs-lbl">Overall Validation Reflection</span></div>
+    <div class="rs-body">
+      <div><span class="label">What pattern did you notice in the risky AI recommendations?</span><textarea id="r7_pattern" class="field tall" placeholder="What do Recommendations 1 and 4 have in common? What type of operational constraint does AI consistently fail to weight appropriately when optimizing for efficiency?…"></textarea></div>
+      <div><span class="label">What is the most important principle for evaluating AI workflow recommendations?</span><textarea id="r7_principle" class="field" placeholder="Write one or two sentences that capture the core judgment standard you applied to these six recommendations. What question should an operations planner always ask before accepting an AI optimization suggestion?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📌</div>
+    <div><div class="ts-label">Next Up · Screen 8</div><div class="ts-title">Workflow Improvement Prioritization</div><div class="ts-desc">Decide which validated improvements NovaForge should implement first — and in what order.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(6)">← Back</button>
+    <button class="btn-next" onclick="goTo(8)">Prioritize Improvements</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 8 — PRIORITIZATION
+══════════════════════════════════ -->
+<div class="screen" id="screen-8">
+  <div class="eyebrow">Phase B · Screen 8 of 10 · Prioritization</div>
+  <h1>Workflow Improvement<br><em>Prioritization</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">You've validated the AI recommendations. Now decide what NovaForge should implement first — prioritizing by highest operational impact and lowest risk. Not everything can happen at once.</p>
+
+  <div class="card amber" style="margin-bottom:16px;">
+    <h3>The prioritization standard</h3>
+    <p>The best improvement to implement first is the one that: (1) unblocks the most production, (2) has the clearest path to execution with current resources, and (3) doesn't create new risks in the process. Use this standard as your filter.</p>
+  </div>
+
+  <div class="priority-grid">
+    <div class="prio-section">
+      <div class="prio-head sched"><span class="prio-title">⚙ Production Scheduling Improvements</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--slate);">What scheduling changes should happen first?</span>
+        <textarea id="p8_sched" class="field" placeholder="Example: Immediately resequence Line A to complete Arm-02 calibration before running any more of ORD-2201. This unlocks 30% more capacity on the P1 order line rather than continuing on reduced output…"></textarea>
+      </div>
+    </div>
+    <div class="prio-section">
+      <div class="prio-head staff"><span class="prio-title">👷 Staffing &amp; Workforce Improvements</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--amber);">What staffing changes should happen first?</span>
+        <textarea id="p8_staff" class="field" placeholder="Example: Identify interim QC lead authority so batch releases don't stall — and discuss voluntary shift extension (not mandatory overtime) with night shift operators to cover the 2 vacancies…"></textarea>
+      </div>
+    </div>
+    <div class="prio-section">
+      <div class="prio-head equip"><span class="prio-title">🛠 Equipment &amp; Maintenance Improvements</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--orange);">What equipment actions should happen first?</span>
+        <textarea id="p8_equip" class="field" placeholder="Example: Prioritize Arm-02 calibration today, proceed with Arm-03 Thursday as scheduled, maintain the Wednesday welding unit window — do NOT compress maintenance to chase efficiency…"></textarea>
+      </div>
+    </div>
+    <div class="prio-section">
+      <div class="prio-head invent"><span class="prio-title">📦 Inventory &amp; Resource Coordination</span></div>
+      <div class="prio-body">
+        <span class="label" style="color:var(--green);">What supply chain actions should happen first?</span>
+        <textarea id="p8_invent" class="field" placeholder="Example: Emergency contact on Arm Motor Kit supplier today — request Tuesday delivery and confirm in writing. Monitor QC test fixture ETA; if Wk+2 holds, escalate for priority shipment…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📌</span><span class="rs-lbl">Overall Prioritization Reasoning</span></div>
+    <div class="rs-body">
+      <div><span class="label">What is the single most important action NovaForge should take in the next 24 hours?</span><textarea id="p8_top1" class="field tall" placeholder="Choose one action — the one that would have the highest combined impact across scheduling, staffing, equipment, and materials. Justify why it's first…"></textarea></div>
+      <div><span class="label">What improvement from the AI recommendations did you reject entirely — and why?</span><textarea id="p8_reject" class="field" placeholder="Name the recommendation you removed from the plan and explain the reasoning that led you to reject it despite it appearing to improve efficiency metrics…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="trans-strip">
+    <div class="ts-icon">📄</div>
+    <div><div class="ts-label">Next Up · Screen 9</div><div class="ts-title">Build Your Optimization Report</div><div class="ts-desc">Compile everything into your final Phase B deliverable — the AI Workflow Optimization Report.</div></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(7)">← Back</button>
+    <button class="btn-next" onclick="goTo(9)">Build Report</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 9 — FINAL REPORT
+══════════════════════════════════ -->
+<div class="screen" id="screen-9">
+  <div class="eyebrow">Phase B · Screen 9 of 10 · Final Report</div>
+  <h1>Build Your<br><em>Optimization Report</em></h1>
+  <div class="screen-rule"></div>
+  <p class="lead">Compile everything into your Phase B deliverable. Your responses from Screens 2–8 feed directly into the PDF. Fill in the synthesis sections below — these become the core of your report.</p>
+
+  <div class="card slate" style="margin-bottom:20px;">
+    <h3>📊 NovaForge AI Workflow Optimization Report</h3>
+    <p>This is a professional-grade deliverable — the kind of optimization report you'd bring to an operations director before implementing changes across a live production facility. Be clear, specific, and evidence-based throughout.</p>
+  </div>
+
+  <!-- Analyst info -->
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👤</span><span class="rs-lbl">Analyst Information</span></div>
+    <div class="rs-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><span class="label">Full Name</span><input type="text" id="r_name" class="ifield" placeholder="Your full name"></div>
+        <div><span class="label">Date</span><input type="date" id="r_date" class="ifield"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🔍</span><span class="rs-lbl">Part 1 — Workflow Bottleneck Analysis</span></div>
+    <div class="rs-body">
+      <div><span class="label">What are the most critical bottlenecks — and what combination of constraints creates them?</span><textarea id="b_bottleneck" class="field tall" placeholder="Synthesize your findings from Screens 2–6. Which cross-system bottlenecks did AI help you see more clearly — and which ones required your Phase A knowledge to fully understand?…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📅</span><span class="rs-lbl">Part 2 — Production Scheduling Improvements</span></div>
+    <div class="rs-body">
+      <div><span class="label">What scheduling changes are recommended — and are they achievable with current resources?</span><textarea id="b_sched" class="field tall" placeholder="Summarize validated scheduling improvements. For each one, note what makes it realistic and what constraint it needs to work within…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">👷</span><span class="rs-lbl">Part 3 — Staffing Optimization Findings</span></div>
+    <div class="rs-body">
+      <div><span class="label">What staffing changes would improve production — and what safeguards are required?</span><textarea id="b_staff" class="field tall" placeholder="Summarize validated staffing recommendations. Include the QC lead issue, the calibration tech availability, and how overtime should be handled responsibly…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚙️</span><span class="rs-lbl">Part 4 — Downtime Reduction Recommendations</span></div>
+    <div class="rs-body">
+      <div><span class="label">What equipment and maintenance changes should be made — and which should NOT be made?</span><textarea id="b_equip" class="field tall" placeholder="Summarize validated equipment recommendations. Specifically address why the maintenance window compression recommendation was rejected and what should happen instead…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">📦</span><span class="rs-lbl">Part 5 — Inventory Coordination Insights</span></div>
+    <div class="rs-body">
+      <div><span class="label">What supply chain actions are most urgent — and what happens if they're delayed?</span><textarea id="b_invent" class="field tall" placeholder="Summarize the materials situation and the specific actions recommended. Include what stalls if the Arm Motor Kit doesn't arrive on time…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">⚖️</span><span class="rs-lbl">Part 6 — AI Recommendations: Accepted vs. Rejected</span></div>
+    <div class="rs-body">
+      <span class="label">Accepted recommendations — and why they are operationally responsible</span>
+      <table class="cmp-table">
+        <thead><tr><th>Recommendation</th><th>Decision</th><th>Reasoning</th></tr></thead>
+        <tbody>
+          <tr><td>Prioritize Arm-02 calibration immediately</td><td><span class="tag accept">Accept</span></td><td>High impact, achievable today with day-shift techs, no safety downside</td></tr>
+          <tr><td>Emergency supplier contact for motor kits</td><td><span class="tag accept">Accept</span></td><td>Directly addresses P1 order risk — straightforward action with clear benefit</td></tr>
+          <tr><td>Eliminate Wednesday maintenance window</td><td><span class="tag reject">Reject</span></td><td>Safety risk outweighs 4-hour efficiency gain — post-drift machine requires scheduled service</td></tr>
+          <tr><td>Reduce QC inspection time per unit</td><td><span class="tag reject">Reject</span></td><td>Product liability risk to hospital client exceeds any delivery penalty consideration</td></tr>
+          <tr><td>Mandatory overtime on night shift</td><td><span class="tag modify">Modify</span></td><td>Voluntary extension only — understaffed shift cannot safely absorb mandatory overtime</td></tr>
+          <tr><td>Reassign calibration tech to evening shift</td><td><span class="tag review">Review</span></td><td>Operationally useful but requires voluntary agreement — not a unilateral reassignment</td></tr>
+        </tbody>
+      </table>
+      <div><span class="label">Add any additional AI recommendations from your own analysis sessions — accepted, modified, or rejected</span><textarea id="b_additional" class="field" placeholder="If AI generated other recommendations during your Screens 2–6 analysis that aren't captured above, add them here with your assessment…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rs-head"><span class="rs-ico">🚨</span><span class="rs-lbl">Part 7 — Operational Risks Requiring Human Oversight</span></div>
+    <div class="rs-body">
+      <div><span class="label">What risks remain even after implementing the validated recommendations?</span><textarea id="b_risks" class="field tall" placeholder="What could still go wrong? What assumptions in the recovery plan could break down? What should the operations team monitor closely as the plan is implemented?…"></textarea></div>
+      <div><span class="label">Where is human judgment most critical in executing this recovery plan?</span><textarea id="b_human" class="field" placeholder="Name the specific decision points where a human supervisor must be in the loop — not just monitoring, but actively making the call…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="submit-zone">
+    <div class="sz-head">
+      <h3>Submit &amp; Download Your Report</h3>
+      <p>Enter your name and date, then click Submit. Your PDF downloads immediately.</p>
+    </div>
+    <div class="sz-body">
+      <div class="learner-fields">
+        <div class="field-group"><span class="label">Full Name (confirm)</span><input type="text" id="r_name2" class="ifield" placeholder="Your full name"></div>
+        <div class="field-group"><span class="label">Completion Date</span><input type="date" id="r_date2" class="ifield"></div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-sub" id="btn_sub" onclick="handleSubmit()">Submit Report →</button>
+        <button class="btn-dl" id="btn_dl" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <span class="sub-note" id="sub_note">All typed responses will compile into your PDF.</span>
+      </div>
+      <div class="err-msg" id="err_msg">Please enter your name before submitting.</div>
+      <div class="success-box" id="success_box">
+        <p><strong>Report submitted.</strong> Your Phase B AI Workflow Optimization Report is complete. Download your PDF — together with your Phase A Recovery Plan, it forms the full planning and analysis record for Phase C decisions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="goTo(8)">← Edit Report</button>
+    <button class="btn-next" onclick="goTo(10)">View Completion</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 10 — COMPLETION & TRANSITION
+══════════════════════════════════ -->
+<div class="screen" id="screen-10">
+  <div class="eyebrow">Phase B · Screen 10 of 10 · Complete</div>
+  <h1>Optimization Complete —<br><em>Decisions Ahead</em></h1>
+  <div class="screen-rule"></div>
+
+  <div class="comp-hero">
+    <span class="c-icon">📊</span>
+    <h2>AI Workflow Optimization Report Complete</h2>
+    <p>You have used real AI tools to optimize production workflows, evaluated six recommendations critically, rejected the dangerous ones, and built a validated recovery roadmap for NovaForge Robotics.</p>
+  </div>
+
+  <div class="port-badge">
+    <div class="pb-icon">⚡</div>
+    <div>
+      <div class="pb-title">NovaForge AI Workflow Optimization Report</div>
+      <div class="pb-sub">Advanced AI for Manufacturing Certification · Module 4 · Phase B</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-bottom:16px;">
+    <h3>What this report demonstrates</h3>
+    <p>• Ability to use AI tools for production scheduling and workflow optimization<br>
+    • Skill at evaluating AI recommendations against real operational constraints<br>
+    • Critical judgment — identifying when efficiency recommendations cross into safety or quality risk<br>
+    • Cross-system thinking — understanding how scheduling, staffing, equipment, and materials interact<br>
+    • Professional-grade operational planning documentation</p>
+  </div>
+
+  <div class="card amber">
+    <h3>The Module 4 lesson — proven in practice</h3>
+    <p><strong>AI plans for efficiency. Humans plan for responsibility.</strong> The AI system in this module found ways to recover 4 hours here, 40 production hours there — all technically valid optimizations. But the recommendations to compress maintenance, rush inspection, and mandate overtime on an understaffed night shift would have created worse problems than they solved. Catching that difference is exactly what this module was built to teach.</p>
+  </div>
+
+  <div class="trans-box">
+    <div class="trans-eyebrow">Coming Up · Phase C</div>
+    <h2>The plan is ready.<br><em>Now approve what gets implemented.</em></h2>
+    <p>You have the data. You've validated the recommendations. In Phase C, you step into the final decision-maker role — approving, modifying, or rejecting each proposed workflow change and building the operational implementation brief for NovaForge leadership.</p>
+    <ul class="trans-list">
+      <li>Approve or reject specific workflow changes for each production line</li>
+      <li>Make the staffing coverage decision under current vacancy constraints</li>
+      <li>Set the final maintenance and equipment priority sequence</li>
+      <li>Build and present the complete Production Recovery Implementation Brief</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;padding:28px 0 0;">
+    <p style="font-size:14px;color:var(--muted);margin-bottom:6px;">Phase B is complete. Your optimization report has been saved.</p>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--light);letter-spacing:.1em;text-transform:uppercase;">Module 4 · Phase C opens when your instructor is ready.</p>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+let current = 1;
+const TOTAL = 10;
+
+function buildDots() {
+  const wrap = document.getElementById('dotsRow');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.getElementById('screen-' + current).classList.remove('active');
+  current = n;
+  document.getElementById('screen-' + current).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateUI() {
+  document.getElementById('progFill').style.width = (current / TOTAL * 100) + '%';
+  document.getElementById('sctr').textContent = 'Screen ' + current + ' of ' + TOTAL;
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i + 1 === current ? ' active' : i + 1 < current ? ' done' : '');
+  });
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+
+function copyText(btnId, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const b = document.getElementById(btnId);
+    b.textContent = 'Copied!';
+    b.classList.add('copied');
+    setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('copied'); }, 2200);
+  });
+}
+
+function g(id) { return (document.getElementById(id) || {}).value || ''; }
+function analyst() { return (g('r_name2') || g('r_name')).trim(); }
+function dateVal() { return g('r_date2') || g('r_date') || '—'; }
+
+function handleSubmit() {
+  if (!analyst()) { document.getElementById('err_msg').style.display = 'block'; document.getElementById('r_name2').focus(); return; }
+  document.getElementById('err_msg').style.display = 'none';
+  document.getElementById('success_box').style.display = 'block';
+  document.getElementById('btn_dl').style.display = 'inline-flex';
+  const b = document.getElementById('btn_sub');
+  b.textContent = '✓ Submitted'; b.style.background = '#1A6645'; b.style.cursor = 'default'; b.onclick = null;
+  document.getElementById('sub_note').style.display = 'none';
+  document.getElementById('success_box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const PW = 215.9, PH = 279.4, ML = 18, MR = 18, CW = PW - ML - MR;
+  const SLATE = [26,74,138], SLATE_D = [13,42,82], SLATE_BG = [235,242,252];
+  const PURPLE = [123,47,190];
+  const TXT = [13,26,46], MUTED = [74,90,114], LIGHT = [138,155,180];
+  const BORDER = [210,220,235], OFF = [248,250,252];
+  const GREEN = [26,102,69], GREEN_BG = [234,247,240];
+  const AMBER = [122,79,0], AMBER_BG = [253,245,230];
+  const RED = [138,32,32], RED_BG = [253,240,239];
+  let y = 0;
+
+  function newPage() {
+    doc.addPage(); y = 22;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.line(ML, 11, PW - MR, 11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    doc.text('NovaForge Robotics  ·  Module 4 Phase B', ML, 9);
+    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, PW - MR, 9, { align: 'right' });
+  }
+  function checkY(n) { if (y + n > PH - 20) newPage(); }
+  function secHead(icon, title) {
+    checkY(18);
+    doc.setFillColor(...SLATE_BG);
+    doc.roundedRect(ML, y, CW, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...SLATE_D);
+    doc.text(icon + '  ' + title, ML + 5, y + 6.8); y += 13;
+  }
+  function fieldLabel(txt) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...SLATE);
+    doc.text(txt.toUpperCase(), ML + 2, y); y += 4;
+  }
+  function box(lbl, val) {
+    const v = val && val.trim() ? val : '(No response provided)';
+    const lines = doc.splitTextToSize(v, CW - 8);
+    const bh = Math.max(lines.length * 4.5 + 10, 16);
+    checkY(bh + 12);
+    fieldLabel(lbl);
+    doc.setFillColor(...OFF); doc.setDrawColor(...BORDER); doc.setLineWidth(.3);
+    doc.roundedRect(ML, y, CW, bh, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...TXT);
+    doc.text(lines, ML + 4, y + 6); y += bh + 5;
+  }
+
+  // COVER
+  doc.setFillColor(...SLATE);
+  doc.rect(0, 0, PW, 62, 'F');
+  doc.setFillColor(...PURPLE);
+  doc.rect(0, 54, PW, 8, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(170,200,240);
+  doc.text('NOVAFORGE ROBOTICS  ·  ADVANCED AI FOR MANUFACTURING CERTIFICATION  ·  MODULE 4', ML, 19);
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
+  doc.text('AI Workflow Optimization Report', ML, 34);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(170,200,240);
+  doc.text('AI Workflow Optimization Lab  ·  Module 4 Phase B', ML, 46);
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(ML, 56, CW, 27, 2, 2, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...SLATE);
+  doc.text('ANALYST', ML+6, 66); doc.text('DATE', ML+100, 66); doc.text('ASSIGNMENT', ML+152, 66);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...TXT);
+  doc.text(analyst()||'Not provided', ML+6, 76);
+  doc.text(dateVal(), ML+100, 76);
+  doc.setFontSize(10); doc.text('Module 4 · Phase B', ML+152, 76);
+  y = 100;
+
+  // SCREENS 2–6: PER-DATASET ANALYSIS
+  secHead('📅', 'Production Scheduling Analysis (Screen 2)');
+  box('Scheduling Conflicts & Risks AI Identified', g('r2_conflicts'));
+  box('AI Scheduling Recommendations — Realism Assessment', g('r2_recs'));
+  box('What AI Missed from Phase A', g('r2_miss'));
+  y += 4;
+
+  secHead('👷', 'Staffing & Workforce Analysis (Screen 3)');
+  box('Workforce Gaps & Risks AI Identified', g('r3_gaps'));
+  box('Staffing Recommendations & Risk Assessment', g('r3_recs'));
+  box('QC Lead Absence — AI Handling Assessment', g('r3_qc'));
+  y += 4;
+
+  secHead('⚙️', 'Equipment & Downtime Analysis (Screen 4)');
+  box('Equipment Bottlenecks AI Identified', g('r4_bottlenecks'));
+  box('Maintenance Window Recommendations — Assessment', g('r4_maint'));
+  box('Equipment Recommendations: Accept vs Reject', g('r4_accept'));
+  y += 4;
+
+  secHead('📦', 'Inventory & Materials Analysis (Screen 5)');
+  box('Critical Material Shortages AI Flagged', g('r5_critical'));
+  box('Supply Chain Shortcuts — Risk Assessment', g('r5_risks'));
+  box('Highest-Impact Materials Action', g('r5_highest'));
+  y += 4;
+
+  secHead('🔗', 'Cross-System Workflow Optimization (Screen 6)');
+  box('New Cross-System Connections AI Found', g('r6_new'));
+  box('AI Top Recovery Recommendation — Full Assessment', g('r6_top'));
+  box('Phase A Bottleneck Map vs AI Cross-System Analysis', g('r6_confirm'));
+  y += 4;
+
+  // SCREEN 7: VALIDATION
+  secHead('⚠️', 'AI Recommendation Validation Challenge (Screen 7)');
+  box('Rec 1 — Compress Maintenance Windows', g('v1'));
+  box('Rec 2 — Mandatory Night Shift Overtime', g('v2'));
+  box('Rec 3 — Prioritize Arm-02 Calibration', g('v3'));
+  box('Rec 4 — Reduce QC Inspection Time', g('v4'));
+  box('Rec 5 — Emergency Supplier Contact', g('v5'));
+  box('Rec 6 — Reassign Calibration Tech', g('v6'));
+  box('Pattern in Risky AI Recommendations', g('r7_pattern'));
+  box('Core Principle for Evaluating AI Workflow Recommendations', g('r7_principle'));
+  y += 4;
+
+  // SCREEN 8: PRIORITIES
+  secHead('📌', 'Workflow Improvement Prioritization (Screen 8)');
+  box('Production Scheduling Improvements — Priority', g('p8_sched'));
+  box('Staffing & Workforce Improvements — Priority', g('p8_staff'));
+  box('Equipment & Maintenance Improvements — Priority', g('p8_equip'));
+  box('Inventory & Resource Coordination — Priority', g('p8_invent'));
+  box('Single Most Important Action (Next 24 Hours)', g('p8_top1'));
+  box('Improvement Rejected — and Why', g('p8_reject'));
+  y += 4;
+
+  // SCREEN 9: FULL REPORT
+  secHead('📊', 'Full Optimization Report Synthesis (Screen 9)');
+  box('Workflow Bottleneck Analysis', g('b_bottleneck'));
+  box('Production Scheduling Improvements', g('b_sched'));
+  box('Staffing Optimization Findings', g('b_staff'));
+  box('Downtime Reduction Recommendations', g('b_equip'));
+  box('Inventory Coordination Insights', g('b_invent'));
+  box('Additional AI Recommendations (Accepted/Rejected)', g('b_additional'));
+  box('Operational Risks Requiring Human Oversight', g('b_risks'));
+  box('Where Human Judgment Is Most Critical', g('b_human'));
+
+  // FOOTERS
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...LIGHT);
+    if (i > 1) {
+      doc.text('NovaForge Robotics  ·  Module 4 Phase B  ·  AI Workflow Optimization Report', ML, PH-8);
+      doc.text('Page '+i+' of '+total, PW/2, PH-8, {align:'center'});
+      doc.text(analyst()||'', PW-MR, PH-8, {align:'right'});
+    }
+  }
+
+  const safe = analyst().replace(/[^a-z0-9]/gi,'_').toLowerCase() || 'analyst';
+  doc.save('novaforge_m4_phase_b_'+safe+'.pdf');
+}
+
+buildDots();
+document.getElementById('r_date').valueAsDate = new Date();
+document.getElementById('r_date2').valueAsDate = new Date();
+</script>
+</body>
+</html>
